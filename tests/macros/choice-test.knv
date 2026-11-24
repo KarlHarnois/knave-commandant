@@ -1,0 +1,15 @@
+(use lib defchoice from-text value-names)
+
+(defchoice log-format text json)
+
+(deftest a-case-name-reads-as-its-case
+  (assert (= (the (option log-format) (from-text "json"))
+             (some log-format/json))))
+
+(deftest another-name-reads-as-nothing
+  (assert (= (the (option log-format) (from-text "xml"))
+             none)))
+
+(deftest lists-the-case-names-in-order
+  (assert (= (value-names (ref (the (option log-format) none)))
+             (vec (str "text") (str "json")))))

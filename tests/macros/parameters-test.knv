@@ -1,0 +1,35 @@
+(use lib ->switch-slot defcommand switch-state)
+
+(export run-probe)
+
+(defcommand probe (path string :default ".")
+  (:quiet switch :short q)
+  (:color switch :initial on :env "PROBE_COLOR")
+  (:verbose count :short v)
+  (:limit u32)
+  (:depth u32 :default 3)
+  (:tag (vec string)))
+
+(defn example ()
+  (->probe :path (str ".")
+           :quiet switch-state/off
+           :color switch-state/on
+           :verbose 0
+           :limit none
+           :depth 3
+           :tag (vec)))
+
+(deftest a-switch-is-a-switch-state
+  (assert (= (:quiet (example)) switch-state/off)))
+
+(deftest a-count-is-an-int
+  (assert (= (:verbose (example)) 0)))
+
+(deftest an-option-without-a-default-is-optional
+  (assert (= (:limit (example)) none)))
+
+(deftest an-option-with-a-default-is-its-type
+  (assert (= (:depth (example)) 3)))
+
+(deftest a-list-option-is-a-vector
+  (assert (= (len (:tag (example))) 0)))

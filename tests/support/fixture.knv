@@ -6,7 +6,8 @@
          argument-presence parse switch-state value-kind)
 
 (export environment-with no-environment no-words parse-texts
-        parse-with serve-spec spec-requiring words)
+        parse-with serve-spec spec-requiring
+        spec-with-choices words)
 
 (defn parse-texts (texts)
   (parse-with (serve-spec) (no-environment) texts))
@@ -38,7 +39,8 @@
                                          :placeholder (str "port")
                                          :default (some (str "8000"))
                                          :env (vec (str "SERVE_PORT")
-                                                   (str "PORT")))))
+                                                   (str "PORT"))
+                                         :choices (vec))))
                (->option-spec :long (str "open")
                               :short (some (char "o"))
                               :about (str "Opens the browser")
@@ -79,3 +81,19 @@
 
 (defn no-words ()
   (the (vec (ref str)) (vec)))
+
+(defn spec-with-choices ()
+  (->command-spec :name (str "log")
+                  :about (str "Prints the log.")
+                  :version none
+                  :arguments (vec)
+                  :options (vec (->option-spec :long (str "format")
+                                               :short none
+                                               :about (str "How to print")
+                                               :value (value-kind/one
+                                                        (->value-slot
+                                                          :placeholder (str "format")
+                                                          :default none
+                                                          :env (vec)
+                                                          :choices (vec (str "text")
+                                                                        (str "json"))))))))

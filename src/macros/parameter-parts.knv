@@ -1,0 +1,72 @@
+(module
+  "Reads the parts of one `defcommand` parameter: its name, its type and its details.")
+
+(use code bool-not empty? first keyword-name keyword? list
+          list? nth number? rest string string? symbol-name
+          symbol? value-eq)
+
+(export argument? default-text defaulted? detail given?
+        many-type? parameter-details parameter-name
+        parameter-type type-named?)
+
+(def parameter-name
+  (fn (parameter)
+    (if (argument? parameter)
+      (symbol-name (first parameter))
+      (keyword-name (first parameter)))))
+
+(def argument?
+  (fn (parameter)
+    (bool-not (keyword? (first parameter)))))
+
+(def parameter-type
+  (fn (parameter) (nth parameter 1)))
+
+(def defaulted?
+  (fn (parameter)
+    (given? (detail (parameter-details parameter) "default"))))
+
+(def default-text
+  (fn (parameter)
+    (literal-text (detail (parameter-details parameter) "default"))))
+
+(def parameter-details
+  (fn (parameter) (rest (rest parameter))))
+
+(def detail
+  (fn (items key)
+    (if (empty? items)
+      (list)
+      (if (detail-key? (first items) key)
+        (first (rest items))
+        (detail (rest items) key)))))
+
+(def given?
+  (fn (value)
+    (bool-not (if (list? value) (empty? value) false))))
+
+(def many-type?
+  (fn (type)
+    (if (list? type)
+      (type-named? (first type) "vec")
+      false)))
+
+(def type-named?
+  (fn (type name)
+    (if (symbol? type)
+      (value-eq (symbol-name type) name)
+      false)))
+
+(def detail-key?
+  (fn (item key)
+    (if (keyword? item)
+      (value-eq (keyword-name item) key)
+      false)))
+
+(def literal-text
+  (fn (value)
+    (if (string? value)
+      value
+      (if (number? value)
+        (string value)
+        (symbol-name value)))))

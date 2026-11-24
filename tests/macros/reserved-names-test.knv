@@ -1,0 +1,10 @@
+(use lib defcommand)
+
+(export run-near-misses)
+
+(defcommand near-misses (:helper switch :short H)
+  (:versions count :short v))
+
+(deftest names-close-to-the-built-ins-are-allowed
+  (assert (= (len (:options (near-misses-spec)))
+             2)))

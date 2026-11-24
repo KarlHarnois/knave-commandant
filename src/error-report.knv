@@ -3,7 +3,7 @@
 
 (use errors cli-error error->message)
 (use help spec->usage)
-(use spec command-spec)
+(use spec command-spec find-long value-kind)
 (use suggest closest-name)
 
 (export error-report)
@@ -35,7 +35,27 @@
   (match failure
     ((unknown-option written)
      (option-tip spec (as-str written)))
+    ((invalid-value invalid)
+     (choices-tip spec (as-str (:written invalid))))
     (_ none)))
+
+(defn choices-tip (spec written)
+  (then-some (choices-of spec written)
+    (fn (names)
+      (some (str "  tip: possible values: " (join names ", "))))))
+
+(defn choices-of (spec written)
+  (then-some (find-long spec (as-str (long-name-in written)))
+    (fn (option)
+      (slot-choices (:value option)))))
+
+(defn slot-choices (value)
+  (match value
+    ((one slot) (non-empty (clone (:choices slot))))
+    (_ none)))
+
+(defn non-empty (names)
+  (if (empty? names) none (some names)))
 
 (defn option-tip (spec written)
   (map-some (closest-long spec written)

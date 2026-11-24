@@ -1,6 +1,8 @@
 (use error-report error-report)
-(use errors cli-error)
-(use support/fixture serve-spec spec-requiring)
+(use errors ->invalid-text cli-error)
+
+(use support/fixture serve-spec spec-requiring
+                     spec-with-choices)
 
 (defn report-for (failure)
   (error-report (ref (serve-spec))
@@ -40,4 +42,18 @@
 (deftest a-short-option-gets-no-tip
   (assert (not (contains-text? (report-for (cli-error/unknown-option (str
                                                                        "-x")))
+                               "tip"))))
+
+(deftest an-invalid-choice-lists-the-possible-values
+  (assert (contains-text? (error-report (ref (spec-with-choices))
+                                        (ref (cli-error/invalid-value
+                                               (->invalid-text :written (str "--format")
+                                                               :text (str "xml")))))
+                          "  tip: possible values: text, json")))
+
+(deftest an-invalid-number-gets-no-tip
+  (assert (not (contains-text? (report-for (cli-error/invalid-value
+                                             (->invalid-text :written (str "--port")
+                                                             :text (str
+                                                                     "abc"))))
                                "tip"))))

@@ -1,0 +1,144 @@
+(module
+  "Defines `defcommand`, which turns one declaration into a typed struct, its spec, its parse and its run.")
+
+(use prelude/macros header-shape)
+
+(use code concat empty? first keyword-name keyword? list
+          list? prepend rest string string? symbol
+          symbol-name value-eq)
+
+(use errors cli-error)
+(use macros/parameter-parts argument?)
+(use macros/parameter-specs parameter-spec)
+
+(use macros/parameters matches-name parameter-binding
+                       parameter-field parameter-reader)
+
+(use matches matches)
+(use run run-with)
+(use spec ->command-spec)
+
+(export defcommand)
+
+(defmacro defcommand (name parts ...)
+  "Defines a command: a struct with one typed field per parameter, `name-spec`,
+  `matches->name` and `run-name`, which parses the process's command line."
+  (let-parts name
+             (about-of parts)
+             (settings-of parts)
+             (parameters-of parts)))
+
+(header-shape (defcommand name docstring))
+
+(def let-parts
+  (fn (name about settings parameters)
+    (template (do
+                (defstruct (unquote name)
+                  (splice (fields parameters)))
+                (defn (unquote (named name "" "-spec")) ()
+                  (->command-spec
+                    :name (str (unquote (symbol-name name)))
+                    :about (str (unquote about))
+                    :version (unquote (version-form settings))
+                    :arguments (vec (splice (specs (only parameters true))))
+                    :options (vec (splice (specs (only parameters false))))))
+                (type (unquote (named name "matches->" ""))
+                  (fn ((ref matches))
+                    (result (unquote name) cli-error)))
+                (defn (unquote (named name "matches->" "")) ((unquote (matches-name
+                                                                        name)))
+                  (unquote (converter name parameters)))
+                (defn (unquote (named name "run-" "")) ()
+                  (run-with (ref ((unquote (named name "" "-spec"))))
+                            (unquote (named name "matches->" ""))))))))
+
+(def converter
+  (fn (name parameters)
+    (if (empty? parameters)
+      (template (ok ((unquote (named name "->" "")))))
+      (template (let-try ((splice (bindings parameters)))
+                  (ok ((unquote (named name "->" ""))
+                       (splice (constructor-fields parameters)))))))))
+
+(def named
+  (fn (name before after)
+    (symbol name (string before (symbol-name name) after))))
+
+(def about-of
+  (fn (parts)
+    (if (empty? parts)
+      ""
+      (if (string? (first parts))
+        (first parts)
+        ""))))
+
+(def settings-of
+  (fn (parts)
+    (if (empty? parts)
+      (list)
+      (if (list? (first parts))
+        (settings-of (rest parts))
+        (prepend (first parts)
+                 (settings-of (rest parts)))))))
+
+(def parameters-of
+  (fn (parts)
+    (if (empty? parts)
+      (list)
+      (if (list? (first parts))
+        (prepend (first parts)
+                 (parameters-of (rest parts)))
+        (parameters-of (rest parts))))))
+
+(def version-form
+  (fn (settings)
+    (if (empty? settings)
+      (quote none)
+      (if (version-key? (first settings))
+        (template (some (str (unquote (first (rest settings))))))
+        (version-form (rest settings))))))
+
+(def version-key?
+  (fn (item)
+    (if (keyword? item)
+      (value-eq (keyword-name item) "version")
+      false)))
+
+(def only
+  (fn (parameters arguments)
+    (if (empty? parameters)
+      (list)
+      (if (value-eq (argument? (first parameters)) arguments)
+        (prepend (first parameters)
+                 (only (rest parameters) arguments))
+        (only (rest parameters) arguments)))))
+
+(def fields
+  (fn (parameters)
+    (if (empty? parameters)
+      (list)
+      (concat (parameter-field (first parameters))
+              (fields (rest parameters))))))
+
+(def specs
+  (fn (parameters)
+    (if (empty? parameters)
+      (list)
+      (prepend (parameter-spec (first parameters))
+               (specs (rest parameters))))))
+
+(def bindings
+  (fn (parameters)
+    (if (empty? parameters)
+      (list)
+      (prepend (parameter-binding (first parameters))
+               (prepend (parameter-reader (first parameters))
+                        (bindings (rest parameters)))))))
+
+(def constructor-fields
+  (fn (parameters)
+    (if (empty? parameters)
+      (list)
+      (prepend (first (parameter-field (first parameters)))
+               (prepend (parameter-binding (first parameters))
+                        (constructor-fields (rest parameters)))))))

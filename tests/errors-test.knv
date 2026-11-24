@@ -1,4 +1,4 @@
-(use errors cli-error error->message)
+(use errors ->invalid-text cli-error error->message)
 
 (deftest names-an-unknown-option
   (assert (= (error->message (cli-error/unknown-option (str "--prot")))
@@ -23,3 +23,13 @@
 (deftest names-a-missing-argument
   (assert (= (error->message (cli-error/missing-argument (str "file")))
              "missing argument <file>")))
+
+(deftest names-a-missing-required-option
+  (assert (= (error->message (cli-error/missing-option (str "--manager")))
+             "option `--manager` is required")))
+
+(deftest names-an-invalid-value-and-where-it-was-given
+  (assert (= (error->message (cli-error/invalid-value (->invalid-text
+                                                        :written (str "--port")
+                                                        :text (str "abc"))))
+             "invalid value `abc` for `--port`")))

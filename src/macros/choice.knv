@@ -1,0 +1,42 @@
+(module
+  "Defines `defchoice`, an enum whose case names are the values an option accepts.")
+
+(use code empty? first list prepend rest string symbol
+          symbol-name)
+
+(use values cli-value)
+
+(export defchoice)
+
+(defmacro defchoice (name cases ...)
+  "Defines an enum of unit cases that an option or argument can take by name."
+  (template (do
+              (defenum (unquote name) (splice cases))
+              (impl cli-value (unquote name)
+                (from-text (text)
+                  (match text
+                    (splice (case-clauses name cases))
+                    (_ none)))
+
+                (value-names (_)
+                  (vec (splice (case-texts cases))))))))
+
+(def case-clauses
+  (fn (name cases)
+    (if (empty? cases)
+      (list)
+      (prepend (template ((unquote (symbol-name (first cases)))
+                          (some (unquote (case-symbol name (first cases))))))
+               (case-clauses name (rest cases))))))
+
+(def case-symbol
+  (fn (name case)
+    (symbol name
+            (string (symbol-name name) "/" (symbol-name case)))))
+
+(def case-texts
+  (fn (cases)
+    (if (empty? cases)
+      (list)
+      (prepend (template (str (unquote (symbol-name (first cases)))))
+               (case-texts (rest cases))))))
