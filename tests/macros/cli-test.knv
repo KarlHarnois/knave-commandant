@@ -1,5 +1,5 @@
-(use lib ->environment cli-error defcli defcommand outcome
-         parse spec->usage switch-state)
+(use lib ->environment defcli defcommand parse-command
+         spec->usage switch-state)
 
 (defcommand fetch "Fetches the changes."
   (:all switch :short a :about "Fetches every remote"))
@@ -19,12 +19,10 @@
         matches->tool)
 
 (defn tool-after (texts)
-  (match (parse (ref (tool-spec))
-                (ref (->environment :variables (vec)))
-                (ref (collect (map (iter texts)
-                                (fn (text) (str (deref text)))))))
-    ((parsed found) (matches->tool (ref found)))
-    (_ (err cli-error/missing-command))))
+  (parse-command tool
+                 (->environment :variables (vec))
+                 (collect (map (iter texts)
+                            (fn (text) (str (deref text)))))))
 
 (deftest the-spec-lists-each-command-under-its-word
   (assert (= (collect (map (iter (:subcommands (tool-spec)))

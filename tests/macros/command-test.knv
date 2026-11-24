@@ -1,5 +1,6 @@
-(use lib ->environment ->invalid-text cli-error defchoice
-         defcommand outcome parse spec->usage)
+(use lib ->environment ->invalid-text ->usage-failure
+         cli-error defchoice defcommand outcome
+         parse-command spec->usage)
 
 (export matches->greet)
 
@@ -12,12 +13,13 @@
   (:tone tone :default plain :about "How to greet"))
 
 (defn greet-after (texts)
-  (match (parse (ref (greet-spec))
-                (ref (->environment :variables (vec)))
-                (ref (collect (map (iter texts)
-                                (fn (text) (str (deref text)))))))
-    ((parsed found) (matches->greet (ref found)))
-    (_ (err (cli-error/missing-argument (str "not parsed"))))))
+  (parse-command greet
+                 (->environment :variables (vec))
+                 (collect (map (iter texts)
+                            (fn (text) (str (deref text)))))))
+
+(defn usage-error (failure)
+  (err (outcome/usage-error (->usage-failure :path (vec) :error failure))))
 
 (deftest the-spec-carries-the-name-about-and-version
   (assert (= (:name (greet-spec)) "greet"))
@@ -39,6 +41,10 @@
 
 (deftest a-value-out-of-range-is-an-invalid-value
   (assert (= (greet-after (vec "ana" "-n" "300"))
-             (err (cli-error/invalid-value (->invalid-text
-                                             :written (str "--times")
-                                             :text (str "300")))))))
+             (usage-error (cli-error/invalid-value (->invalid-text :written (str
+                                                                              "--times")
+                                                                   :text (str "300")))))))
+
+(deftest help-comes-back-for-the-caller-to-print
+  (assert (= (greet-after (vec "--help"))
+             (err (outcome/help (vec))))))

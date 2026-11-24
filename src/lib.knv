@@ -14,11 +14,11 @@
 (use matches argument-text matched-value matches
              option-value)
 
-(use parse outcome parse)
+(use parse outcome parse parse-into)
 (use macros/choice defchoice)
 (use macros/cli defcli)
-(use macros/command defcommand run-command)
-(use run run run-with)
+(use macros/command defcommand parse-command run-command)
+(use run process-environment run run-with)
 (use values cli-value from-text value-names)
 (use validate spec-error spec-error->message validate-spec)
 
@@ -36,7 +36,9 @@
         defcommand environment error->message error-report
         failure-report from-text invalid-text matched-value
         matches option-presence option-spec option-value
-        outcome parse run run-command run-with spec->help
-        spec->usage spec-error spec-error->message
-        switch-slot switch-state usage-failure validate-spec
-        value-kind value-names value-slot variable)
+        outcome parse parse-command parse-into
+        process-environment run run-command run-with
+        spec->help spec->usage spec-error
+        spec-error->message switch-slot switch-state
+        usage-failure validate-spec value-kind value-names
+        value-slot variable)

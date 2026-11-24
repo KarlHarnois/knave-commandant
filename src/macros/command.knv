@@ -11,10 +11,11 @@
 
 (use macros/parameters matches-name)
 (use matches matches)
+(use parse parse-into)
 (use run run-with)
 (use spec ->command-spec)
 
-(export defcommand run-command)
+(export defcommand parse-command run-command)
 
 (defmacro defcommand (name parts ...)
   "Defines a command: a struct with one typed field per parameter, `name-spec`
@@ -30,6 +31,16 @@
   version, and exits with code 2 on a usage error."
   (template (run-with (ref ((unquote (named name "" "-spec"))))
                       (unquote (named name "matches->" "")))))
+
+(defmacro parse-command (name environment words)
+  "Parses `words` with the command `name`, defined by `defcommand` or
+  `defcli`, and returns `(ok value)` with its typed struct. Help, version and
+  usage errors come back as `(err outcome)`, so the caller prints them. It
+  reads nothing from the process and never exits."
+  (template (parse-into (ref ((unquote (named name "" "-spec"))))
+                        (ref (unquote environment))
+                        (ref (unquote words))
+                        (unquote (named name "matches->" "")))))
 
 (header-shape (defcommand name docstring))
 
