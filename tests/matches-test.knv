@@ -1,13 +1,14 @@
 (use spec switch-state)
 
 (use matches ->argument-match ->matches ->option-match
-             argument-text command-at matched-value
-             option-value read-count read-switch shifted)
+             argument-text argument-texts command-at
+             matched-value option-value read-count
+             read-switch shifted)
 
 (defn found ()
   (->matches :path (vec)
              :arguments (vec (->argument-match :name (str "root")
-                                               :value (str "site")))
+                                               :values (vec (str "site"))))
              :options (vec (->option-match :long (str "verbose")
                                            :value (matched-value/count 2)))))
 
@@ -52,3 +53,10 @@
 (deftest shifting-drops-the-first-command
   (assert (= (:path (shifted (ref (chosen))))
              (vec (str "add")))))
+
+(deftest reads-every-word-of-an-argument
+  (assert (= (argument-texts (ref (found)) "root")
+             (vec (str "site")))))
+
+(deftest an-unknown-argument-has-no-words
+  (assert (empty? (argument-texts (ref (found)) "path"))))

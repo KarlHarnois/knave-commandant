@@ -1,0 +1,60 @@
+(module
+  "Reads each built-in type a parameter can take, such as `string`, `bool` and the number types, from its text.")
+
+(use values cli-value parsed)
+
+(impl cli-value string
+  (from-text (text) (some (str text)))
+
+  (value-names (_) (vec)))
+
+(impl cli-value bool
+  (from-text (text) (parsed text))
+
+  (value-names (_)
+    (vec (str "true") (str "false"))))
+
+(impl cli-value char
+  (from-text (text) (parsed text))
+
+  (value-names (_) (vec)))
+
+(impl cli-value int
+  (from-text (text) (parsed text))
+
+  (value-names (_) (vec)))
+
+(impl cli-value i32
+  (from-text (text) (parsed text))
+
+  (value-names (_) (vec)))
+
+(impl cli-value u8
+  (from-text (text) (parsed text))
+
+  (value-names (_) (vec)))
+
+(impl cli-value u16
+  (from-text (text) (parsed text))
+
+  (value-names (_) (vec)))
+
+(impl cli-value u32
+  (from-text (text) (parsed text))
+
+  (value-names (_) (vec)))
+
+(impl cli-value u64
+  (from-text (text) (parsed text))
+
+  (value-names (_) (vec)))
+
+(impl cli-value usize
+  (from-text (text) (parsed text))
+
+  (value-names (_) (vec)))
+
+(impl cli-value float
+  (from-text (text) (parsed text))
+
+  (value-names (_) (vec)))

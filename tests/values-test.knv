@@ -5,13 +5,18 @@
 
 (use spec switch-state)
 
-(use values from-text read-argument read-many read-option
-            read-optional value-names)
+(use values read-argument read-arguments read-many
+            read-option read-optional
+            read-optional-argument)
 
 (defn found ()
   (->matches
     :path (vec)
-    :arguments (vec (->argument-match :name (str "root") :value (str "site")))
+    :arguments (vec (->argument-match :name (str "root")
+                                      :values (vec (str "site")))
+                    (->argument-match :name (str "ports")
+                                      :values (vec (str "80") (str "81")))
+                    (->argument-match :name (str "label") :values (vec)))
     :options (vec (->option-match :long (str "port")
                                   :value (matched-value/one (some (str "80"))))
                   (->option-match :long (str "name")
@@ -66,13 +71,17 @@
                   (read-many (ref (found)) "tag"))
              (ok (vec 1 2)))))
 
-(deftest a-number-type-reads-digits
-  (assert (= (the (option u16) (from-text "8080"))
-             (some 8080))))
+(deftest reads-every-word-of-a-repeated-argument
+  (assert (= (the (result (vec u16) _)
+                  (read-arguments (ref (found)) "ports"))
+             (ok (vec 80 81)))))
 
-(deftest bool-lists-its-values
-  (assert (= (value-names (ref (the (option bool) none)))
-             (vec (str "true") (str "false")))))
+(deftest an-absent-optional-argument-is-none
+  (assert (= (the (result (option string) _)
+                  (read-optional-argument (ref (found)) "label"))
+             (ok none))))
 
-(deftest a-number-type-lists-no-values
-  (assert (empty? (value-names (ref (the (option u16) none))))))
+(deftest a-given-optional-argument-is-some
+  (assert (= (the (result (option string) _)
+                  (read-optional-argument (ref (found)) "root"))
+             (ok (some (str "site"))))))

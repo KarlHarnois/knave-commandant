@@ -1,27 +1,67 @@
 (module
-  "Rejects a `:required` detail on a parameter that cannot be required.")
+  "Rejects a `:required` or `:default` detail on a parameter that cannot take it.")
 
-(use code fail first)
+(use code bool-not fail first)
 
 (use macros/parameter-parts argument? defaulted? many-type?
-                            parameter-type
+                            option-type? parameter-type
                             required-parameter? type-named?)
 
 (export check-required-detail)
 
 (def check-required-detail
   (fn (parameter)
+    (if (argument? parameter)
+      (check-argument-details parameter)
+      (check-option-required parameter))))
+
+(def check-argument-details
+  (fn (parameter)
+    (if (defaulted? parameter)
+      (check-argument-default parameter)
+      (check-argument-required parameter))))
+
+(def check-argument-default
+  (fn (parameter)
+    (if (single-argument-type? (parameter-type parameter))
+      (check-default-not-required parameter)
+      (fail "a `vec` or `option` argument cannot take `:default`"
+        (first parameter)
+        "give the argument a plain type to give it a default"))))
+
+(def check-default-not-required
+  (fn (parameter)
     (if (required-parameter? parameter)
-      (check-required-argument parameter)
+      (fail "an argument cannot take both `:required` and `:default`"
+        (first parameter)
+        "drop `:required`, since a default fills the argument")
       parameter)))
 
-(def check-required-argument
+(def check-argument-required
   (fn (parameter)
-    (if (argument? parameter)
-      (fail "an argument cannot take `:required`"
+    (if (required-parameter? parameter)
+      (check-required-vec parameter)
+      parameter)))
+
+(def check-required-vec
+  (fn (parameter)
+    (if (many-type? (parameter-type parameter))
+      parameter
+      (fail "only a `vec` argument can take `:required`"
         (first parameter)
-        "an argument without a `:default` is already required")
-      (check-required-default parameter))))
+        "an argument of a plain type is already required"))))
+
+(def single-argument-type?
+  (fn (type)
+    (if (many-type? type)
+      false
+      (bool-not (option-type? type)))))
+
+(def check-option-required
+  (fn (parameter)
+    (if (required-parameter? parameter)
+      (check-required-default parameter)
+      parameter)))
 
 (def check-required-default
   (fn (parameter)

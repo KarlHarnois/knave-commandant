@@ -6,8 +6,9 @@
 
 (use macros/parameter-parts argument? default-text
                             defaulted? detail given?
-                            many-type? parameter-details
-                            parameter-name parameter-type
+                            many-type? option-type?
+                            parameter-details parameter-name
+                            parameter-type
                             required-parameter? type-named?)
 
 (use spec ->argument-spec ->option-spec ->switch-slot
@@ -37,6 +38,24 @@
     (if (defaulted? parameter)
       (template (argument-presence/defaulted (str (unquote (default-text
                                                              parameter)))))
+      (undefaulted-argument parameter (parameter-type parameter)))))
+
+(def undefaulted-argument
+  (fn (parameter type)
+    (if (many-type? type)
+      (repeated-presence parameter)
+      (single-presence type))))
+
+(def repeated-presence
+  (fn (parameter)
+    (if (required-parameter? parameter)
+      (quote argument-presence/one-or-more)
+      (quote argument-presence/zero-or-more))))
+
+(def single-presence
+  (fn (type)
+    (if (option-type? type)
+      (quote argument-presence/optional)
       (quote argument-presence/required))))
 
 (def option-spec

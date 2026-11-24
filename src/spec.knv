@@ -5,9 +5,9 @@
         ->switch-slot ->value-slot argument-presence
         argument-spec command-spec find-long find-short
         name->placeholder option-presence option-required?
-        option-spec required? short-takes-value? switch-slot
-        switch-state switch? takes-value? value-kind
-        value-slot)
+        option-spec repeated? required? short-takes-value?
+        switch-slot switch-state switch? takes-value?
+        value-kind value-slot)
 
 (defstruct command-spec
   :name string
@@ -24,7 +24,10 @@
 
 (defenum argument-presence
   required
-  (defaulted string))
+  optional
+  (defaulted string)
+  one-or-more
+  zero-or-more)
 
 (defstruct option-spec
   :long string
@@ -116,4 +119,14 @@
 (defn required? (argument)
   (match (:presence argument)
     (argument-presence/required true)
+    (argument-presence/one-or-more true)
+    (_ false)))
+
+(type repeated?
+  (fn ((ref argument-spec)) bool))
+
+(defn repeated? (argument)
+  (match (:presence argument)
+    (argument-presence/one-or-more true)
+    (argument-presence/zero-or-more true)
     (_ false)))

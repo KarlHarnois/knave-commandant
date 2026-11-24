@@ -17,7 +17,9 @@
   (let (shown (name->placeholder (as-str (:name argument))))
     (match (:presence argument)
       (argument-presence/required (str "<" shown ">"))
-      ((argument-presence/defaulted _) (str "[" shown "]")))))
+      (argument-presence/one-or-more (str "<" shown ">..."))
+      (argument-presence/zero-or-more (str "[" shown "]..."))
+      (_ (str "[" shown "]")))))
 
 (defn option-term (option)
   (str (short-part (:short option))

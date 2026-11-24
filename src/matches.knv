@@ -4,9 +4,10 @@
 (use spec switch-state)
 
 (export ->argument-match ->matches ->option-match
-        argument-match argument-text command-at many-texts
-        matched-value matches one-text option-match
-        option-value read-count read-switch shifted)
+        argument-match argument-text argument-texts
+        command-at many-texts matched-value matches one-text
+        option-match option-value read-count read-switch
+        shifted)
 
 (defstruct matches
   :path (vec string)
@@ -15,7 +16,7 @@
 
 (defstruct argument-match
   :name string
-  :value string)
+  :values (vec string))
 
 (defstruct option-match
   :long string
@@ -32,10 +33,21 @@
     (option (ref string))))
 
 (defn argument-text (matches name)
-  (map-some (find (iter (:arguments matches))
-              (fn (found)
-                (= (as-str (:name found)) name)))
-            (fn (found) (:value found))))
+  (then-some (find (iter (:arguments matches))
+               (fn (found)
+                 (= (as-str (:name found)) name)))
+             (fn (found) (first (:values found)))))
+
+(type argument-texts
+  (fn ((ref matches) (ref str))
+    (vec string)))
+
+(defn argument-texts (matches name)
+  (match (find (iter (:arguments matches))
+           (fn (found)
+             (= (as-str (:name found)) name)))
+    ((some found) (clone (:values found)))
+    (none (vec))))
 
 (defn read-switch (found long)
   (match (option-value found long)

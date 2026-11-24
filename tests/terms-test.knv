@@ -1,7 +1,8 @@
 (use terms argument-term option-term required-option-term)
+(use spec argument-presence)
 
-(use support/fixture serve-spec spec-requiring
-                     spec-with-token)
+(use support/fixture argument-named serve-spec
+                     spec-requiring spec-with-token)
 
 (deftest a-defaulted-argument-shows-in-brackets
   (assert (= (argument-term (at (:arguments (serve-spec)) 0))
@@ -18,3 +19,18 @@
 (deftest a-required-option-shows-its-long-and-value
   (assert (= (required-option-term (at (:options (spec-with-token)) 0))
              "--token <TOKEN>")))
+
+(deftest a-repeated-argument-shows-its-dots
+  (assert (= (argument-term
+               (ref (argument-named "file" argument-presence/one-or-more)))
+             "<FILE>...")))
+
+(deftest an-argument-that-can-repeat-zero-times-shows-in-brackets
+  (assert (= (argument-term
+               (ref (argument-named "file" argument-presence/zero-or-more)))
+             "[FILE]...")))
+
+(deftest an-optional-argument-shows-in-brackets
+  (assert (= (argument-term (ref (argument-named "name"
+                                                 argument-presence/optional)))
+             "[NAME]")))

@@ -2,7 +2,7 @@
          cli-error defchoice defcommand outcome
          parse-command spec->usage)
 
-(export matches->greet)
+(export matches->copy matches->greet matches->hello)
 
 (defchoice tone plain loud)
 
@@ -12,11 +12,23 @@
   (:times u8 :short n :default 1 :about "How many times")
   (:tone tone :default plain :about "How to greet"))
 
+(defcommand copy "Copies files."
+  (sources (vec string)
+           :required true
+           :about "The files to copy")
+  (target string :about "Where to copy them"))
+
+(defcommand hello "Greets someone, or everyone."
+  (name (option string) :about "Who to greet"))
+
+(defn texts->words (texts)
+  (collect (map (iter texts)
+             (fn (text) (str (deref text))))))
+
 (defn greet-after (texts)
   (parse-command greet
                  (->environment :variables (vec))
-                 (collect (map (iter texts)
-                            (fn (text) (str (deref text)))))))
+                 (texts->words texts)))
 
 (defn usage-error (failure)
   (err (outcome/usage-error (->usage-failure :path (vec) :error failure))))
@@ -48,3 +60,26 @@
 (deftest help-comes-back-for-the-caller-to-print
   (assert (= (greet-after (vec "--help"))
              (err (outcome/help (vec))))))
+
+(deftest a-vec-argument-takes-every-word-the-next-one-leaves
+  (assert (= (parse-command copy
+                            (->environment :variables (vec))
+                            (texts->words (vec "a" "b" "c")))
+             (ok (->copy :sources (vec (str "a") (str "b"))
+                         :target (str "c"))))))
+
+(deftest a-required-vec-argument-shows-it-repeats
+  (assert (= (spec->usage (ref (copy-spec)))
+             "copy [OPTIONS] <SOURCES>... <TARGET>")))
+
+(deftest an-option-argument-can-be-left-out
+  (assert (= (parse-command hello
+                            (->environment :variables (vec))
+                            (texts->words (the (vec (ref str)) (vec))))
+             (ok (->hello :name none)))))
+
+(deftest an-option-argument-takes-a-given-word
+  (assert (= (parse-command hello
+                            (->environment :variables (vec))
+                            (texts->words (vec "ana")))
+             (ok (->hello :name (some (str "ana")))))))
