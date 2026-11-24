@@ -8,7 +8,7 @@
 (export about always-set? argument? default-text defaulted?
         detail given? many-type? option-type?
         parameter-details parameter-name parameter-type
-        required-parameter? type-named?)
+        required-parameter? type-named? value-name)
 
 (def parameter-name
   (fn (parameter)
@@ -94,3 +94,9 @@
     (if (given? (detail (parameter-details parameter) "about"))
       (detail (parameter-details parameter) "about")
       "")))
+
+(def value-name
+  (fn (parameter)
+    (if (given? (detail (parameter-details parameter) "value-name"))
+      (literal-text (detail (parameter-details parameter) "value-name"))
+      (parameter-name parameter))))

@@ -1,10 +1,11 @@
-(use lib argument-text cli-error failure-report
-         matched-value option-value outcome spec->help
-         switch-state)
+(use lib ->argument-spec argument-text cli-error
+         failure-report matched-value option-value outcome
+         presence repetition spec->help switch-state)
 
 (use support/fixture environment-with no-environment
                      no-words parse-texts parse-with
-                     serve-spec site-spec spec-with-lists
+                     serve-spec site-spec
+                     spec-with-arguments spec-with-lists
                      spec-with-token usage-error)
 
 (defn option-after (texts long)
@@ -164,3 +165,22 @@
              (str "error: option `--description` cannot be used with `--description-file`\n\n"
                   "Usage: add [OPTIONS]\n\n"
                   "For more information, try `add --help`."))))
+
+(defn spec-with-value-name ()
+  (spec-with-arguments (vec (->argument-spec :name (str "root")
+                                             :placeholder (str "path")
+                                             :about (str "")
+                                             :presence presence/required
+                                             :repeats repetition/once))))
+
+(deftest a-missing-argument-is-reported-under-its-value-name
+  (assert (= (match (parse-with (spec-with-value-name)
+                                (no-environment)
+                                (no-words))
+               ((usage-error failure)
+                (failure-report (ref (spec-with-value-name))
+                                (ref failure)))
+               (_ (str)))
+             (str "error: missing argument <PATH>\n\n"
+                  "Usage: copy [OPTIONS] <PATH>\n\n"
+                  "For more information, try `copy --help`."))))

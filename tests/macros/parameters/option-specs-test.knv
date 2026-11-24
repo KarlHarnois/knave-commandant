@@ -10,7 +10,8 @@
           :env ("PROBE_DEPTH" "DEPTH")
           :about "How deep to go")
   (:token string :required true)
-  (:label string))
+  (:label string)
+  (:out string :value-name "FILE"))
 
 (defn option-at (index)
   (clone (at (:options (probe-spec)) index)))
@@ -45,3 +46,9 @@
 
 (deftest an-option-without-a-default-is-optional
   (assert (= (presence-at 4) (some presence/optional))))
+
+(deftest a-value-name-becomes-the-placeholder
+  (assert (= (match (:value (option-at 5))
+               ((one slot) (clone (:placeholder slot)))
+               (_ (str)))
+             "FILE")))

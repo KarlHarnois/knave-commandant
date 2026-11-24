@@ -24,6 +24,7 @@
     (push! (:arguments spec)
            (->argument-spec :repeats repetition/once
                             :name (str name)
+                            :placeholder (str name)
                             :about (str "")
                             :presence presence/required))
     spec))

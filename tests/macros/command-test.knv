@@ -19,7 +19,7 @@
   (target string :about "Where to copy them"))
 
 (defcommand hello "Greets someone, or everyone."
-  (name (option string) :about "Who to greet"))
+  (name (option string) :value-name who :about "Who to greet"))
 
 (defn texts->words (texts)
   (collect (map (iter texts)
@@ -83,3 +83,7 @@
                             (->environment :variables (vec))
                             (texts->words (vec "ana")))
              (ok (->hello :name (some (str "ana")))))))
+
+(deftest a-value-name-shows-in-the-usage
+  (assert (= (spec->usage (ref (hello-spec)))
+             "hello [OPTIONS] [WHO]")))

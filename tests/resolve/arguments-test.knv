@@ -15,11 +15,13 @@
 (deftest a-word-fills-the-argument
   (assert (= (arguments-of (serve-spec) (vec "site"))
              (ok (vec (->argument-match :name (str "root")
+                                        :placeholder (str "root")
                                         :values (vec (str "site"))))))))
 
 (deftest an-absent-argument-takes-its-default
   (assert (= (arguments-of (serve-spec) (no-words))
              (ok (vec (->argument-match :name (str "root")
+                                        :placeholder (str "root")
                                         :values (vec (str "."))))))))
 
 (deftest an-extra-word-is-an-error
@@ -37,8 +39,10 @@
 (deftest a-repeated-argument-leaves-the-last-word-to-the-one-after-it
   (assert (= (arguments-of (copy-spec) (vec "a" "b" "c"))
              (ok (vec (->argument-match :name (str "source")
+                                        :placeholder (str "source")
                                         :values (vec (str "a") (str "b")))
                       (->argument-match :name (str "target")
+                                        :placeholder (str "target")
                                         :values (vec (str "c"))))))))
 
 (deftest a-repeated-argument-that-needs-one-word-is-missing-without-it
@@ -49,10 +53,14 @@
   (assert (= (arguments-of (spec-with-arguments
                              (vec (repeated-argument "file" presence/optional)))
                            (no-words))
-             (ok (vec (->argument-match :name (str "file") :values (vec)))))))
+             (ok (vec (->argument-match :name (str "file")
+                                        :placeholder (str "file")
+                                        :values (vec)))))))
 
 (deftest an-absent-optional-argument-has-no-value
   (assert (= (arguments-of (spec-with-arguments
                              (vec (argument-named "name" presence/optional)))
                            (no-words))
-             (ok (vec (->argument-match :name (str "name") :values (vec)))))))
+             (ok (vec (->argument-match :name (str "name")
+                                        :placeholder (str "name")
+                                        :values (vec)))))))

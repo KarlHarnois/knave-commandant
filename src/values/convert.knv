@@ -4,8 +4,9 @@
 (use errors/cli-error ->invalid-text cli-error)
 (use spec/shapes long-flag name->placeholder)
 
-(use values/matches argument-text argument-texts many-texts
-                    matches one-text)
+(use values/matches argument-placeholder argument-text
+                    argument-texts many-texts matches
+                    one-text)
 
 (export cli-value from-text parsed read-argument
         read-arguments read-many read-option read-optional
@@ -25,8 +26,9 @@
 
 (defn read-argument (found name)
   (match (argument-text found name)
-    ((some text) (converted text (argument-written name)))
-    (none (err (cli-error/missing-argument (str name))))))
+    ((some text) (converted text (argument-written found name)))
+    (none (err (cli-error/missing-argument (argument-placeholder found
+                                                                 name))))))
 
 (type read-optional-argument
   (where ((t cli-value))
@@ -36,7 +38,7 @@
 (defn read-optional-argument (found name)
   (match (argument-text found name)
     ((some text)
-     (map-ok (converted text (argument-written name)) some))
+     (map-ok (converted text (argument-written found name)) some))
     (none (ok none))))
 
 (type read-arguments
@@ -46,10 +48,12 @@
 
 (defn read-arguments (found name)
   (converted-all (argument-texts found name)
-                 (argument-written name)))
+                 (argument-written found name)))
 
-(defn argument-written (name)
-  (str "<" (name->placeholder name) ">"))
+(defn argument-written (found name)
+  (str "<"
+       (name->placeholder (as-str (argument-placeholder found name)))
+       ">"))
 
 (type read-option
   (where ((t cli-value))
