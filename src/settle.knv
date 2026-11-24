@@ -5,8 +5,8 @@
 (use matches ->option-match matched-value option-match)
 (use scan-state occurrence occurrence-value)
 
-(use spec command-spec option-spec switch-slot switch-state
-          value-kind value-slot)
+(use spec command-spec option-presence option-spec
+          switch-slot switch-state value-kind value-slot)
 
 (export occurrences-of option-matches)
 
@@ -100,7 +100,12 @@
 (defn fallback-value (environment slot)
   (match (first-set environment (:env slot))
     ((some value) (some value))
-    (none (clone (:default slot)))))
+    (none (presence-default (:presence slot)))))
+
+(defn presence-default (presence)
+  (match presence
+    ((option-presence/defaulted text) (some (clone text)))
+    (_ none)))
 
 (defn occurrence-text (value)
   (match value

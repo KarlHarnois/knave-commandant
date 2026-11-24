@@ -1,0 +1,19 @@
+(use lib ->environment cli-error defcommand outcome parse)
+
+(export matches->deploy)
+
+(defcommand deploy "Deploys the site."
+  (:token string :required true :about "The API token"))
+
+(defn deploy-after (texts)
+  (match (parse (ref (deploy-spec))
+                (ref (->environment :variables (vec)))
+                (ref (collect (map (iter texts)
+                                (fn (text) (str (deref text)))))))
+    ((parsed found) (matches->deploy (ref found)))
+    (_ (err (cli-error/missing-argument (str "not parsed"))))))
+
+(deftest a-required-option-becomes-a-plain-field
+  (assert (= (map-ok (deploy-after (vec "--token" "secret"))
+               (fn (deploy) (clone (:token deploy))))
+             (ok (str "secret")))))

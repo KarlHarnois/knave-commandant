@@ -7,13 +7,13 @@
 
 (use lib ->argument-spec ->command-spec ->environment
          ->option-spec ->switch-slot ->value-slot ->variable
-         argument-presence outcome parse switch-state
-         value-kind)
+         argument-presence option-presence outcome parse
+         switch-state value-kind)
 
 (export command-spec-named environment-with no-environment
         no-words parse-texts parse-with scanned-texts
         serve-spec site-spec spec-requiring
-        spec-with-choices usage-error words)
+        spec-with-choices spec-with-token usage-error words)
 
 (defn parse-texts (texts)
   (parse-with (serve-spec) (no-environment) texts))
@@ -37,16 +37,16 @@
                                      :presence (argument-presence/defaulted (str
                                                                               "."))))
     :options (vec
-               (->option-spec :long (str "port")
-                              :short (some (char "p"))
-                              :about (str "The port to listen on")
-                              :value (value-kind/one
-                                       (->value-slot
-                                         :placeholder (str "port")
-                                         :default (some (str "8000"))
-                                         :env (vec (str "SERVE_PORT")
-                                                   (str "PORT"))
-                                         :choices (vec))))
+               (->option-spec
+                 :long (str "port")
+                 :short (some (char "p"))
+                 :about (str "The port to listen on")
+                 :value (value-kind/one
+                          (->value-slot
+                            :placeholder (str "port")
+                            :presence (option-presence/defaulted (str "8000"))
+                            :env (vec (str "SERVE_PORT") (str "PORT"))
+                            :choices (vec))))
                (->option-spec :long (str "open")
                               :short (some (char "o"))
                               :about (str "Opens the browser")
@@ -101,7 +101,7 @@
                                                :value (value-kind/one
                                                         (->value-slot
                                                           :placeholder (str "format")
-                                                          :default none
+                                                          :presence option-presence/optional
                                                           :env (vec)
                                                           :choices (vec (str "text")
                                                                         (str "json"))))))
@@ -148,7 +148,7 @@
                                   :about (str "A port")
                                   :value (value-kind/one (->value-slot
                                                            :placeholder (str "port")
-                                                           :default none
+                                                           :presence option-presence/optional
                                                            :env (vec)
                                                            :choices (vec)))))
                   :subcommands (vec)))
@@ -167,3 +167,19 @@
   (match end
     ((scanned found) (some (clone (:scan found))))
     (_ none)))
+
+(defn spec-with-token ()
+  (->command-spec :name (str "deploy")
+                  :about (str "Deploys the site.")
+                  :version none
+                  :arguments (vec)
+                  :options (vec (->option-spec :long (str "token")
+                                               :short none
+                                               :about (str "The API token")
+                                               :value (value-kind/one
+                                                        (->value-slot
+                                                          :placeholder (str "token")
+                                                          :presence option-presence/required
+                                                          :env (vec (str "DEPLOY_TOKEN"))
+                                                          :choices (vec)))))
+                  :subcommands (vec)))

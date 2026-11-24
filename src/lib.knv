@@ -24,8 +24,9 @@
 
 (use spec ->argument-spec ->command-spec ->option-spec
           ->switch-slot ->value-slot argument-presence
-          argument-spec command-spec option-spec switch-slot
-          switch-state value-kind value-slot)
+          argument-spec command-spec option-presence
+          option-spec switch-slot switch-state value-kind
+          value-slot)
 
 (export ->argument-spec ->command-spec ->environment
         ->invalid-text ->option-spec ->switch-slot
@@ -34,8 +35,8 @@
         cli-error cli-value command-spec defchoice defcli
         defcommand environment error->message error-report
         failure-report from-text invalid-text matched-value
-        matches option-spec option-value outcome parse run
-        run-command run-with spec->help spec->usage
-        spec-error spec-error->message switch-slot
-        switch-state usage-failure validate-spec value-kind
-        value-names value-slot variable)
+        matches option-presence option-spec option-value
+        outcome parse run run-command run-with spec->help
+        spec->usage spec-error spec-error->message
+        switch-slot switch-state usage-failure validate-spec
+        value-kind value-names value-slot variable)

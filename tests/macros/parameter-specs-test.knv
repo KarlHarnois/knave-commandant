@@ -1,5 +1,5 @@
 (use lib ->switch-slot argument-presence defcommand
-         switch-state value-kind)
+         option-presence switch-state value-kind)
 
 (export matches->probe)
 
@@ -10,7 +10,9 @@
   (:depth u32
           :default 3
           :env ("PROBE_DEPTH" "DEPTH")
-          :about "How deep to go"))
+          :about "How deep to go")
+  (:token string :required true)
+  (:label string))
 
 (defn option-at (index)
   (clone (at (:options (probe-spec)) index)))
@@ -37,8 +39,19 @@
   (assert (= (:about (option-at 2)) "How deep to go"))
   (assert (= (match (:value (option-at 2))
                ((one slot)
-                (some (pair (clone (:default slot))
+                (some (pair (clone (:presence slot))
                             (clone (:env slot)))))
                (_ none))
-             (some (pair (some (str "3"))
+             (some (pair (option-presence/defaulted (str "3"))
                          (vec (str "PROBE_DEPTH") (str "DEPTH")))))))
+
+(defn presence-at (index)
+  (match (:value (option-at index))
+    ((one slot) (some (clone (:presence slot))))
+    (_ none)))
+
+(deftest a-required-option-records-that-it-is-required
+  (assert (= (presence-at 3) (some option-presence/required))))
+
+(deftest an-option-without-a-default-is-optional
+  (assert (= (presence-at 4) (some option-presence/optional))))

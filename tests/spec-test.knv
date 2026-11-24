@@ -1,7 +1,8 @@
-(use spec find-long find-short required? short-takes-value?
-          switch? takes-value?)
+(use spec find-long find-short option-required? required?
+          short-takes-value? switch? takes-value?)
 
-(use support/fixture serve-spec spec-requiring)
+(use support/fixture serve-spec spec-requiring
+                     spec-with-token)
 
 (defn long-named (name)
   (map-some (find-long (ref (serve-spec)) name)
@@ -47,3 +48,9 @@
 
 (deftest a-defaulted-argument-is-not-required
   (assert (not (required? (at (:arguments (serve-spec)) 0)))))
+
+(deftest an-option-is-required-when-its-presence-says-so
+  (assert (option-required? (at (:options (spec-with-token)) 0))))
+
+(deftest an-option-with-a-default-is-not-required
+  (assert (not (option-required? (unwrap (long-named "port"))))))

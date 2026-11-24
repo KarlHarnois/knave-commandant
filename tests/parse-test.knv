@@ -3,7 +3,7 @@
 (use parse outcome)
 
 (use support/fixture no-environment parse-texts parse-with
-                     site-spec usage-error)
+                     site-spec spec-with-token usage-error)
 
 (defn root-after (texts)
   (match (parse-texts texts)
@@ -52,3 +52,9 @@
              (outcome/usage-error (->usage-failure :path (vec (str "build"))
                                                    :error (cli-error/unexpected-argument
                                                             (str "b")))))))
+
+(deftest help-needs-no-required-option
+  (assert (= (parse-with (spec-with-token)
+                         (no-environment)
+                         (vec "--help"))
+             (outcome/help (vec)))))
