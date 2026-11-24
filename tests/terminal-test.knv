@@ -1,0 +1,14 @@
+(use support/fixture environment-with no-environment)
+(use terminal terminal-width)
+
+(deftest reads-the-width-from-columns
+  (assert (= (terminal-width (ref (environment-with "COLUMNS" "120")))
+             120)))
+
+(deftest defaults-to-eighty-columns
+  (assert (= (terminal-width (ref (no-environment)))
+             80)))
+
+(deftest ignores-a-width-that-is-not-a-number
+  (assert (= (terminal-width (ref (environment-with "COLUMNS" "wide")))
+             80)))

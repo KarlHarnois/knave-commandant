@@ -4,12 +4,15 @@
 (use environment ->environment ->variable environment
                  variable)
 
+(use error-report error-report)
 (use errors cli-error error->message)
+(use help spec->help spec->usage)
 
 (use matches argument-text matched-value matches
              option-value)
 
 (use parse outcome parse)
+(use run run)
 
 (use spec ->argument-spec ->command-spec ->option-spec
           ->value-slot argument-presence argument-spec
@@ -20,6 +23,7 @@
         ->option-spec ->value-slot ->variable
         argument-presence argument-spec argument-text
         cli-error command-spec environment error->message
-        matched-value matches option-spec option-value
-        outcome parse switch-state value-kind value-slot
+        error-report matched-value matches option-spec
+        option-value outcome parse run spec->help
+        spec->usage switch-state value-kind value-slot
         variable)

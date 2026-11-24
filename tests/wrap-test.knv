@@ -1,0 +1,25 @@
+(use wrap wrap)
+
+(deftest keeps-a-short-text-on-one-line
+  (assert (= (wrap "Opens the browser" 40)
+             (vec (str "Opens the browser")))))
+
+(deftest breaks-between-words-at-the-width
+  (assert (= (wrap "The port the server listens on" 15)
+             (vec (str "The port the")
+                  (str "server listens")
+                  (str "on")))))
+
+(deftest gives-a-long-word-its-own-line
+  (assert (= (wrap "a supercalifragilistic word" 10)
+             (vec (str "a")
+                  (str "supercalifragilistic")
+                  (str "word")))))
+
+(deftest collapses-repeated-spaces
+  (assert (= (wrap "one   two" 40)
+             (vec (str "one two")))))
+
+(deftest wraps-an-empty-text-to-no-lines
+  (assert (= (wrap "" 40)
+             (the (vec string) (vec)))))

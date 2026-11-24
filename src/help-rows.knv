@@ -1,0 +1,115 @@
+(module
+  "Describes each argument and option of a command as one row of its help page.")
+
+(use spec argument-presence command-spec option-spec
+          switch-state value-kind)
+
+(export ->help-row argument-rows argument-term help-row
+        option-rows)
+
+(def no-short "    ")
+
+(def help-row-term "-h, --help")
+
+(def help-row-description "Print help")
+
+(def version-row-term "-V, --version")
+
+(def version-row-description "Print version")
+
+(defstruct help-row
+  :term string
+  :description string)
+
+(type argument-rows
+  (fn ((ref command-spec)) (vec help-row)))
+
+(defn argument-rows (spec)
+  (collect (map (iter (:arguments spec)) argument-row)))
+
+(type option-rows
+  (fn ((ref command-spec)) (vec help-row)))
+
+(defn option-rows (spec)
+  (let (rows (collect (map (iter (:options spec)) option-row)))
+    (push! rows
+           (->help-row :term (str help-row-term)
+                       :description (str help-row-description)))
+    (push-version-row! (mut rows) spec)
+    rows))
+
+(defn argument-term (argument)
+  (match (:presence argument)
+    (required (str "<" (:name argument) ">"))
+    ((defaulted _) (str "[" (:name argument) "]"))))
+
+(defn push-version-row! (rows spec)
+  (when (some? (:version spec))
+    (push! rows
+           (->help-row :term (str version-row-term)
+                       :description (str version-row-description)))))
+
+(defn argument-row (argument)
+  (->help-row :term (argument-term argument)
+              :description (str (:about argument)
+                                (argument-default-note (:presence argument)))))
+
+(defn argument-default-note (presence)
+  (match presence
+    (required (str))
+    ((defaulted text) (default-note text))))
+
+(defn option-row (option)
+  (->help-row :term (str (short-part (:short option))
+                         (long-part option)
+                         (value-part (:value option)))
+              :description (str (:about option)
+                                (value-default-note (:value option))
+                                (env-note (:env option)))))
+
+(defn short-part (short)
+  (match short
+    ((some character) (str "-" character ", "))
+    (none (str no-short))))
+
+(type long-part
+  (fn ((ref option-spec)) string))
+
+(defn long-part (option)
+  (str "--"
+       (negation-mark (:value option))
+       (:long option)))
+
+(defn negation-mark (value)
+  (match value
+    ((switch initial) (initial-mark initial))
+    (_ (str))))
+
+(defn initial-mark (initial)
+  (match initial
+    (on (str "[no-]"))
+    (off (str))))
+
+(defn value-part (value)
+  (match value
+    ((switch _) (str))
+    (count (str "..."))
+    ((one slot) (str " <" (:placeholder slot) ">"))
+    ((many placeholder) (str " <" placeholder ">..."))))
+
+(defn value-default-note (value)
+  (match value
+    ((one slot) (slot-default-note slot))
+    (_ (str))))
+
+(defn slot-default-note (slot)
+  (match (:default slot)
+    ((some text) (default-note text))
+    (none (str))))
+
+(defn default-note (text) (str " [default: " text "]"))
+
+(defn env-note (names)
+  (if (empty? names)
+    (str)
+    (str " [env: " (join names ", ") "]")))

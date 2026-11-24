@@ -1,0 +1,39 @@
+(use errors cli-error)
+(use matches ->matches)
+(use parse outcome)
+(use run outcome->response response)
+(use support/fixture serve-spec)
+
+(defn response-for (outcome)
+  (outcome->response (ref (serve-spec)) outcome 80))
+
+(defn reply-text (response)
+  (match response
+    ((reply text) text)
+    (_ (str))))
+
+(defn refusal-text (response)
+  (match response
+    ((refuse text) text)
+    (_ (str))))
+
+(defn no-matches ()
+  (->matches :arguments (vec) :options (vec)))
+
+(deftest parsed-matches-let-the-program-proceed
+  (assert (= (response-for (outcome/parsed (no-matches)))
+             (response/proceed (no-matches)))))
+
+(deftest help-replies-with-the-help-page
+  (assert (starts-with? (as-str (reply-text (response-for outcome/help)))
+                        "Serves a folder over HTTP.\n\nUsage: serve")))
+
+(deftest version-replies-with-the-name-and-version
+  (assert (= (response-for (outcome/version (str "1.0.0")))
+             (response/reply (str "serve 1.0.0")))))
+
+(deftest a-usage-error-refuses-with-a-report
+  (assert (starts-with? (as-str (refusal-text (response-for
+                                                (outcome/usage-error (cli-error/unknown-option
+                                                                       (str "--prot"))))))
+                        "error: unknown option `--prot`")))
