@@ -4,7 +4,7 @@
 
 (defcommand move (sources (vec string) :required true)
   (target string)
-  (label string :default "moved"))
+  (label string :default "moved" :value-name tag))
 
 (defn argument-at (index)
   (clone (at (:arguments (move-spec)) index)))
@@ -20,3 +20,7 @@
 (deftest a-defaulted-argument-records-its-default-text
   (assert (= (:presence (argument-at 2))
              (presence/defaulted (str "moved")))))
+
+(deftest an-argument-shows-its-name-unless-it-names-its-value
+  (assert (= (:placeholder (argument-at 1)) "target"))
+  (assert (= (:placeholder (argument-at 2)) "tag")))

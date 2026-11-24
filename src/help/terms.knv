@@ -13,7 +13,7 @@
   (fn ((ref argument-spec)) string))
 
 (defn argument-term (argument)
-  (let (shown (name->placeholder (as-str (:name argument))))
+  (let (shown (name->placeholder (as-str (:placeholder argument))))
     (str (bracketed argument shown)
          (repeat-mark (:repeats argument)))))
 

@@ -20,6 +20,7 @@
 
 (defstruct argument-spec
   :name string
+  :placeholder string
   :about string
   :presence presence
   :repeats repetition)

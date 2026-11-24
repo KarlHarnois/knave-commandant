@@ -4,10 +4,10 @@
 (use spec/shapes switch-state)
 
 (export ->argument-match ->matches ->option-match
-        argument-match argument-text argument-texts
-        command-at many-texts matched-value matches one-text
-        option-match option-value read-count read-switch
-        shifted)
+        argument-match argument-placeholder argument-text
+        argument-texts command-at many-texts matched-value
+        matches one-text option-match option-value
+        read-count read-switch shifted)
 
 (defstruct matches
   :path (vec string)
@@ -16,6 +16,7 @@
 
 (defstruct argument-match
   :name string
+  :placeholder string
   :values (vec string))
 
 (defstruct option-match
@@ -94,3 +95,13 @@
          :path (collect (map (range 1 (len (:path found)))
                           (fn (index)
                             (clone (at (:path found) index)))))))
+
+(type argument-placeholder
+  (fn ((ref matches) (ref str)) string))
+
+(defn argument-placeholder (matches name)
+  (match (find (iter (:arguments matches))
+           (fn (found)
+             (= (as-str (:name found)) name)))
+    ((some found) (clone (:placeholder found)))
+    (none (str name))))

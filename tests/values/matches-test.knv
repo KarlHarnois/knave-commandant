@@ -9,6 +9,7 @@
 (defn found ()
   (->matches :path (vec)
              :arguments (vec (->argument-match :name (str "root")
+                                               :placeholder (str "root")
                                                :values (vec (str "site"))))
              :options (vec (->option-match :long (str "verbose")
                                            :value (matched-value/count 2)))))

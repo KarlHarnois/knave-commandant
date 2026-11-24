@@ -8,7 +8,7 @@
 
 (use macros/parameters/parts about default-text defaulted?
                              parameter-name
-                             required-parameter?)
+                             required-parameter? value-name)
 
 (use spec/shapes ->argument-spec presence repetition)
 
@@ -17,6 +17,8 @@
 (def argument-spec
   (fn (parameter)
     (template (->argument-spec :name (str (unquote (parameter-name parameter)))
+                               :placeholder (str (unquote (value-name
+                                                            parameter)))
                                :about (str (unquote (about parameter)))
                                :presence (unquote (presence parameter))
                                :repeats (unquote (repeats parameter))))))

@@ -4,7 +4,10 @@
 
 (defcommand serve "Serves a folder over HTTP."
   :version "1.0.0"
-  (root string :default "." :about "The folder to serve")
+  (root string
+        :default "."
+        :value-name dir
+        :about "The folder to serve")
   (:port u16
          :short p
          :default 8000
@@ -21,6 +24,7 @@
            :about "How to print each request")
   (:header (vec string)
            :short H
+           :value-name "name:value"
            :about "Adds a header to each response")
   (:name string :about "Names the server in its log"))
 

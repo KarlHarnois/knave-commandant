@@ -35,6 +35,7 @@
     :version (some (str "1.0.0"))
     :arguments (vec (->argument-spec :repeats repetition/once
                                      :name (str "root")
+                                     :placeholder (str "root")
                                      :about (str "The folder to serve")
                                      :presence (presence/defaulted (str "."))))
     :options (vec
@@ -83,6 +84,7 @@
                   :version none
                   :arguments (vec (->argument-spec :repeats repetition/once
                                                    :name (str name)
+                                                   :placeholder (str name)
                                                    :about (str
                                                             "The file to copy")
                                                    :presence presence/required))
@@ -153,6 +155,7 @@
     :version none
     :arguments (vec (->argument-spec :repeats repetition/once
                                      :name (str "root")
+                                     :placeholder (str "root")
                                      :about (str "The pages")
                                      :presence (presence/defaulted (str "."))))
     :options (vec (->option-spec :conflicts-with (vec)
@@ -202,12 +205,14 @@
 
 (defn argument-named (name presence)
   (->argument-spec :name (str name)
+                   :placeholder (str name)
                    :about (str "")
                    :presence presence
                    :repeats repetition/once))
 
 (defn repeated-argument (name presence)
   (->argument-spec :name (str name)
+                   :placeholder (str name)
                    :about (str "")
                    :presence presence
                    :repeats repetition/repeated))
