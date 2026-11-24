@@ -23,36 +23,28 @@
     (fn (wrapping word) (add-word wrapping word width))))
 
 (defn end-line (wrapping)
-  (let (next wrapping)
-    (push! (:lines next)
-           (clone (:current next)))
-    (with-current next (str))))
+  (let-match ((wrapping lines current) wrapping)
+    (->wrapping :lines (appended lines current) :current (str))))
 
 (defn word? (part)
   (not (empty? (deref part))))
 
 (defn add-word (wrapping word width)
-  (cond
-    ((empty? (:current wrapping))
-     (with-current wrapping (str word)))
-    ((fits? wrapping word width) (extend-current wrapping word))
-    (else (break-before wrapping word))))
+  (let-match ((wrapping lines current) wrapping)
+    (cond
+      ((empty? current)
+       (->wrapping :lines lines :current (str word)))
+      ((fits? (as-str current) word width)
+       (->wrapping :lines lines
+                   :current (str current word-separator word)))
+      (else (->wrapping :lines (appended lines current)
+                        :current (str word))))))
 
-(defn fits? (wrapping word width)
-  (<= (+ (len (:current wrapping))
+(defn fits? (current word width)
+  (<= (+ (len current)
          (len word-separator)
          (len word))
       width))
 
-(defn extend-current (wrapping word)
-  (let (current (str (:current wrapping) word-separator word))
-    (with-current wrapping current)))
-
-(defn with-current (wrapping current)
-  (assoc wrapping :current current))
-
-(defn break-before (wrapping word)
-  (let (next wrapping)
-    (push! (:lines next)
-           (clone (:current next)))
-    (with-current next (str word))))
+(defn appended (lines line)
+  (let (all lines) (push! all line) all))
