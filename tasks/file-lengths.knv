@@ -1,0 +1,69 @@
+(module
+  "Fails when a .knv file under src/ passes the line limit, so each module keeps to one concern.")
+
+(use ledelint/files knave-files-under)
+
+(def source-directory "src")
+
+(def line-limit 150)
+
+(defstruct file-length
+  :path string
+  :lines int)
+
+(defenum length-error (unreadable string io-error))
+
+(deftask check-file-lengths ()
+  "Fails when a .knv file in src/ is longer than 150 lines."
+  (match (measure-files (knave-files-under source-directory))
+    ((ok lengths) (report (too-long (ref lengths))))
+    ((err failure) (eprintln (error->message failure)) (exit 1))))
+
+(type measure-files
+  (fn ((vec string))
+    (result (vec file-length) length-error)))
+
+(defn measure-files (paths)
+  (loop (index 0
+         lengths (vec))
+    (if (>= index (len paths))
+      (ok lengths)
+      (let-try (length (measure (at paths index)))
+        (recur (inc index) (appended lengths length))))))
+
+(defn measure (path)
+  (let-try (text (map-err (slurp path)
+                   (fn (cause)
+                     (length-error/unreadable (clone path) cause))))
+    (ok (->file-length :path (clone path)
+                       :lines (count (lines (as-str text)))))))
+
+(defn too-long (lengths)
+  (collect (filter (iter lengths)
+             (fn (length)
+               (> (:lines length) line-limit)))))
+
+(defn report (long-files)
+  (if (empty? long-files)
+    (println "Each .knv file in " source-directory "/ is "
+             line-limit " lines or shorter.")
+    (fail-with long-files)))
+
+(type fail-with
+  (fn ((vec (ref file-length))) unit))
+
+(defn fail-with (long-files)
+  (eprintln "These .knv files pass " line-limit
+            " lines. Split each one along a seam:")
+  (for-each (iter long-files)
+    (fn (length)
+      (eprintln "  " (:path length) ": " (:lines length) " lines")))
+  (exit 1))
+
+(defn appended (items item)
+  (let (all items) (push! all item) all))
+
+(defn error->message (failure)
+  (match failure
+    ((unreadable path cause)
+     (str "cannot read " path ": " cause))))
