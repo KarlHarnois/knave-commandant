@@ -17,8 +17,6 @@ Replace `<commit>` with the commit to pin.
 
 ## Usage
 
-Declare a command with `defcommand`. The macro defines a struct with one typed field per parameter. It also defines `run-<name>`, which parses the process's command line into that struct:
-
 ```clj
 (use knave-commandant defcommand)
 
@@ -32,7 +30,7 @@ Declare a command with `defcommand`. The macro defines a struct with one typed f
     (println "Hello, " (:who options))))
 ```
 
-`run-greet` answers `-h` and `--help` with the help page, and `-V` and `--version` with the version. It prints a usage error to stderr and exits with code 2. [examples/serve](examples/serve/src/main.knv) shows every kind of parameter.
+See [examples/serve](examples/serve/src/main.knv) for every kind of parameter.
 
 ## Development
 
