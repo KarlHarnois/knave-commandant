@@ -1,8 +1,12 @@
 (module
   "Names each way a command line can break the rules of its command.")
 
-(export ->invalid-text cli-error error->message
-        invalid-text)
+(export ->invalid-text ->usage-failure cli-error
+        error->message invalid-text usage-failure)
+
+(defstruct usage-failure
+  :path (vec string)
+  :error cli-error)
 
 (defenum cli-error
   (unknown-option string)
@@ -12,6 +16,8 @@
   (unexpected-argument string)
   (missing-argument string)
   (missing-option string)
+  (unknown-command string)
+  missing-command
   (invalid-value invalid-text))
 
 (defstruct invalid-text
@@ -32,6 +38,9 @@
      (str "unexpected argument `" written "`"))
     ((missing-argument name)
      (str "missing argument <" name ">"))
+    ((unknown-command written)
+     (str "unknown command `" written "`"))
+    (missing-command (str "a command is required"))
     ((missing-option written)
      (str "option `" written "` is required"))
     ((invalid-value invalid)

@@ -1,0 +1,144 @@
+(module
+  "Reads one flag of a command line: a built-in, an option and its value, or a switch's negation.")
+
+(use errors cli-error)
+(use hits builtin find-hit hit)
+(use items flag flag->written item token->items)
+(use scan-state occurrence-value record! scan step)
+(use spec command-spec option-spec takes-value?)
+(use tokens token)
+
+(export scan-assignment! scan-flag!)
+
+(type scan-flag!
+  (fn ((ref command-spec)
+       (ref (vec token))
+       int
+       (mut scan)
+       (ref flag))
+    (result step cli-error)))
+
+(defn scan-flag! (spec tokens index scan flag)
+  (match (builtin spec flag)
+    ((some stop) (ok (step/halt stop)))
+    (none (scan-option! spec tokens index scan flag))))
+
+(type scan-assignment!
+  (fn ((ref command-spec)
+       int
+       (mut scan)
+       (ref flag)
+       (ref string))
+    (result step cli-error)))
+
+(defn scan-assignment! (spec index scan flag value)
+  (if (some? (builtin spec flag))
+    (err (cli-error/unexpected-value (flag->written flag)))
+    (assign-to-hit! spec index scan flag value)))
+
+(type scan-option!
+  (fn ((ref command-spec)
+       (ref (vec token))
+       int
+       (mut scan)
+       (ref flag))
+    (result step cli-error)))
+
+(defn scan-option! (spec tokens index scan flag)
+  (match (find-hit spec flag)
+    ((some hit)
+     (take-hit! spec tokens index scan hit (flag->written flag)))
+    (none (err (cli-error/unknown-option (flag->written flag))))))
+
+(type take-hit!
+  (fn ((ref command-spec)
+       (ref (vec token))
+       int
+       (mut scan)
+       hit string)
+    (result step cli-error)))
+
+(defn take-hit! (spec tokens index scan hit written)
+  (match hit
+    ((direct option)
+     (take-option! spec tokens index scan option written))
+    ((negation option)
+     (record! scan option written occurrence-value/negated
+              (inc index)))))
+
+(type take-option!
+  (fn ((ref command-spec)
+       (ref (vec token))
+       int
+       (mut scan)
+       option-spec string)
+    (result step cli-error)))
+
+(defn take-option! (spec tokens index scan option written)
+  (if (takes-value? (ref option))
+    (take-following-value! spec tokens index scan option
+                           written)
+    (record! scan option written occurrence-value/present
+             (inc index))))
+
+(type take-following-value!
+  (fn ((ref command-spec)
+       (ref (vec token))
+       int
+       (mut scan)
+       option-spec string)
+    (result step cli-error)))
+
+(defn take-following-value! (spec tokens index scan option written)
+  (match (following-word spec tokens index)
+    ((some text)
+     (record! scan option written
+              (occurrence-value/text text)
+              (+ index 2)))
+    (none (err (cli-error/missing-value written)))))
+
+(defn following-word (spec tokens index)
+  (match (get tokens (inc index))
+    ((some token) (single-word (token->items spec token)))
+    (none none)))
+
+(defn single-word (items)
+  (match (first items)
+    ((some (item/word text)) (some (clone text)))
+    (_ none)))
+
+(type assign-to-hit!
+  (fn ((ref command-spec)
+       int
+       (mut scan)
+       (ref flag)
+       (ref string))
+    (result step cli-error)))
+
+(defn assign-to-hit! (spec index scan flag value)
+  (match (find-hit spec flag)
+    ((some hit)
+     (assign-hit! index scan hit (flag->written flag) value))
+    (none (err (cli-error/unknown-option
+                 (str (flag->written flag) "=" value))))))
+
+(type assign-hit!
+  (fn (int (mut scan) hit string (ref string))
+    (result step cli-error)))
+
+(defn assign-hit! (index scan hit written value)
+  (match hit
+    ((direct option)
+     (assign-option! index scan option written value))
+    ((negation _) (err (cli-error/unexpected-value written)))))
+
+(type assign-option!
+  (fn (int (mut scan) option-spec string (ref string))
+    (result step cli-error)))
+
+(defn assign-option! (index scan option written value)
+  (if (takes-value? (ref option))
+    (record! scan option written
+             (occurrence-value/text (clone value))
+             (inc index))
+    (err (cli-error/unexpected-value written))))

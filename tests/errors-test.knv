@@ -33,3 +33,11 @@
                                                         :written (str "--port")
                                                         :text (str "abc"))))
              "invalid value `abc` for `--port`")))
+
+(deftest names-an-unknown-command
+  (assert (= (error->message (cli-error/unknown-command (str "biuld")))
+             "unknown command `biuld`")))
+
+(deftest names-a-missing-command
+  (assert (= (error->message cli-error/missing-command)
+             "a command is required")))

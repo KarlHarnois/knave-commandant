@@ -1,7 +1,9 @@
 (use spec ->argument-spec ->option-spec argument-presence
           value-kind)
 
-(use support/fixture serve-spec)
+(use support/fixture command-spec-named serve-spec
+                     site-spec)
+
 (use validate spec-error spec-error->message validate-spec)
 
 (defn with-option (long short)
@@ -19,6 +21,12 @@
            (->argument-spec :name (str name)
                             :about (str "")
                             :presence argument-presence/required))
+    spec))
+
+(defn site-with-command (name)
+  (let (spec (site-spec))
+    (push! (:subcommands spec)
+           (command-spec-named name "Another."))
     spec))
 
 (deftest a-well-formed-spec-is-valid
@@ -49,3 +57,24 @@
 (deftest names-a-repeated-short-option
   (assert (= (spec-error->message (spec-error/repeated-short (char "p")))
              "two options are named `-p`")))
+
+(deftest a-group-spec-is-valid
+  (assert (ok? (validate-spec (ref (site-spec))))))
+
+(deftest a-spec-cannot-define-a-help-command
+  (assert (= (unwrap-err (validate-spec (ref (site-with-command "help"))))
+             spec-error/reserved-command)))
+
+(deftest two-commands-cannot-share-a-name
+  (assert (= (unwrap-err (validate-spec (ref (site-with-command "build"))))
+             (spec-error/repeated-command (str "build")))))
+
+(deftest a-command-cannot-reuse-a-global-option
+  (let (spec (site-spec))
+    (push! (:options spec)
+           (->option-spec :long (str "port")
+                          :short none
+                          :about (str "")
+                          :value value-kind/count))
+    (assert (= (unwrap-err (validate-spec (ref spec)))
+               (spec-error/repeated-long (str "port"))))))

@@ -1,29 +1,15 @@
 (use errors cli-error)
-(use items tokens->items)
 (use matches argument-text option-value)
 (use resolve resolve)
-(use scan scan-end scan-items)
 
-(use support/fixture no-environment no-words serve-spec
-                     words)
-
-(use tokens words->tokens)
+(use support/fixture no-environment no-words scanned-texts
+                     serve-spec)
 
 (defn resolved (texts)
   (let (spec (serve-spec))
     (resolve (ref spec)
              (ref (no-environment))
-             (ref (scan-of (ref spec) texts)))))
-
-(defn scan-of (spec texts)
-  (let (items (tokens->items spec
-                             (ref (words->tokens (ref (words texts))))))
-    (unwrap (scanned (unwrap-ok (scan-items spec (ref items)))))))
-
-(defn scanned (end)
-  (match end
-    ((scanned found) (some found))
-    (_ none)))
+             (ref (scanned-texts spec texts)))))
 
 (deftest fills-the-arguments
   (assert (= (argument-text (ref (unwrap-ok (resolved (vec "site"))))

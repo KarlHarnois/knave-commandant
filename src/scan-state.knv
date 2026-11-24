@@ -3,12 +3,13 @@
 
 (use errors cli-error)
 (use hits stop)
-(use spec option-spec)
+(use spec command-spec option-spec)
 
 (export ->scan occurrence occurrence-value record! scan
         step)
 
 (defstruct scan
+  :path (vec string)
   :positionals (vec string)
   :occurrences (vec occurrence))
 
@@ -24,6 +25,7 @@
 
 (defenum step
   (advance int)
+  (descend command-spec)
   (halt stop))
 
 (type record!

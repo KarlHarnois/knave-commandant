@@ -1,12 +1,13 @@
 (module
-  "Writes a usage error: the problem, a tip when a known option is close, the usage line, and where to find help.")
+  "Writes a usage error: the problem, a tip when a known name is close, the usage line of the command it happened in, and where to find help.")
 
-(use errors cli-error error->message)
+(use commands spec-at subcommand-names)
+(use errors cli-error error->message usage-failure)
 (use help spec->usage)
 (use spec command-spec find-long value-kind)
 (use suggest closest-name)
 
-(export error-report)
+(export error-report failure-report)
 
 (def long-prefix "--")
 
@@ -17,6 +18,16 @@
 (def version-long "version")
 
 (def part-break "\n\n")
+
+(type failure-report
+  (fn ((ref command-spec) (ref usage-failure))
+    string))
+
+(defn failure-report (root failure)
+  (let (spec (unwrap-or (spec-at root (ref (:path failure)))
+                        (clone root)))
+    (error-report (ref spec)
+                  (ref (:error failure)))))
 
 (defn error-report (spec failure)
   (let (parts (vec (str "error: " (error->message failure))))
@@ -37,7 +48,14 @@
      (option-tip spec (as-str written)))
     ((invalid-value invalid)
      (choices-tip spec (as-str (:written invalid))))
+    ((unknown-command written)
+     (command-tip spec (as-str written)))
     (_ none)))
+
+(defn command-tip (spec written)
+  (map-some (closest-name written (ref (subcommand-names spec)))
+    (fn (name)
+      (str "  tip: a similar command exists: `" name "`"))))
 
 (defn choices-tip (spec written)
   (then-some (choices-of spec written)

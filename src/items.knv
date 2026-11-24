@@ -4,7 +4,7 @@
 (use spec command-spec short-takes-value?)
 (use tokens token)
 
-(export flag flag->written item tokens->items)
+(export flag flag->written item token->items tokens->items)
 
 (def long-prefix "--")
 
@@ -30,6 +30,11 @@
     (for-each (iter tokens)
       (fn (token)
         (push-token-items! (mut items) spec token)))
+    items))
+
+(defn token->items (spec token)
+  (let (items (vec))
+    (push-token-items! (mut items) spec token)
     items))
 
 (defn push-token-items! (items spec token)

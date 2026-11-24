@@ -1,35 +1,40 @@
 (module
   "Parses a command line against a command's spec, as a pure function of the spec, the environment and the words.")
 
-(use errors cli-error)
-(use items tokens->items)
+(use environment environment)
+(use errors ->usage-failure usage-failure)
 (use matches matches)
 (use resolve resolve)
-(use scan scan-end scan-items)
+(use scan finished-scan scan-end scan-tokens)
 (use tokens words->tokens)
 
 (export outcome parse)
 
 (defenum outcome
   (parsed matches)
-  help
+  (help (vec string))
   (version string)
-  (usage-error cli-error))
+  (usage-error usage-failure))
 
 (defn parse (spec environment words)
-  (let (items (tokens->items spec (ref (words->tokens words))))
-    (match (scan-items spec (ref items))
-      ((ok end) (scan-end->outcome spec environment end))
-      ((err failure) (outcome/usage-error failure)))))
+  (match (scan-tokens spec (ref (words->tokens words)))
+    ((ok end) (scan-end->outcome environment end))
+    ((err failure) (outcome/usage-error failure))))
 
-(defn scan-end->outcome (spec environment end)
+(defn scan-end->outcome (environment end)
   (match end
-    ((scanned scan)
-     (resolved->outcome (resolve spec environment (ref scan))))
-    (help outcome/help)
+    ((scanned finished)
+     (finished->outcome environment finished))
+    ((help path) (outcome/help path))
     ((version text) (outcome/version text))))
 
-(defn resolved->outcome (resolved)
-  (match resolved
-    ((ok matches) (outcome/parsed matches))
-    ((err failure) (outcome/usage-error failure))))
+(type finished->outcome
+  (fn ((ref environment) finished-scan) outcome))
+
+(defn finished->outcome (environment finished)
+  (let-match ((finished-scan scan spec) finished)
+    (match (resolve (ref spec) environment (ref scan))
+      ((ok found) (outcome/parsed found))
+      ((err failure)
+       (outcome/usage-error (->usage-failure :path (clone (:path scan))
+                                             :error failure))))))

@@ -1,0 +1,98 @@
+(module
+  "Reads the parts that `defcommand` and `defcli` share: the about text, the settings and the parameters, and writes their fields, specs and bindings.")
+
+(use code concat empty? first keyword-name keyword? list
+          list? prepend rest string string? symbol
+          symbol-name value-eq)
+
+(use macros/parameter-parts argument?)
+(use macros/parameter-specs parameter-spec)
+
+(use macros/parameters parameter-binding parameter-field
+                       parameter-reader)
+
+(export about-of bindings constructor-fields fields named
+        only parameters-of settings-of specs version-form)
+
+(def about-of
+  (fn (parts)
+    (if (empty? parts)
+      ""
+      (if (string? (first parts))
+        (first parts)
+        ""))))
+
+(def settings-of
+  (fn (parts)
+    (if (empty? parts)
+      (list)
+      (if (list? (first parts))
+        (settings-of (rest parts))
+        (prepend (first parts)
+                 (settings-of (rest parts)))))))
+
+(def parameters-of
+  (fn (parts)
+    (if (empty? parts)
+      (list)
+      (if (list? (first parts))
+        (prepend (first parts)
+                 (parameters-of (rest parts)))
+        (parameters-of (rest parts))))))
+
+(def version-form
+  (fn (settings)
+    (if (empty? settings)
+      (quote none)
+      (if (version-key? (first settings))
+        (template (some (str (unquote (first (rest settings))))))
+        (version-form (rest settings))))))
+
+(def only
+  (fn (parameters arguments)
+    (if (empty? parameters)
+      (list)
+      (if (value-eq (argument? (first parameters)) arguments)
+        (prepend (first parameters)
+                 (only (rest parameters) arguments))
+        (only (rest parameters) arguments)))))
+
+(def fields
+  (fn (parameters)
+    (if (empty? parameters)
+      (list)
+      (concat (parameter-field (first parameters))
+              (fields (rest parameters))))))
+
+(def specs
+  (fn (parameters)
+    (if (empty? parameters)
+      (list)
+      (prepend (parameter-spec (first parameters))
+               (specs (rest parameters))))))
+
+(def bindings
+  (fn (parameters)
+    (if (empty? parameters)
+      (list)
+      (prepend (parameter-binding (first parameters))
+               (prepend (parameter-reader (first parameters))
+                        (bindings (rest parameters)))))))
+
+(def constructor-fields
+  (fn (parameters)
+    (if (empty? parameters)
+      (list)
+      (prepend (first (parameter-field (first parameters)))
+               (prepend (parameter-binding (first parameters))
+                        (constructor-fields (rest parameters)))))))
+
+(def named
+  (fn (name before after)
+    (symbol name (string before (symbol-name name) after))))
+
+(def version-key?
+  (fn (item)
+    (if (keyword? item)
+      (value-eq (keyword-name item) "version")
+      false)))

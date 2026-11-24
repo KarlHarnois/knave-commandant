@@ -1,0 +1,56 @@
+(module
+  "Reads the `(commands ...)` list of a `defcli` and writes its enum cases, its subcommand specs and the clauses that pick a command.")
+
+(use code empty? first list list? nth prepend rest string
+          symbol symbol-name)
+
+(use macros/declaration named)
+
+(export case-forms command-clauses subcommand-specs)
+
+(def case-forms
+  (fn (commands)
+    (if (empty? commands)
+      (list)
+      (prepend (list (command-type (first commands))
+                     (command-type (first commands)))
+               (case-forms (rest commands))))))
+
+(def subcommand-specs
+  (fn (commands)
+    (if (empty? commands)
+      (list)
+      (prepend (template (assoc ((unquote (named (command-type (first commands))
+                                                 ""
+                                                 "-spec")))
+                                :name (str (unquote (command-word (first commands))))))
+               (subcommand-specs (rest commands))))))
+
+(def command-clauses
+  (fn (name commands)
+    (if (empty? commands)
+      (list)
+      (prepend (command-clause name (first commands))
+               (command-clauses name (rest commands))))))
+
+(def command-clause
+  (fn (name entry)
+    (template ((= (as-str (unquote (symbol name "word")))
+                  (unquote (command-word entry)))
+               (map-ok ((unquote (named (command-type entry) "matches->" ""))
+                        (ref (unquote (symbol name "rest"))))
+                       (fn ((unquote (symbol name "chosen")))
+                         ((unquote (symbol (command-type entry)
+                                           (string (symbol-name name)
+                                                   "-command/"
+                                                   (symbol-name (command-type
+                                                                  entry)))))
+                          (unquote (symbol name "chosen")))))))))
+
+(def command-type
+  (fn (entry)
+    (if (list? entry) (nth entry 1) entry)))
+
+(def command-word
+  (fn (entry)
+    (symbol-name (if (list? entry) (first entry) entry))))

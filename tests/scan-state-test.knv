@@ -5,7 +5,9 @@
   (clone (at (:options (serve-spec)) 0)))
 
 (deftest recording-moves-to-the-next-index
-  (let (scan (->scan :positionals (vec) :occurrences (vec)))
+  (let (scan (->scan :path (vec)
+                     :positionals (vec)
+                     :occurrences (vec)))
     (assert (= (record! (mut scan)
                         (port-option)
                         (str "-p")
@@ -14,7 +16,9 @@
                (ok (step/advance 2))))))
 
 (deftest recording-keeps-the-option-and-its-value
-  (let (scan (->scan :positionals (vec) :occurrences (vec)))
+  (let (scan (->scan :path (vec)
+                     :positionals (vec)
+                     :occurrences (vec)))
     (record! (mut scan)
              (port-option)
              (str "-p")

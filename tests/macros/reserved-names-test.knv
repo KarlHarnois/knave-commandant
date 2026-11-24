@@ -1,6 +1,6 @@
 (use lib defcommand)
 
-(export run-near-misses)
+(export matches->near-misses)
 
 (defcommand near-misses (:helper switch :short H)
   (:versions count :short v))

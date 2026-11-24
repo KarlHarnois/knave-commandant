@@ -1,7 +1,7 @@
 (use lib ->switch-slot argument-presence defcommand
          switch-state value-kind)
 
-(export run-probe)
+(export matches->probe)
 
 (defcommand probe (path string :default ".")
   (target string)

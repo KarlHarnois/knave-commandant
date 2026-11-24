@@ -2,14 +2,15 @@
   "Runs a command against the process: reads its words and environment, answers help and version, and stops on a usage error or a broken spec.")
 
 (use environment ->environment ->variable)
-(use error-report error-report)
+(use commands spec-at)
+(use error-report failure-report)
 (use help spec->help)
 (use matches matches)
 (use parse outcome parse)
 (use spec command-spec)
 (use terminal terminal-width)
 (use validate spec-error->message validate-spec)
-(use errors cli-error)
+(use errors ->usage-failure cli-error)
 
 (export command->response response run run-with)
 
@@ -39,9 +40,13 @@
       t)))
 
 (defn run-with (spec convert)
-  (match (convert (ref (run spec)))
-    ((ok value) value)
-    ((err failure) (refuse-typed spec (ref failure)))))
+  (let (found (run spec))
+    (match (convert (ref found))
+      ((ok value) value)
+      ((err failure)
+       (refuse-typed spec
+                     (->usage-failure :path (clone (:path found))
+                                      :error failure))))))
 
 (defn run (spec)
   (respond (command->response spec
@@ -59,17 +64,22 @@
                            (spec-error->message failure))))))
 
 (defn refuse-typed (spec failure)
-  (eprintln (error-report spec failure))
+  (eprintln (failure-report spec (ref failure)))
   (exit-with usage-exit-code))
 
 (defn outcome->response (spec outcome width)
   (match outcome
     ((parsed found) (response/proceed found))
-    (help (response/reply (spec->help spec width)))
+    ((help path)
+     (response/reply (help-at spec (ref path) width)))
     ((version text)
      (response/reply (str (:name spec) " " text)))
     ((usage-error failure)
-     (response/refuse (error-report spec (ref failure))))))
+     (response/refuse (failure-report spec (ref failure))))))
+
+(defn help-at (spec path width)
+  (spec->help (ref (unwrap-or (spec-at spec path) (clone spec)))
+              width))
 
 (defn respond (response)
   (match response

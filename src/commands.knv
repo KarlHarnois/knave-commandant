@@ -1,0 +1,40 @@
+(module
+  "Finds a command's subcommands, and the spec in effect after a path of them, with the parent's options carried down as global options.")
+
+(use spec command-spec)
+
+(export descended find-subcommand spec-at subcommand-names
+        subcommands?)
+
+(defn subcommands? (spec)
+  (not (empty? (:subcommands spec))))
+
+(defn subcommand-names (spec)
+  (collect (map (iter (:subcommands spec))
+             (fn (subcommand)
+               (clone (:name subcommand))))))
+
+(defn spec-at (spec path)
+  (reduce (iter path) (some (clone spec))
+    (fn (current name)
+      (then-some current
+        (fn (found)
+          (find-subcommand (ref found) (as-str name)))))))
+
+(defn find-subcommand (spec name)
+  (map-some (find (iter (:subcommands spec))
+              (fn (subcommand)
+                (= (as-str (:name subcommand)) name)))
+            (fn (subcommand) (descended spec subcommand))))
+
+(type descended
+  (fn ((ref command-spec) (ref command-spec))
+    command-spec))
+
+(defn descended (parent subcommand)
+  (let (merged (clone subcommand))
+    (for-each (iter (:options parent))
+      (fn (option)
+        (push! (:options merged) (clone option))))
+    (assoc merged
+           :name (str (:name parent) " " (:name subcommand)))))

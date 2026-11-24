@@ -1,6 +1,6 @@
 (use lib ->switch-slot defcommand switch-state)
 
-(export run-probe)
+(export matches->probe probe-spec)
 
 (defcommand probe (path string :default ".")
   (:quiet switch :short q)

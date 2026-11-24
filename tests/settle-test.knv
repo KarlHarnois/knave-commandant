@@ -1,13 +1,9 @@
-(use items tokens->items)
 (use matches matched-value)
-(use scan scan-end scan-items)
 (use settle option-matches)
 (use spec switch-state)
 
 (use support/fixture environment-with no-environment
-                     no-words serve-spec words)
-
-(use tokens words->tokens)
+                     no-words scanned-texts serve-spec)
 
 (defn option-after (texts long)
   (option-with (no-environment) texts long))
@@ -16,21 +12,11 @@
   (let (spec (serve-spec)
         found (option-matches (ref spec)
                               (ref environment)
-                              (ref (:occurrences (scan-of (ref spec) texts)))))
+                              (ref (:occurrences (scanned-texts spec texts)))))
     (map-some (find (iter found)
                 (fn (match)
                   (= (as-str (:long match)) long)))
               (fn (match) (clone (:value match))))))
-
-(defn scan-of (spec texts)
-  (let (items (tokens->items spec
-                             (ref (words->tokens (ref (words texts))))))
-    (unwrap (scanned (unwrap-ok (scan-items spec (ref items)))))))
-
-(defn scanned (end)
-  (match end
-    ((scanned found) (some found))
-    (_ none)))
 
 (defn port-text (text)
   (some (matched-value/one (some (str text)))))
