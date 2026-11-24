@@ -7,14 +7,13 @@
 
 (use lib ->argument-spec ->command-spec ->environment
          ->list-slot ->option-spec ->switch-slot
-         ->value-slot ->variable argument-presence
-         option-presence outcome parse switch-state
-         value-kind)
+         ->value-slot ->variable outcome parse presence
+         repetition switch-state value-kind)
 
 (export argument-named command-spec-named environment-with
         no-environment no-words parse-texts parse-with
-        scanned-texts serve-spec site-spec spec-requiring
-        spec-with-arguments spec-with-choices
+        repeated-argument scanned-texts serve-spec site-spec
+        spec-requiring spec-with-arguments spec-with-choices
         spec-with-lists spec-with-token usage-error words)
 
 (defn parse-texts (texts)
@@ -34,22 +33,22 @@
     :name (str "serve")
     :about (str "Serves a folder over HTTP.")
     :version (some (str "1.0.0"))
-    :arguments (vec (->argument-spec :name (str "root")
+    :arguments (vec (->argument-spec :repeats repetition/once
+                                     :name (str "root")
                                      :about (str "The folder to serve")
-                                     :presence (argument-presence/defaulted (str
-                                                                              "."))))
+                                     :presence (presence/defaulted (str "."))))
     :options (vec
-               (->option-spec
-                 :conflicts-with (vec)
-                 :long (str "port")
-                 :short (some (char "p"))
-                 :about (str "The port to listen on")
-                 :value (value-kind/one
-                          (->value-slot
-                            :placeholder (str "port")
-                            :presence (option-presence/defaulted (str "8000"))
-                            :env (vec (str "SERVE_PORT") (str "PORT"))
-                            :choices (vec))))
+               (->option-spec :conflicts-with (vec)
+                              :long (str "port")
+                              :short (some (char "p"))
+                              :about (str "The port to listen on")
+                              :value (value-kind/one
+                                       (->value-slot
+                                         :placeholder (str "port")
+                                         :presence (presence/defaulted (str "8000"))
+                                         :env (vec (str "SERVE_PORT")
+                                                   (str "PORT"))
+                                         :choices (vec))))
                (->option-spec :conflicts-with (vec)
                               :long (str "open")
                               :short (some (char "o"))
@@ -82,10 +81,11 @@
   (->command-spec :name (str "copy")
                   :about (str "Copies a file.")
                   :version none
-                  :arguments (vec (->argument-spec
-                                    :name (str name)
-                                    :about (str "The file to copy")
-                                    :presence argument-presence/required))
+                  :arguments (vec (->argument-spec :repeats repetition/once
+                                                   :name (str name)
+                                                   :about (str
+                                                            "The file to copy")
+                                                   :presence presence/required))
                   :options (vec)
                   :subcommands (vec)))
 
@@ -104,17 +104,18 @@
                   :about (str "Prints the log.")
                   :version none
                   :arguments (vec)
-                  :options (vec (->option-spec :conflicts-with (vec)
-                                               :long (str "format")
-                                               :short none
-                                               :about (str "How to print")
-                                               :value (value-kind/one
-                                                        (->value-slot
-                                                          :placeholder (str "format")
-                                                          :presence option-presence/optional
-                                                          :env (vec)
-                                                          :choices (vec (str "text")
-                                                                        (str "json"))))))
+                  :options (vec (->option-spec
+                                  :conflicts-with (vec)
+                                  :long (str "format")
+                                  :short none
+                                  :about (str "How to print")
+                                  :value (value-kind/one
+                                           (->value-slot
+                                             :placeholder (str "format")
+                                             :presence presence/optional
+                                             :env (vec)
+                                             :choices (vec (str "text")
+                                                           (str "json"))))))
                   :subcommands (vec)))
 
 (defn scanned-texts (spec texts)
@@ -146,24 +147,25 @@
                   :subcommands (vec)))
 
 (defn build-spec ()
-  (->command-spec :name (str "build")
-                  :about (str "Builds the site.")
-                  :version none
-                  :arguments (vec (->argument-spec :name (str "root")
-                                                   :about (str "The pages")
-                                                   :presence (argument-presence/defaulted
-                                                               (str "."))))
-                  :options (vec (->option-spec
-                                  :conflicts-with (vec)
-                                  :long (str "port")
-                                  :short (some (char "p"))
-                                  :about (str "A port")
-                                  :value (value-kind/one (->value-slot
-                                                           :placeholder (str "port")
-                                                           :presence option-presence/optional
-                                                           :env (vec)
-                                                           :choices (vec)))))
-                  :subcommands (vec)))
+  (->command-spec
+    :name (str "build")
+    :about (str "Builds the site.")
+    :version none
+    :arguments (vec (->argument-spec :repeats repetition/once
+                                     :name (str "root")
+                                     :about (str "The pages")
+                                     :presence (presence/defaulted (str "."))))
+    :options (vec (->option-spec :conflicts-with (vec)
+                                 :long (str "port")
+                                 :short (some (char "p"))
+                                 :about (str "A port")
+                                 :value (value-kind/one
+                                          (->value-slot
+                                            :placeholder (str "port")
+                                            :presence presence/optional
+                                            :env (vec)
+                                            :choices (vec)))))
+    :subcommands (vec)))
 
 (defn page-spec ()
   (->command-spec :name (str "page")
@@ -185,22 +187,30 @@
                   :about (str "Deploys the site.")
                   :version none
                   :arguments (vec)
-                  :options (vec (->option-spec :conflicts-with (vec)
-                                               :long (str "token")
-                                               :short none
-                                               :about (str "The API token")
-                                               :value (value-kind/one
-                                                        (->value-slot
-                                                          :placeholder (str "token")
-                                                          :presence option-presence/required
-                                                          :env (vec (str "DEPLOY_TOKEN"))
-                                                          :choices (vec)))))
+                  :options (vec (->option-spec
+                                  :conflicts-with (vec)
+                                  :long (str "token")
+                                  :short none
+                                  :about (str "The API token")
+                                  :value (value-kind/one
+                                           (->value-slot
+                                             :placeholder (str "token")
+                                             :presence presence/required
+                                             :env (vec (str "DEPLOY_TOKEN"))
+                                             :choices (vec)))))
                   :subcommands (vec)))
 
 (defn argument-named (name presence)
   (->argument-spec :name (str name)
                    :about (str "")
-                   :presence presence))
+                   :presence presence
+                   :repeats repetition/once))
+
+(defn repeated-argument (name presence)
+  (->argument-spec :name (str name)
+                   :about (str "")
+                   :presence presence
+                   :repeats repetition/repeated))
 
 (defn spec-with-arguments (arguments)
   (->command-spec :name (str "copy")
@@ -235,6 +245,6 @@
                  :about (str "")
                  :value (value-kind/one (->value-slot
                                           :placeholder (str long)
-                                          :presence option-presence/optional
+                                          :presence presence/optional
                                           :env (vec)
                                           :choices (vec)))))

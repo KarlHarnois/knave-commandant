@@ -1,6 +1,8 @@
 (use resolve/shares shares-of split-of taken-total)
-(use spec/shapes argument-presence)
-(use support/fixture argument-named spec-with-arguments)
+(use spec/shapes presence)
+
+(use support/fixture argument-named repeated-argument
+                     spec-with-arguments)
 
 (defn starts-and-counts (spec given)
   (collect (map (iter (shares-of (ref spec)
@@ -9,9 +11,8 @@
                   (pair (:start taken) (:count taken))))))
 
 (defn copy-spec ()
-  (spec-with-arguments (vec
-                         (argument-named "source" argument-presence/one-or-more)
-                         (argument-named "target" argument-presence/required))))
+  (spec-with-arguments (vec (repeated-argument "source" presence/required)
+                            (argument-named "target" presence/required))))
 
 (deftest the-repeated-argument-takes-the-words-in-the-middle
   (assert (= (starts-and-counts (copy-spec) 4)
@@ -24,6 +25,6 @@
 (deftest without-a-repeated-argument-every-word-past-the-last-is-left
   (assert (= (taken-total (ref (split-of (ref (spec-with-arguments (vec (argument-named
                                                                           "name"
-                                                                          argument-presence/required))))
+                                                                          presence/required))))
                                          3)))
              1)))

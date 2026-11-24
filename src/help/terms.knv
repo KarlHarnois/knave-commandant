@@ -1,9 +1,9 @@
 (module
   "Writes how the help page and the usage line show an argument or an option, with its value in capitals.")
 
-(use spec/shapes argument-presence argument-spec long-prefix
-                 name->placeholder option-spec switch-state
-                 value-kind)
+(use spec/shapes argument-spec long-prefix name->placeholder
+                 option-spec repetition required?
+                 switch-state value-kind)
 
 (export argument-term option-term required-option-term)
 
@@ -14,11 +14,21 @@
 
 (defn argument-term (argument)
   (let (shown (name->placeholder (as-str (:name argument))))
-    (match (:presence argument)
-      (argument-presence/required (str "<" shown ">"))
-      (argument-presence/one-or-more (str "<" shown ">..."))
-      (argument-presence/zero-or-more (str "[" shown "]..."))
-      (_ (str "[" shown "]")))))
+    (str (bracketed argument shown)
+         (repeat-mark (:repeats argument)))))
+
+(type bracketed
+  (fn ((ref argument-spec) string) string))
+
+(defn bracketed (argument shown)
+  (if (required? argument)
+    (str "<" shown ">")
+    (str "[" shown "]")))
+
+(defn repeat-mark (repeats)
+  (match repeats
+    (repeated (str "..."))
+    (once (str))))
 
 (defn option-term (option)
   (str (short-part (:short option))

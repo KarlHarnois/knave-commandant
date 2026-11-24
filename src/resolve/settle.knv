@@ -10,7 +10,7 @@
 (use scan/state occurrence occurrence-value
                 occurrences-named)
 
-(use spec/shapes command-spec option-presence option-spec
+(use spec/shapes command-spec option-spec presence
                  switch-slot switch-state value-kind
                  value-slot)
 
@@ -103,7 +103,7 @@
 
 (defn presence-default (presence)
   (match presence
-    ((option-presence/defaulted text) (some (clone text)))
+    ((presence/defaulted text) (some (clone text)))
     (_ none)))
 
 (defn occurrence-text (value)

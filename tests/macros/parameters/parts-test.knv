@@ -1,4 +1,4 @@
-(use lib argument-presence defcommand)
+(use lib defcommand presence)
 
 (export matches->parts)
 
@@ -11,15 +11,15 @@
 
 (deftest a-number-default-becomes-its-digits
   (assert (= (default-at 0)
-             (argument-presence/defaulted (str "8080")))))
+             (presence/defaulted (str "8080")))))
 
 (deftest a-symbol-default-becomes-its-name
   (assert (= (default-at 1)
-             (argument-presence/defaulted (str "text")))))
+             (presence/defaulted (str "text")))))
 
 (deftest a-string-default-stays-as-written
   (assert (= (default-at 2)
-             (argument-presence/defaulted (str "two words")))))
+             (presence/defaulted (str "two words")))))
 
 (deftest a-parameter-without-about-has-an-empty-about
   (assert (= (:about (at (:arguments (parts-spec)) 0))

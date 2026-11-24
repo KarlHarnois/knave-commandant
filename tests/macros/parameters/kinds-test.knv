@@ -1,4 +1,4 @@
-(use lib argument-presence defcommand value-kind)
+(use lib defcommand presence repetition value-kind)
 
 (export matches->kinds)
 
@@ -12,8 +12,12 @@
   (clone (:value (at (:options (kinds-spec)) index))))
 
 (deftest a-vec-argument-repeats
+  (assert (= (:repeats (at (:arguments (kinds-spec)) 0))
+             repetition/repeated)))
+
+(deftest a-vec-argument-without-required-is-optional
   (assert (= (:presence (at (:arguments (kinds-spec)) 0))
-             argument-presence/zero-or-more)))
+             presence/optional)))
 
 (deftest a-count-option-counts
   (assert (= (kind-at 1) value-kind/count)))

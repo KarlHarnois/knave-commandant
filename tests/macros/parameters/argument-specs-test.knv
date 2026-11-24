@@ -1,0 +1,22 @@
+(use lib defcommand presence repetition)
+
+(export matches->move)
+
+(defcommand move (sources (vec string) :required true)
+  (target string)
+  (label string :default "moved"))
+
+(defn argument-at (index)
+  (clone (at (:arguments (move-spec)) index)))
+
+(deftest a-required-vec-argument-is-required-and-repeats
+  (assert (= (:presence (argument-at 0)) presence/required))
+  (assert (= (:repeats (argument-at 0)) repetition/repeated)))
+
+(deftest an-argument-without-a-default-is-required-once
+  (assert (= (:presence (argument-at 1)) presence/required))
+  (assert (= (:repeats (argument-at 1)) repetition/once)))
+
+(deftest a-defaulted-argument-records-its-default-text
+  (assert (= (:presence (argument-at 2))
+             (presence/defaulted (str "moved")))))
