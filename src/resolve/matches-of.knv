@@ -1,0 +1,70 @@
+(module
+  "Turns a scan into matches: fills each argument, checks that a single-value option is given once, and settles each option.")
+
+(use resolve/arguments resolve-arguments)
+(use resolve/conflicts check-conflicts)
+(use errors/cli-error cli-error)
+(use values/matches ->matches matches one-text)
+(use scan/state occurrence)
+(use resolve/settle occurrences-of option-matches)
+
+(use spec/shapes command-spec option-required? option-spec
+                 value-kind)
+
+(export resolve)
+
+(def long-prefix "--")
+
+(defn resolve (spec environment scan)
+  (let-try (arguments (resolve-arguments spec (ref (:positionals scan))))
+    (try (check-no-repeated spec (ref (:occurrences scan))))
+    (try (check-conflicts spec (ref (:occurrences scan))))
+    (let (found (->matches :path (clone (:path scan))
+                           :arguments arguments
+                           :options (option-matches spec
+                                                    environment
+                                                    (ref (:occurrences scan)))))
+      (try (check-required spec (ref found)))
+      (ok found))))
+
+(type check-required
+  (fn ((ref command-spec) (ref matches))
+    (result unit cli-error)))
+
+(defn check-required (spec found)
+  (match (find (iter (:options spec))
+           (fn (option) (unset? option found)))
+    ((some option)
+     (err (cli-error/missing-option (str long-prefix (:long option)))))
+    (none (ok (do)))))
+
+(defn unset? (option found)
+  (and (option-required? option)
+       (none? (one-text found (as-str (:long option))))))
+
+(type check-no-repeated
+  (fn ((ref command-spec)
+       (ref (vec occurrence)))
+    (result unit cli-error)))
+
+(defn check-no-repeated (spec occurrences)
+  (match (find (iter (:options spec))
+           (fn (option) (repeated? option occurrences)))
+    ((some option)
+     (err (cli-error/repeated-option (second-written option occurrences))))
+    (none (ok (do)))))
+
+(defn repeated? (option occurrences)
+  (and (single-value? option)
+       (> (len (occurrences-of option occurrences)) 1)))
+
+(type single-value?
+  (fn ((ref option-spec)) bool))
+
+(defn single-value? (option)
+  (match (:value option)
+    ((one _) true)
+    (_ false)))
+
+(defn second-written (option occurrences)
+  (clone (:written (at (occurrences-of option occurrences) 1))))

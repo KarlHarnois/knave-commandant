@@ -2,12 +2,15 @@
   "Parses a command line against a command's spec, as a pure function of the spec, the environment and the words.")
 
 (use environment environment)
-(use errors ->usage-failure cli-error usage-failure)
-(use matches matches)
-(use resolve resolve)
-(use spec command-spec)
-(use scan finished-scan scan-end scan-tokens)
-(use tokens words->tokens)
+
+(use errors/cli-error ->usage-failure cli-error
+                      usage-failure)
+
+(use values/matches matches)
+(use resolve/matches-of resolve)
+(use spec/shapes command-spec)
+(use scan/walk finished-scan scan-end scan-tokens)
+(use scan/tokens words->tokens)
 
 (export matches->typed outcome parse parse-into)
 

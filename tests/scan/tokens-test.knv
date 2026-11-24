@@ -1,0 +1,34 @@
+(use support/fixture words)
+(use scan/tokens ->long-assignment token words->tokens)
+
+(defn tokens-of (texts)
+  (words->tokens (ref (words texts))))
+
+(deftest a-long-flag-is-a-long-name
+  (assert (= (tokens-of (vec "--open"))
+             (vec (token/long-name (str "open"))))))
+
+(deftest an-equals-sign-attaches-a-value
+  (assert (= (tokens-of (vec "--port=80"))
+             (vec (token/long-with-value (->long-assignment :name (str "port")
+                                                            :value (str
+                                                                     "80")))))))
+
+(deftest an-attached-value-keeps-its-own-equals-signs
+  (assert (= (tokens-of (vec "--define=a=b"))
+             (vec (token/long-with-value (->long-assignment :name (str "define")
+                                                            :value (str "a=b")))))))
+
+(deftest a-single-dash-starts-a-short-cluster
+  (assert (= (tokens-of (vec "-vo"))
+             (vec (token/short-cluster (str "vo"))))))
+
+(deftest a-lone-dash-is-a-word
+  (assert (= (tokens-of (vec "-"))
+             (vec (token/word (str "-"))))))
+
+(deftest a-double-dash-marks-the-end-and-turns-the-rest-into-words
+  (assert (= (tokens-of (vec "--" "--open" "-v"))
+             (vec token/options-end
+                  (token/word (str "--open"))
+                  (token/word (str "-v"))))))

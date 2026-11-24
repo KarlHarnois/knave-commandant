@@ -1,9 +1,9 @@
 (module
   "Builds the specs, environments and words the tests run against.")
 
-(use errors ->usage-failure)
-(use scan scan-end scan-tokens)
-(use tokens words->tokens)
+(use errors/cli-error ->usage-failure)
+(use scan/walk scan-end scan-tokens)
+(use scan/tokens words->tokens)
 
 (use lib ->argument-spec ->command-spec ->environment
          ->list-slot ->option-spec ->switch-slot

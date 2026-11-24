@@ -1,0 +1,63 @@
+(use help/page spec->help spec->usage)
+(use spec/shapes ->option-spec value-kind)
+
+(use support/fixture serve-spec site-spec spec-requiring
+                     spec-with-token)
+
+(def serve-help
+  (str "Serves a folder over HTTP.\n" "\n"
+       "Usage: serve [OPTIONS] [ROOT]\n" "\n" "Arguments:\n"
+       "  [ROOT]              The folder to serve [default: .]\n"
+       "\n" "Options:\n"
+       "  -p, --port <PORT>   The port to listen on [default: 8000]\n"
+       "                      [env: SERVE_PORT, PORT]\n"
+       "  -o, --open          Opens the browser [env: SERVE_OPEN]\n"
+       "      --[no-]color    Colors the log\n"
+       "  -v, --verbose...    Logs more\n"
+       "  -t, --tag <TAG>...  Tags the log\n"
+       "  -h, --help          Print help\n"
+       "  -V, --version       Print version"))
+
+(defn spec-with-undescribed-option ()
+  (let (spec (serve-spec))
+    (push! (:options spec)
+           (->option-spec :conflicts-with (vec)
+                          :long (str "quiet")
+                          :short none
+                          :about (str "")
+                          :value value-kind/count))
+    spec))
+
+(deftest the-usage-lists-options-then-arguments
+  (assert (= (spec->usage (ref (serve-spec)))
+             "serve [OPTIONS] [ROOT]")))
+
+(deftest the-usage-marks-a-required-argument
+  (assert (= (spec->usage (ref (spec-requiring "file")))
+             "copy [OPTIONS] <FILE>")))
+
+(deftest the-help-page-aligns-and-wraps-to-the-width
+  (assert (= (spec->help (ref (serve-spec)) 60)
+             serve-help)))
+
+(deftest a-narrow-width-keeps-twenty-columns-for-descriptions
+  (assert (= (spec->help (ref (serve-spec)) 10)
+             (spec->help (ref (serve-spec)) 42))))
+
+(deftest an-option-without-a-description-keeps-its-row
+  (assert (> (count (split (as-str (spec->help (ref (spec-with-undescribed-option))
+                                               80))
+                           "\n      --quiet...\n"))
+             1)))
+
+(deftest the-usage-of-a-group-ends-with-its-command
+  (assert (= (spec->usage (ref (site-spec)))
+             "site [OPTIONS] <COMMAND>")))
+
+(deftest a-group-lists-its-commands-before-its-options
+  (assert (starts-with? (as-str (spec->help (ref (site-spec)) 80))
+                        "Builds and serves a site.\n\nUsage: site [OPTIONS] <COMMAND>\n\nCommands:\n  build")))
+
+(deftest the-usage-lists-each-required-option
+  (assert (= (spec->usage (ref (spec-with-token)))
+             "deploy [OPTIONS] --token <TOKEN>")))

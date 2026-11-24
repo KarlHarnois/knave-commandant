@@ -1,0 +1,90 @@
+(use values/matches matched-value)
+(use resolve/settle option-matches)
+(use spec/shapes switch-state)
+
+(use support/fixture environment-with no-environment
+                     no-words scanned-texts serve-spec)
+
+(defn option-after (texts long)
+  (option-with (no-environment) texts long))
+
+(defn option-with (environment texts long)
+  (let (spec (serve-spec)
+        found (option-matches (ref spec)
+                              (ref environment)
+                              (ref (:occurrences (scanned-texts spec texts)))))
+    (map-some (find (iter found)
+                (fn (match)
+                  (= (as-str (:long match)) long)))
+              (fn (match) (clone (:value match))))))
+
+(defn port-text (text)
+  (some (matched-value/one (some (str text)))))
+
+(deftest a-given-value-fills-the-option
+  (assert (= (option-after (vec "-p" "80") "port")
+             (port-text "80"))))
+
+(deftest an-absent-option-takes-its-default
+  (assert (= (option-after (no-words) "port")
+             (port-text "8000"))))
+
+(deftest an-environment-variable-fills-an-absent-option
+  (assert (= (option-with (environment-with "SERVE_PORT" "90")
+                          (no-words)
+                          "port")
+             (port-text "90"))))
+
+(deftest a-later-environment-variable-is-a-fallback
+  (assert (= (option-with (environment-with "PORT" "91")
+                          (no-words)
+                          "port")
+             (port-text "91"))))
+
+(deftest a-flag-beats-the-environment
+  (assert (= (option-with (environment-with "SERVE_PORT" "90")
+                          (vec "-p" "80")
+                          "port")
+             (port-text "80"))))
+
+(deftest an-absent-switch-keeps-its-initial-state
+  (assert (= (option-after (no-words) "open")
+             (some (matched-value/switch switch-state/off)))))
+
+(deftest a-given-switch-turns-on
+  (assert (= (option-after (vec "--open") "open")
+             (some (matched-value/switch switch-state/on)))))
+
+(deftest a-negation-turns-a-switch-off
+  (assert (= (option-after (vec "--no-color") "color")
+             (some (matched-value/switch switch-state/off)))))
+
+(deftest the-last-of-a-switch-and-its-negation-wins
+  (assert (= (option-after (vec "--no-color" "--color") "color")
+             (some (matched-value/switch switch-state/on)))))
+
+(deftest a-repeated-flag-counts
+  (assert (= (option-after (vec "-vvv") "verbose")
+             (some (matched-value/count 3)))))
+
+(deftest a-repeated-option-collects-its-values
+  (assert (= (option-after (vec "--tag" "a" "-t" "b") "tag")
+             (some (matched-value/many (vec (str "a") (str "b")))))))
+
+(deftest an-environment-variable-turns-a-switch-on
+  (assert (= (option-with (environment-with "SERVE_OPEN" "1")
+                          (no-words)
+                          "open")
+             (some (matched-value/switch switch-state/on)))))
+
+(deftest a-false-environment-variable-keeps-a-switch-off
+  (assert (= (option-with (environment-with "SERVE_OPEN" "False")
+                          (no-words)
+                          "open")
+             (some (matched-value/switch switch-state/off)))))
+
+(deftest a-flag-beats-the-environment-for-a-switch
+  (assert (= (option-with (environment-with "SERVE_OPEN" "0")
+                          (vec "--open")
+                          "open")
+             (some (matched-value/switch switch-state/on)))))

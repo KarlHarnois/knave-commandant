@@ -1,0 +1,30 @@
+(use scan/state ->scan occurrence-value record! step)
+(use support/fixture serve-spec)
+
+(defn port-option ()
+  (clone (at (:options (serve-spec)) 0)))
+
+(deftest recording-moves-to-the-next-index
+  (let (scan (->scan :path (vec)
+                     :positionals (vec)
+                     :occurrences (vec)))
+    (assert (= (record! (mut scan)
+                        (port-option)
+                        (str "-p")
+                        (occurrence-value/text (str "80"))
+                        2)
+               (ok (step/advance 2))))))
+
+(deftest recording-keeps-the-option-and-its-value
+  (let (scan (->scan :path (vec)
+                     :positionals (vec)
+                     :occurrences (vec)))
+    (record! (mut scan)
+             (port-option)
+             (str "-p")
+             (occurrence-value/text (str "80"))
+             2)
+    (assert (= (:long (at (:occurrences scan) 0))
+               "port"))
+    (assert (= (:value (at (:occurrences scan) 0))
+               (occurrence-value/text (str "80"))))))

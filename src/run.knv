@@ -2,15 +2,15 @@
   "Runs a command against the process: reads its words and environment, answers help and version, and stops on a usage error or a broken spec.")
 
 (use environment ->environment ->variable)
-(use commands spec-at)
-(use error-report failure-report)
-(use help spec->help)
-(use matches matches)
+(use spec/commands spec-at)
+(use errors/report failure-report)
+(use help/page spec->help)
+(use values/matches matches)
 (use parse matches->typed outcome parse)
-(use spec command-spec)
-(use terminal terminal-width)
-(use validate spec-error->message validate-spec)
-(use errors ->usage-failure cli-error)
+(use spec/shapes command-spec)
+(use help/terminal terminal-width)
+(use spec/validate spec-error->message validate-spec)
+(use errors/cli-error ->usage-failure cli-error)
 
 (export command->response process-environment response run
         run-with)

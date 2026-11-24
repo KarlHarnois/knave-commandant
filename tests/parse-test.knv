@@ -1,5 +1,5 @@
-(use errors ->usage-failure cli-error)
-(use matches argument-text matches)
+(use errors/cli-error ->usage-failure cli-error)
+(use values/matches argument-text matches)
 (use parse outcome parse-into)
 
 (use support/fixture no-environment parse-texts parse-with

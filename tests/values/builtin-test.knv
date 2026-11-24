@@ -1,0 +1,13 @@
+(use values/builtin)
+(use values/convert from-text value-names)
+
+(deftest a-number-type-reads-digits
+  (assert (= (the (option u16) (from-text "8080"))
+             (some 8080))))
+
+(deftest bool-lists-its-values
+  (assert (= (value-names (ref (the (option bool) none)))
+             (vec (str "true") (str "false")))))
+
+(deftest a-number-type-lists-no-values
+  (assert (empty? (value-names (ref (the (option u16) none))))))

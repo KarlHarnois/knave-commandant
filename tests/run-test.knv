@@ -1,5 +1,5 @@
 (use run command->response response)
-(use spec ->option-spec value-kind)
+(use spec/shapes ->option-spec value-kind)
 
 (use support/fixture no-environment serve-spec site-spec
                      words)

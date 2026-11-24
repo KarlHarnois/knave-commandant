@@ -1,0 +1,87 @@
+(module
+  "Finds the option a flag names, including `--no-x` for a switch, and the flags every command takes.")
+
+(use scan/items flag)
+
+(use spec/shapes command-spec find-long find-short
+                 option-spec switch?)
+
+(export builtin find-hit hit stop)
+
+(def help-long "help")
+
+(def version-long "version")
+
+(def help-short (char "h"))
+
+(def version-short (char "V"))
+
+(def negation-prefix "no-")
+
+(defenum stop
+  finished
+  help-asked
+  (version-asked string))
+
+(defenum hit
+  (direct option-spec)
+  (negation option-spec))
+
+(type builtin
+  (fn ((ref command-spec) (ref flag))
+    (option stop)))
+
+(defn builtin (spec flag)
+  (match flag
+    ((long name) (long-builtin spec (as-str name)))
+    ((short character) (short-builtin spec (deref character)))))
+
+(type find-hit
+  (fn ((ref command-spec) (ref flag))
+    (option hit)))
+
+(defn find-hit (spec flag)
+  (match flag
+    ((long name) (long-hit spec (as-str name)))
+    ((short character)
+     (map-some (find-short spec (deref character))
+       (fn (option)
+         (hit/direct (clone option)))))))
+
+(defn long-builtin (spec name)
+  (cond
+    ((= name help-long) (some stop/help-asked))
+    ((= name version-long) (version-stop spec))
+    (else none)))
+
+(defn short-builtin (spec character)
+  (cond
+    ((= character help-short) (some stop/help-asked))
+    ((= character version-short) (version-stop spec))
+    (else none)))
+
+(defn version-stop (spec)
+  (map-some (clone (:version spec))
+    (fn (version) (stop/version-asked version))))
+
+(defn long-hit (spec name)
+  (match (find-long spec name)
+    ((some option) (some (hit/direct (clone option))))
+    (none (negation-hit spec name))))
+
+(defn negation-hit (spec name)
+  (then-some (negated-name name)
+    (fn (bare)
+      (switch-hit spec (as-str bare)))))
+
+(defn negated-name (name)
+  (if (starts-with? name negation-prefix)
+    (some (str (subs name (len negation-prefix) (len name))))
+    none))
+
+(defn switch-hit (spec name)
+  (then-some (find-long spec name)
+    (fn (option)
+      (if (switch? option)
+        (some (hit/negation (clone option)))
+        none))))

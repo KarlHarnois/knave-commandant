@@ -3,17 +3,17 @@
 
 (use prelude/macros header-shape)
 (use code empty? symbol-name)
-(use errors cli-error)
+(use errors/cli-error cli-error)
 
 (use macros/declaration about-of bindings constructor-fields
                         fields named only parameters-of
                         settings-of specs version-form)
 
-(use macros/parameters matches-name)
-(use matches matches)
+(use macros/parameters/fields matches-name)
+(use values/matches matches)
 (use parse parse-into)
 (use run run-with)
-(use spec ->command-spec)
+(use spec/shapes ->command-spec)
 
 (export defcommand parse-command run-command)
 

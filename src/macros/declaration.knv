@@ -5,11 +5,12 @@
           list? prepend rest string string? symbol
           symbol-name value-eq)
 
-(use macros/parameter-parts argument?)
-(use macros/parameter-specs parameter-spec)
+(use macros/parameters/parts argument?)
+(use macros/parameters/specs parameter-spec)
 
-(use macros/parameters parameter-binding parameter-field
-                       parameter-reader)
+(use macros/parameters/fields parameter-binding
+                              parameter-field
+                              parameter-reader)
 
 (export about-of bindings constructor-fields fields named
         only parameters-of settings-of specs version-form)
