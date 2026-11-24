@@ -1,6 +1,7 @@
 (module
   "Settles each option's value from its flags, then its environment variables, then its default.")
 
+(use delimited list-texts)
 (use environment environment first-set)
 (use matches ->option-match matched-value option-match)
 (use scan-state occurrence occurrence-value)
@@ -50,7 +51,9 @@
     (count (matched-value/count (len found)))
     ((one slot)
      (matched-value/one (one-value environment (ref found) slot)))
-    ((many _) (matched-value/many (texts (ref found))))))
+    ((many slot)
+     (matched-value/many (list-texts (texts (ref found))
+                                     (:delimiter slot))))))
 
 (type switch-from
   (fn ((ref environment)

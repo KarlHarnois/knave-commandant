@@ -1,7 +1,9 @@
 (module
   "Writes a command's usage line and its help page, laid out in columns that fit a width.")
 
-(use help-rows argument-rows command-rows option-rows)
+(use help-rows argument-rows command-rows help-row
+               option-rows)
+
 (use terms argument-term required-option-term)
 (use spec command-spec option-required?)
 (use wrap wrap)
@@ -98,6 +100,10 @@
   (unwrap-or (max (map (iter rows)
                     (fn (row) (len (:term row)))))
              0))
+
+(type row->text
+  (fn ((ref help-row) (ref layout))
+    string))
 
 (defn row->text (row layout)
   (let (lines (wrap (as-str (:description row))

@@ -3,8 +3,9 @@
 
 (use spec name->placeholder)
 
-(export ->invalid-text ->usage-failure cli-error
-        error->message invalid-text usage-failure)
+(export ->invalid-text ->option-conflict ->usage-failure
+        cli-error error->message invalid-text
+        option-conflict usage-failure)
 
 (defstruct usage-failure
   :path (vec string)
@@ -20,11 +21,16 @@
   (missing-option string)
   (unknown-command string)
   missing-command
-  (invalid-value invalid-text))
+  (invalid-value invalid-text)
+  (conflicting-options option-conflict))
 
 (defstruct invalid-text
   :written string
   :text string)
+
+(defstruct option-conflict
+  :written string
+  :other string)
 
 (defn error->message (failure)
   (match failure
@@ -52,4 +58,10 @@
           (:text invalid)
           "` for `"
           (:written invalid)
+          "`"))
+    ((conflicting-options conflict)
+     (str "option `"
+          (:written conflict)
+          "` cannot be used with `"
+          (:other conflict)
           "`"))))

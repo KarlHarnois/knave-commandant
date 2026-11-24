@@ -2,6 +2,7 @@
   "Turns a scan into matches: fills each argument, checks that a single-value option is given once, and settles each option.")
 
 (use arguments resolve-arguments)
+(use conflicts check-conflicts)
 (use errors cli-error)
 (use matches ->matches matches one-text)
 (use scan-state occurrence)
@@ -17,6 +18,7 @@
 (defn resolve (spec environment scan)
   (let-try (arguments (resolve-arguments spec (ref (:positionals scan))))
     (try (check-no-repeated spec (ref (:occurrences scan))))
+    (try (check-conflicts spec (ref (:occurrences scan))))
     (let (found (->matches :path (clone (:path scan))
                            :arguments arguments
                            :options (option-matches spec

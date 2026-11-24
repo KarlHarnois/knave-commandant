@@ -1,0 +1,44 @@
+(module
+  "Rejects a `:delimiter` on a parameter that is not a `vec` option, and a `:conflicts-with` on an argument.")
+
+(use code fail first)
+
+(use macros/parameter-parts argument? detail given?
+                            many-type? parameter-details
+                            parameter-type)
+
+(export check-option-details)
+
+(def check-option-details
+  (fn (parameter)
+    (if (given? (detail (parameter-details parameter) "delimiter"))
+      (check-delimiter parameter)
+      (check-conflicts-detail parameter))))
+
+(def check-delimiter
+  (fn (parameter)
+    (if (delimited-list? parameter)
+      (check-conflicts-detail parameter)
+      (fail "only a `vec` option can take `:delimiter`"
+        (first parameter)
+        "give the option a `vec` type, or drop `:delimiter`"))))
+
+(def delimited-list?
+  (fn (parameter)
+    (if (argument? parameter)
+      false
+      (many-type? (parameter-type parameter)))))
+
+(def check-conflicts-detail
+  (fn (parameter)
+    (if (given? (detail (parameter-details parameter) "conflicts-with"))
+      (check-conflicts-on-option parameter)
+      parameter)))
+
+(def check-conflicts-on-option
+  (fn (parameter)
+    (if (argument? parameter)
+      (fail "an argument cannot take `:conflicts-with`"
+        (first parameter)
+        "put `:conflicts-with` on an option")
+      parameter)))

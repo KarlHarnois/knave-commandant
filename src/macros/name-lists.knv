@@ -1,0 +1,36 @@
+(module
+  "Writes a `defcommand` detail that holds one name or a list of names, such as `:env` and `:conflicts-with`, as the vector of names its spec holds.")
+
+(use code empty? first list list? prepend rest string?
+          symbol-name)
+
+(use macros/parameter-parts detail parameter-details)
+
+(export conflicts-form env-form)
+
+(def env-form
+  (fn (parameter) (names-form parameter "env")))
+
+(def conflicts-form
+  (fn (parameter) (names-form parameter "conflicts-with")))
+
+(def names-form
+  (fn (parameter key)
+    (names-vec (detail (parameter-details parameter) key))))
+
+(def names-vec
+  (fn (names)
+    (if (list? names)
+      (template (vec (splice (name-texts names))))
+      (template (vec (str (unquote (name-text names))))))))
+
+(def name-texts
+  (fn (names)
+    (if (empty? names)
+      (list)
+      (prepend (template (str (unquote (name-text (first names)))))
+               (name-texts (rest names))))))
+
+(def name-text
+  (fn (name)
+    (if (string? name) name (symbol-name name))))

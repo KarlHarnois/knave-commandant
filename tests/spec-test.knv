@@ -1,5 +1,6 @@
-(use spec find-long find-short option-required? required?
-          short-takes-value? switch? takes-value?)
+(use spec find-long find-short name->placeholder
+          option-required? required? short-takes-value?
+          switch? takes-value?)
 
 (use support/fixture serve-spec spec-requiring
                      spec-with-token)
@@ -54,3 +55,6 @@
 
 (deftest an-option-with-a-default-is-not-required
   (assert (not (option-required? (unwrap (long-named "port"))))))
+
+(deftest a-placeholder-is-the-name-in-capitals-with-underscores
+  (assert (= (name->placeholder "body-file") "BODY_FILE")))

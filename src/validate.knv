@@ -5,6 +5,7 @@
                     order-error->message)
 
 (use commands descended subcommand-names)
+(use conflicts unknown-conflict)
 (use spec command-spec)
 
 (export spec-error spec-error->message validate-spec)
@@ -23,12 +24,14 @@
   (repeated-short char)
   (repeated-argument string)
   (misordered-argument order-error)
+  (unknown-conflict string)
   reserved-command
   (repeated-command string))
 
 (defn validate-spec (spec)
   (try (check-longs (long-names spec)))
   (try (check-shorts (short-names spec)))
+  (try (check-conflict-names spec))
   (try (check-arguments (argument-names spec)))
   (try (map-err (argument-order spec)
          (fn (failure) (spec-error/misordered-argument failure))))
@@ -51,10 +54,18 @@
      (str "two arguments are named <" name ">"))
     ((misordered-argument failure)
      (order-error->message failure))
+    ((unknown-conflict name)
+     (str "an option conflicts with `--" name
+          "`, which is not an option"))
     (reserved-command (str "command `" reserved-command
                            "` is built in, so a spec cannot define it"))
     ((repeated-command name)
      (str "two commands are named `" name "`"))))
+
+(defn check-conflict-names (spec)
+  (match (unknown-conflict spec)
+    ((some name) (err (spec-error/unknown-conflict name)))
+    (none (ok (do)))))
 
 (defn validate-subcommands (spec)
   (reduce (iter (:subcommands spec)) (ok (do))

@@ -4,8 +4,8 @@
 
 (use support/fixture environment-with no-environment
                      no-words parse-texts parse-with
-                     serve-spec site-spec spec-with-token
-                     usage-error)
+                     serve-spec site-spec spec-with-lists
+                     spec-with-token usage-error)
 
 (defn option-after (texts long)
   (match (parse-texts texts)
@@ -142,3 +142,25 @@
              (str "error: option `--token` is required\n\n"
                   "Usage: deploy [OPTIONS] --token <TOKEN>\n\n"
                   "For more information, try `deploy --help`."))))
+
+(deftest a-delimited-list-option-reads-every-part
+  (assert (= (match (parse-with (spec-with-lists)
+                                (no-environment)
+                                (vec "--after" "1,2" "--after" "3"))
+               ((parsed found)
+                (map-some (option-value (ref found) "after") clone))
+               (_ none))
+             (some (matched-value/many (vec (str "1") (str "2") (str "3")))))))
+
+(deftest conflicting-options-report-both-names
+  (assert (= (match (parse-with
+                      (spec-with-lists)
+                      (no-environment)
+                      (vec "--description" "x" "--description-file" "y.md"))
+               ((usage-error failure)
+                (failure-report (ref (spec-with-lists))
+                                (ref failure)))
+               (_ (str)))
+             (str "error: option `--description` cannot be used with `--description-file`\n\n"
+                  "Usage: add [OPTIONS]\n\n"
+                  "For more information, try `add --help`."))))

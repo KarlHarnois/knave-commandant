@@ -1,0 +1,34 @@
+(use conflicts check-conflicts unknown-conflict)
+(use errors ->option-conflict cli-error)
+(use spec ->option-spec value-kind)
+(use support/fixture scanned-texts spec-with-lists)
+
+(defn conflicts-after (texts)
+  (let (spec (spec-with-lists))
+    (check-conflicts (ref spec)
+                     (ref (:occurrences (scanned-texts spec texts))))))
+
+(deftest options-that-conflict-cannot-be-given-together
+  (assert (= (unwrap-err (conflicts-after
+                           (vec "--description-file" "a.md"
+                                "--description" "Text")))
+             (cli-error/conflicting-options (->option-conflict :written (str "--description")
+                                                               :other (str "--description-file"))))))
+
+(deftest either-conflicting-option-alone-is-fine
+  (assert (ok? (conflicts-after (vec "--description" "Text")))))
+
+(deftest every-conflict-of-the-fixture-names-an-option
+  (assert (= (unknown-conflict (ref (spec-with-lists)))
+             none)))
+
+(deftest a-conflict-can-name-a-missing-option
+  (let (spec (spec-with-lists))
+    (push! (:options spec)
+           (->option-spec :conflicts-with (vec (str "nope"))
+                          :long (str "quiet")
+                          :short none
+                          :about (str "")
+                          :value value-kind/count))
+    (assert (= (unknown-conflict (ref spec))
+               (some (str "nope"))))))

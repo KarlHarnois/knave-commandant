@@ -22,7 +22,16 @@
           :about "The token of the host"))
 
 (defcommand page-add "Adds a page."
-  (title string :about "The title of the page"))
+  (title string :about "The title of the page")
+  (:tags (vec string)
+         :short t
+         :delimiter ","
+         :about "Tags the page, as in `--tags news,release`")
+  (:body string
+         :conflicts-with body-file
+         :about "The text of the page")
+  (:body-file string
+              :about "Reads the text of the page from a file"))
 
 (defcommand page-list "Lists the pages."
   (filter (option string)
