@@ -1,0 +1,54 @@
+(use spec/commands descended find-subcommand spec-at
+                   subcommand-names subcommands?)
+
+(use support/fixture serve-spec site-spec)
+
+(defn names (texts)
+  (collect (map (iter texts)
+             (fn (text) (str (deref text))))))
+
+(deftest a-spec-with-commands-has-subcommands
+  (assert (subcommands? (ref (site-spec)))))
+
+(deftest a-leaf-spec-has-no-subcommands
+  (assert (not (subcommands? (ref (serve-spec))))))
+
+(deftest lists-the-subcommand-names
+  (assert (= (subcommand-names (ref (site-spec)))
+             (vec (str "build") (str "page")))))
+
+(deftest a-subcommand-is-named-after-its-path
+  (assert (= (map-some (find-subcommand (ref (site-spec)) "build")
+               (fn (found) (clone (:name found))))
+             (some (str "site build")))))
+
+(deftest a-subcommand-carries-the-parent-options
+  (assert (= (map-some (find-subcommand (ref (site-spec)) "build")
+               (fn (found) (len (:options found))))
+             (some 2))))
+
+(deftest an-unknown-subcommand-is-none
+  (assert (none? (find-subcommand (ref (site-spec)) "biuld"))))
+
+(deftest a-path-leads-to-a-nested-spec
+  (assert (= (map-some (spec-at (ref (site-spec))
+                                (ref (names (vec "page" "add"))))
+                       (fn (found) (clone (:name found))))
+             (some (str "site page add")))))
+
+(deftest an-empty-path-is-the-spec-itself
+  (assert (= (map-some (spec-at (ref (site-spec))
+                                (ref (names (the (vec (ref str)) (vec)))))
+                       (fn (found) (clone (:name found))))
+             (some (str "site")))))
+
+(deftest a-path-through-an-unknown-name-is-none
+  (assert (none? (spec-at (ref (site-spec))
+                          (ref (names (vec "page" "edit")))))))
+
+(deftest descending-keeps-the-subcommand-options-first
+  (let (site (site-spec))
+    (assert (= (:long (at (:options (descended (ref site)
+                                               (at (:subcommands site) 0)))
+                          0))
+               "port"))))

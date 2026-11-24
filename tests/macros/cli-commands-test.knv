@@ -1,5 +1,5 @@
 (use lib cli-error defcli defcommand)
-(use matches ->matches)
+(use values/matches ->matches)
 
 (defcommand log-show "Shows the log.")
 

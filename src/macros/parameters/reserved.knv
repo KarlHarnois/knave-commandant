@@ -1,0 +1,51 @@
+(module
+  "Rejects a `defcommand` option that takes a name every command already has.")
+
+(use code empty? fail first list rest string symbol-name
+          symbol? value-eq)
+
+(use macros/parameters/parts detail parameter-details
+                             parameter-name)
+
+(export check-reserved)
+
+(def reserved-longs (list "help" "version"))
+
+(def reserved-shorts (list "h" "V"))
+
+(def check-reserved
+  (fn (parameter)
+    (if (reserved-long? (parameter-name parameter))
+      (fail (string "option `--"
+                    (parameter-name parameter)
+                    "` is built in")
+        (first parameter)
+        "rename the option, because every command already takes it")
+      (check-reserved-short parameter))))
+
+(def check-reserved-short
+  (fn (parameter)
+    (if (reserved-short? (detail (parameter-details parameter) "short"))
+      (fail (string "option `-"
+                    (symbol-name (detail (parameter-details parameter) "short"))
+                    "` is built in")
+        (first parameter)
+        "pick another short name, because `-h` and `-V` are built in")
+      parameter)))
+
+(def reserved-long?
+  (fn (name) (listed? reserved-longs name)))
+
+(def reserved-short?
+  (fn (short)
+    (if (symbol? short)
+      (listed? reserved-shorts (symbol-name short))
+      false)))
+
+(def listed?
+  (fn (names name)
+    (if (empty? names)
+      false
+      (if (value-eq (first names) name)
+        true
+        (listed? (rest names) name)))))

@@ -6,15 +6,15 @@
 (use code empty? fail first keyword? list list? prepend rest
           symbol symbol-name symbol? value-eq)
 
-(use errors cli-error)
+(use errors/cli-error cli-error)
 
 (use macros/declaration about-of bindings constructor-fields
                         fields named settings-of specs
                         version-form)
 
-(use macros/parameters matches-name)
-(use matches command-at matches shifted)
-(use spec ->command-spec)
+(use macros/parameters/fields matches-name)
+(use values/matches command-at matches shifted)
+(use spec/shapes ->command-spec)
 
 (use macros/cli-commands case-forms command-clauses
                          subcommand-specs)

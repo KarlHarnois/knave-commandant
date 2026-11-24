@@ -1,0 +1,39 @@
+(use scan/items flag flag->written item tokens->items)
+(use support/fixture serve-spec words)
+(use scan/tokens words->tokens)
+
+(defn items-of (texts)
+  (tokens->items (ref (serve-spec))
+                 (ref (words->tokens (ref (words texts))))))
+
+(deftest a-cluster-splits-into-short-flags
+  (assert (= (items-of (vec "-vo"))
+             (vec (item/flag (flag/short (char "v")))
+                  (item/flag (flag/short (char "o")))))))
+
+(deftest a-cluster-ends-at-an-option-that-takes-a-value
+  (assert (= (items-of (vec "-vp80"))
+             (vec (item/flag (flag/short (char "v")))
+                  (item/flag-with-value (flag/short (char "p"))
+                                        (str "80"))))))
+
+(deftest a-value-option-that-ends-a-cluster-waits-for-the-next-word
+  (assert (= (items-of (vec "-vp"))
+             (vec (item/flag (flag/short (char "v")))
+                  (item/flag (flag/short (char "p")))))))
+
+(deftest a-long-flag-is-written-with-two-dashes
+  (assert (= (flag->written (ref (flag/long (str "port"))))
+             "--port")))
+
+(deftest a-short-flag-is-written-with-one-dash
+  (assert (= (flag->written (ref (flag/short (char "p"))))
+             "-p")))
+
+(deftest a-negative-number-is-a-word
+  (assert (= (items-of (vec "-5"))
+             (vec (item/word (str "-5"))))))
+
+(deftest a-double-dash-stays-a-marker
+  (assert (= (items-of (vec "--" "x"))
+             (vec item/options-end (item/word (str "x"))))))

@@ -1,0 +1,32 @@
+(use spec/argument-order argument-order order-error)
+(use spec/shapes argument-presence)
+(use support/fixture argument-named spec-with-arguments)
+
+(defn order-of (arguments)
+  (argument-order (ref (spec-with-arguments arguments))))
+
+(defn failure-of (arguments)
+  (match (order-of arguments)
+    ((ok _) none)
+    ((err failure) (some failure))))
+
+(deftest a-required-argument-can-follow-a-repeated-one
+  (assert (ok? (order-of
+                 (vec (argument-named "source" argument-presence/one-or-more)
+                      (argument-named "target" argument-presence/required))))))
+
+(deftest only-one-argument-can-repeat
+  (assert (= (failure-of (vec
+                           (argument-named "a" argument-presence/zero-or-more)
+                           (argument-named "b" argument-presence/zero-or-more)))
+             (some (order-error/second-repeated (str "b"))))))
+
+(deftest a-required-argument-cannot-follow-an-optional-one
+  (assert (= (failure-of (vec (argument-named "a" argument-presence/optional)
+                              (argument-named "b" argument-presence/required)))
+             (some (order-error/after-optional (str "b"))))))
+
+(deftest only-a-required-argument-can-follow-a-repeated-one
+  (assert (= (failure-of (vec (argument-named "a" argument-presence/one-or-more)
+                              (argument-named "b" argument-presence/optional)))
+             (some (order-error/after-repeated (str "b"))))))

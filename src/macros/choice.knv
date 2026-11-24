@@ -4,7 +4,7 @@
 (use code empty? first list prepend rest string symbol
           symbol-name)
 
-(use values cli-value)
+(use values/convert cli-value)
 
 (export defchoice)
 

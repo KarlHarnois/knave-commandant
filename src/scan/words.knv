@@ -1,0 +1,78 @@
+(module
+  "Reads one plain word of a command line: an argument, the name of a subcommand, or a request for a command's help.")
+
+(use spec/commands find-subcommand spec-at subcommands?)
+(use errors/cli-error cli-error)
+(use scan/hits stop)
+(use scan/state scan step)
+(use spec/shapes command-spec)
+(use scan/tokens token)
+
+(export scan-word!)
+
+(def help-word "help")
+
+(type scan-word!
+  (fn ((ref command-spec)
+       (ref (vec token))
+       int
+       (mut scan)
+       (ref string))
+    (result step cli-error)))
+
+(defn scan-word! (spec tokens index scan text)
+  (cond
+    ((not (subcommands? spec))
+     (push! (:positionals scan) (clone text))
+     (ok (step/advance (inc index))))
+    ((= (as-str text) help-word)
+     (help-for! spec tokens index scan))
+    (else (enter-subcommand! spec scan text))))
+
+(type enter-subcommand!
+  (fn ((ref command-spec)
+       (mut scan)
+       (ref string))
+    (result step cli-error)))
+
+(defn enter-subcommand! (spec scan text)
+  (match (find-subcommand spec (as-str text))
+    ((some subcommand)
+     (push! (:path scan) (clone text))
+     (ok (step/descend subcommand)))
+    (none (err (cli-error/unknown-command (clone text))))))
+
+(type help-for!
+  (fn ((ref command-spec)
+       (ref (vec token))
+       int
+       (mut scan))
+    (result step cli-error)))
+
+(defn help-for! (spec tokens index scan)
+  (let (names (words-after tokens index))
+    (if (some? (spec-at spec (ref names)))
+      (asked-help-for! scan names)
+      (err (cli-error/unknown-command (join names " "))))))
+
+(type asked-help-for!
+  (fn ((mut scan) (vec string))
+    (result step cli-error)))
+
+(defn asked-help-for! (scan names)
+  (for-each (iter names)
+    (fn (name)
+      (push! (:path scan) (clone name))))
+  (ok (step/halt stop/help-asked)))
+
+(defn words-after (tokens index)
+  (let (names (vec))
+    (for-each (range (inc index) (len tokens))
+      (fn (position)
+        (push-word! (mut names) (at tokens position))))
+    names))
+
+(defn push-word! (names token)
+  (match token
+    ((token/word text) (push! names (clone text)))
+    (_ (do))))
