@@ -1,8 +1,9 @@
 (module
   "Describes each argument and option of a command as one row of its help page.")
 
-(use spec argument-presence command-spec option-spec
-          switch-state value-kind)
+(use spec argument-presence argument-spec command-spec
+          option-presence option-spec switch-state
+          value-kind value-slot)
 
 (export ->help-row argument-rows argument-term command-rows
         help-row option-rows)
@@ -50,10 +51,14 @@
                          :description (str help-command-description))))
     rows))
 
+(type argument-term
+  (fn ((ref argument-spec)) string))
+
 (defn argument-term (argument)
   (match (:presence argument)
-    (required (str "<" (:name argument) ">"))
-    ((defaulted _) (str "[" (:name argument) "]"))))
+    (argument-presence/required (str "<" (:name argument) ">"))
+    ((argument-presence/defaulted _)
+     (str "[" (:name argument) "]"))))
 
 (defn push-version-row! (rows spec)
   (when (some? (:version spec))
@@ -75,8 +80,8 @@
 
 (defn argument-default-note (presence)
   (match presence
-    (required (str))
-    ((defaulted text) (default-note text))))
+    (argument-presence/required (str))
+    ((argument-presence/defaulted text) (default-note text))))
 
 (defn option-row (option)
   (->help-row :term (str (short-part (:short option))
@@ -124,10 +129,13 @@
           (env-note (:env slot))))
     (_ (str))))
 
+(type slot-default-note
+  (fn ((ref value-slot)) string))
+
 (defn slot-default-note (slot)
-  (match (:default slot)
-    ((some text) (default-note text))
-    (none (str))))
+  (match (:presence slot)
+    ((option-presence/defaulted text) (default-note text))
+    (_ (str))))
 
 (defn choices-note (names)
   (if (empty? names)

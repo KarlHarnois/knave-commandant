@@ -1,0 +1,48 @@
+(module
+  "Rejects a `:required` detail on a parameter that cannot be required.")
+
+(use code fail first)
+
+(use macros/parameter-parts argument? defaulted? many-type?
+                            parameter-type
+                            required-parameter? type-named?)
+
+(export check-required-detail)
+
+(def check-required-detail
+  (fn (parameter)
+    (if (required-parameter? parameter)
+      (check-required-argument parameter)
+      parameter)))
+
+(def check-required-argument
+  (fn (parameter)
+    (if (argument? parameter)
+      (fail "an argument cannot take `:required`"
+        (first parameter)
+        "an argument without a `:default` is already required")
+      (check-required-default parameter))))
+
+(def check-required-default
+  (fn (parameter)
+    (if (defaulted? parameter)
+      (fail "an option cannot take both `:required` and `:default`"
+        (first parameter)
+        "drop `:default`, or drop `:required` to make it optional")
+      (check-required-type parameter (parameter-type parameter)))))
+
+(def check-required-type
+  (fn (parameter type)
+    (if (takes-one-value? type)
+      parameter
+      (fail "only an option that takes one value can be required"
+        (first parameter)
+        "a switch, a count or a `vec` option is never required"))))
+
+(def takes-one-value?
+  (fn (type)
+    (if (type-named? type "switch")
+      false
+      (if (type-named? type "count")
+        false
+        (if (many-type? type) false true)))))

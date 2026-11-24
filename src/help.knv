@@ -4,7 +4,9 @@
 (use help-rows argument-rows argument-term command-rows
                option-rows)
 
-(use spec command-spec)
+(use spec command-spec option-required? option-spec
+          value-kind)
+
 (use wrap wrap)
 
 (export spec->help spec->usage)
@@ -12,6 +14,8 @@
 (def options-mark "[OPTIONS]")
 
 (def command-mark "<COMMAND>")
+
+(def long-prefix "--")
 
 (def indent "  ")
 
@@ -57,12 +61,41 @@
 (defn spec->usage (spec)
   (let (parts (vec (clone (:name spec))
                    (str options-mark)))
+    (push-required-options! (mut parts) spec)
     (for-each (iter (:arguments spec))
       (fn (argument)
         (push! parts (argument-term argument))))
     (when (not (empty? (:subcommands spec)))
       (push! parts (str command-mark)))
     (join parts " ")))
+
+(defn push-required-options! (parts spec)
+  (for-each (iter (required-option-terms spec))
+    (fn (term) (push! parts (clone term)))))
+
+(type required-option-terms
+  (fn ((ref command-spec)) (vec string)))
+
+(defn required-option-terms (spec)
+  (collect (map (filter (iter (:options spec))
+                  (fn (option)
+                    (option-required? (deref option))))
+                required-option-term)))
+
+(type required-option-term
+  (fn ((ref option-spec)) string))
+
+(defn required-option-term (option)
+  (str long-prefix
+       (:long option)
+       " <"
+       (placeholder-of (ref (:value option)))
+       ">"))
+
+(defn placeholder-of (value)
+  (match value
+    ((one slot) (clone (:placeholder slot)))
+    (_ (str))))
 
 (defn page-layout (term-width width)
   (->layout

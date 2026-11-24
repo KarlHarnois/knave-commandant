@@ -5,9 +5,9 @@
           list? nth number? rest string string? symbol-name
           symbol? value-eq)
 
-(export argument? default-text defaulted? detail given?
-        many-type? parameter-details parameter-name
-        parameter-type type-named?)
+(export always-set? argument? default-text defaulted? detail
+        given? many-type? parameter-details parameter-name
+        parameter-type required-parameter? type-named?)
 
 (def parameter-name
   (fn (parameter)
@@ -25,6 +25,17 @@
 (def defaulted?
   (fn (parameter)
     (given? (detail (parameter-details parameter) "default"))))
+
+(def required-parameter?
+  (fn (parameter)
+    (type-named? (detail (parameter-details parameter) "required")
+                 "true")))
+
+(def always-set?
+  (fn (parameter)
+    (if (defaulted? parameter)
+      true
+      (required-parameter? parameter))))
 
 (def default-text
   (fn (parameter)

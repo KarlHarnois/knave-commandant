@@ -3,7 +3,7 @@
 
 (use code first list string symbol)
 
-(use macros/parameter-parts argument? defaulted? many-type?
+(use macros/parameter-parts always-set? argument? many-type?
                             parameter-name parameter-type
                             type-named?)
 
@@ -52,7 +52,7 @@
         (quote int)
         (if (many-type? type)
           type
-          (if (defaulted? parameter)
+          (if (always-set? parameter)
             type
             (template (option (unquote type)))))))))
 
@@ -69,6 +69,6 @@
         (template (ok (read-count (unquote found) (unquote name))))
         (if (many-type? type)
           (template (read-many (unquote found) (unquote name)))
-          (if (defaulted? parameter)
+          (if (always-set? parameter)
             (template (read-option (unquote found) (unquote name)))
             (template (read-optional (unquote found) (unquote name)))))))))

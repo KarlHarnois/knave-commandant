@@ -8,13 +8,14 @@
                             defaulted? detail given?
                             many-type? parameter-details
                             parameter-name parameter-type
-                            type-named?)
+                            required-parameter? type-named?)
 
 (use spec ->argument-spec ->option-spec ->switch-slot
-          ->value-slot argument-presence switch-state
-          value-kind)
+          ->value-slot argument-presence option-presence
+          switch-state value-kind)
 
 (use values value-names)
+(use macros/required-detail check-required-detail)
 (use macros/reserved-names check-reserved)
 
 (export parameter-spec)
@@ -22,8 +23,8 @@
 (def parameter-spec
   (fn (parameter)
     (if (argument? parameter)
-      (argument-spec parameter)
-      (option-spec (check-reserved parameter)))))
+      (argument-spec (check-required-detail parameter))
+      (option-spec (check-reserved (check-required-detail parameter))))))
 
 (def argument-spec
   (fn (parameter)
@@ -79,7 +80,7 @@
     (template (value-kind/one
                 (->value-slot
                   :placeholder (str (unquote (parameter-name parameter)))
-                  :default (unquote (default-form parameter))
+                  :presence (unquote (option-presence-form parameter))
                   :env (unquote (env-form parameter))
                   :choices (value-names (ref (the (option (unquote type))
                                                   none))))))))
@@ -91,11 +92,18 @@
       (quote switch-state/on)
       (quote switch-state/off))))
 
-(def default-form
+(def option-presence-form
   (fn (parameter)
     (if (defaulted? parameter)
-      (template (some (str (unquote (default-text parameter)))))
-      (quote none))))
+      (template (option-presence/defaulted (str (unquote (default-text
+                                                           parameter)))))
+      (undefaulted-presence parameter))))
+
+(def undefaulted-presence
+  (fn (parameter)
+    (if (required-parameter? parameter)
+      (quote option-presence/required)
+      (quote option-presence/optional))))
 
 (def env-form
   (fn (parameter)

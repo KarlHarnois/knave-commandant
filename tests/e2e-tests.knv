@@ -4,7 +4,8 @@
 
 (use support/fixture environment-with no-environment
                      no-words parse-texts parse-with
-                     serve-spec site-spec usage-error)
+                     serve-spec site-spec spec-with-token
+                     usage-error)
 
 (defn option-after (texts long)
   (match (parse-texts texts)
@@ -129,3 +130,15 @@
              (str "error: a command is required\n\n"
                   "Usage: site page [OPTIONS] <COMMAND>\n\n"
                   "For more information, try `site page --help`."))))
+
+(deftest a-missing-required-option-reports-the-usage-that-names-it
+  (assert (= (match (parse-with (spec-with-token)
+                                (no-environment)
+                                (no-words))
+               ((usage-error failure)
+                (failure-report (ref (spec-with-token))
+                                (ref failure)))
+               (_ (str)))
+             (str "error: option `--token` is required\n\n"
+                  "Usage: deploy [OPTIONS] --token <token>\n\n"
+                  "For more information, try `deploy --help`."))))
