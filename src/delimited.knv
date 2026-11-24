@@ -1,0 +1,25 @@
+(module
+  "Splits the values of a list option at its delimiter, so `--tag a,b` gives two values.")
+
+(export list-texts)
+
+(defn list-texts (texts delimiter)
+  (match delimiter
+    ((some separator) (split-all texts separator))
+    (none texts)))
+
+(type split-all
+  (fn ((vec string) char) (vec string)))
+
+(defn split-all (texts separator)
+  (let (parts (vec))
+    (for-each (iter texts)
+      (fn (text)
+        (push-parts! (mut parts) (as-str text) separator)))
+    parts))
+
+(defn push-parts! (parts text separator)
+  (for-each (split text separator)
+    (fn (part)
+      (when (not (empty? (trim part)))
+        (push! parts (str (trim part)))))))

@@ -21,7 +21,8 @@
 (defn spec-with-undescribed-option ()
   (let (spec (serve-spec))
     (push! (:options spec)
-           (->option-spec :long (str "quiet")
+           (->option-spec :conflicts-with (vec)
+                          :long (str "quiet")
                           :short none
                           :about (str "")
                           :value value-kind/count))

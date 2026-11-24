@@ -3,15 +3,16 @@
 (use spec ->argument-spec ->option-spec argument-presence
           value-kind)
 
-(use support/fixture command-spec-named serve-spec
-                     site-spec)
+(use support/fixture command-spec-named serve-spec site-spec
+                     spec-with-lists)
 
 (use validate spec-error spec-error->message validate-spec)
 
 (defn with-option (long short)
   (let (spec (serve-spec))
     (push! (:options spec)
-           (->option-spec :long (str long)
+           (->option-spec :conflicts-with (vec)
+                          :long (str long)
                           :short short
                           :about (str "")
                           :value value-kind/count))
@@ -74,7 +75,8 @@
 (deftest a-command-cannot-reuse-a-global-option
   (let (spec (site-spec))
     (push! (:options spec)
-           (->option-spec :long (str "port")
+           (->option-spec :conflicts-with (vec)
+                          :long (str "port")
                           :short none
                           :about (str "")
                           :value value-kind/count))
@@ -84,3 +86,14 @@
 (deftest a-required-argument-cannot-follow-a-default
   (assert (= (unwrap-err (validate-spec (ref (with-argument "extra"))))
              (spec-error/misordered-argument (order-error/after-optional (str "extra"))))))
+
+(deftest a-conflict-must-name-an-option-of-the-command
+  (let (spec (spec-with-lists))
+    (push! (:options spec)
+           (->option-spec :conflicts-with (vec (str "nope"))
+                          :long (str "quiet")
+                          :short none
+                          :about (str "")
+                          :value value-kind/count))
+    (assert (= (unwrap-err (validate-spec (ref spec)))
+               (spec-error/unknown-conflict (str "nope"))))))

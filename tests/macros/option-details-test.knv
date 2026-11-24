@@ -1,0 +1,32 @@
+(use lib ->environment ->option-conflict ->usage-failure
+         cli-error defcommand outcome parse-command)
+
+(export matches->add-item)
+
+(defcommand add-item "Adds an item."
+  (:after (vec u32)
+          :delimiter ","
+          :about "The items it comes after")
+  (:description string :conflicts-with description-file)
+  (:description-file string))
+
+(defn add-after (texts)
+  (parse-command add-item
+                 (->environment :variables (vec))
+                 (collect (map (iter texts)
+                            (fn (text) (str (deref text)))))))
+
+(deftest a-delimited-vec-option-reads-each-part
+  (assert (= (map-ok (add-after (vec "--after" "1,2" "--after" "3"))
+               (fn (item) (clone (:after item))))
+             (ok (vec 1 2 3)))))
+
+(deftest conflicting-options-are-a-usage-error
+  (assert (= (map-ok (add-after
+                       (vec "--description" "x" "--description-file" "y"))
+                     (fn (_) 0))
+             (err (outcome/usage-error
+                    (->usage-failure :path (vec)
+                                     :error (cli-error/conflicting-options
+                                              (->option-conflict :written (str "--description")
+                                                                 :other (str "--description-file")))))))))

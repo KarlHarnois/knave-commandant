@@ -30,7 +30,8 @@
 (defn spec-with-help-option ()
   (let (spec (serve-spec))
     (push! (:options spec)
-           (->option-spec :long (str "help")
+           (->option-spec :conflicts-with (vec)
+                          :long (str "help")
                           :short none
                           :about (str "Shadows the built-in help")
                           :value value-kind/count))

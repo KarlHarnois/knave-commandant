@@ -1,0 +1,18 @@
+(use lib defcommand)
+
+(export matches->listed)
+
+(defcommand listed "Lists names."
+  (:quiet switch :conflicts-with (verbose loud))
+  (:verbose count)
+  (:loud switch :env "LISTED_LOUD"))
+
+(defn option-at (index)
+  (clone (at (:options (listed-spec)) index)))
+
+(deftest a-list-of-names-becomes-a-vector
+  (assert (= (:conflicts-with (option-at 0))
+             (vec (str "verbose") (str "loud")))))
+
+(deftest an-absent-list-is-empty
+  (assert (empty? (:conflicts-with (option-at 1)))))

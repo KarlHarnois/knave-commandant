@@ -1,0 +1,60 @@
+(module
+  "Finds two options given together that their spec says cannot be, and a conflict that names an option the command does not have.")
+
+(use errors ->option-conflict cli-error option-conflict)
+(use scan-state occurrence)
+(use spec command-spec find-long)
+
+(export check-conflicts unknown-conflict)
+
+(defn check-conflicts (spec occurrences)
+  (match (first (filter-conflicts spec occurrences))
+    ((some conflict)
+     (err (cli-error/conflicting-options (clone conflict))))
+    (none (ok (do)))))
+
+(type filter-conflicts
+  (fn ((ref command-spec)
+       (ref (vec occurrence)))
+    (vec option-conflict)))
+
+(defn filter-conflicts (spec occurrences)
+  (let (found (vec))
+    (for-each (iter (:options spec))
+      (fn (option)
+        (for-each (iter (:conflicts-with option))
+          (fn (other)
+            (push-conflict! (mut found)
+                            (first-written occurrences (:long option))
+                            (first-written occurrences other))))))
+    found))
+
+(defn push-conflict! (found written other)
+  (match (pair written other)
+    ((pair (some written) (some other))
+     (push! found
+            (->option-conflict :written written :other other)))
+    (_ (do))))
+
+(type first-written
+  (fn ((ref (vec occurrence)) (ref string))
+    (option string)))
+
+(defn first-written (occurrences long)
+  (map-some (find (iter occurrences)
+              (fn (given) (= (:long given) long)))
+            (fn (given) (clone (:written given)))))
+
+(type unknown-conflict
+  (fn ((ref command-spec))
+    (option string)))
+
+(defn unknown-conflict (spec)
+  (let (unknown (vec))
+    (for-each (iter (:options spec))
+      (fn (option)
+        (for-each (iter (:conflicts-with option))
+          (fn (other)
+            (when (none? (find-long spec (as-str other)))
+              (push! unknown (clone other)))))))
+    (map-some (first unknown) clone)))

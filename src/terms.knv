@@ -56,7 +56,13 @@
     ((switch _) (str))
     (count (str "..."))
     ((one slot) (value-term (:placeholder slot)))
-    ((many placeholder) (str (value-term placeholder) "..."))))
+    ((many slot) (list-term slot))))
+
+(defn list-term (slot)
+  (match (:delimiter slot)
+    ((some separator)
+     (str (value-term (:placeholder slot)) separator "..."))
+    (none (str (value-term (:placeholder slot)) "..."))))
 
 (defn value-term (name)
   (str " <" (name->placeholder (as-str name)) ">"))

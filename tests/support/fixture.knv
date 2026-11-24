@@ -6,15 +6,16 @@
 (use tokens words->tokens)
 
 (use lib ->argument-spec ->command-spec ->environment
-         ->option-spec ->switch-slot ->value-slot ->variable
-         argument-presence option-presence outcome parse
-         switch-state value-kind)
+         ->list-slot ->option-spec ->switch-slot
+         ->value-slot ->variable argument-presence
+         option-presence outcome parse switch-state
+         value-kind)
 
 (export argument-named command-spec-named environment-with
         no-environment no-words parse-texts parse-with
         scanned-texts serve-spec site-spec spec-requiring
         spec-with-arguments spec-with-choices
-        spec-with-token usage-error words)
+        spec-with-lists spec-with-token usage-error words)
 
 (defn parse-texts (texts)
   (parse-with (serve-spec) (no-environment) texts))
@@ -39,6 +40,7 @@
                                                                               "."))))
     :options (vec
                (->option-spec
+                 :conflicts-with (vec)
                  :long (str "port")
                  :short (some (char "p"))
                  :about (str "The port to listen on")
@@ -48,26 +50,32 @@
                             :presence (option-presence/defaulted (str "8000"))
                             :env (vec (str "SERVE_PORT") (str "PORT"))
                             :choices (vec))))
-               (->option-spec :long (str "open")
+               (->option-spec :conflicts-with (vec)
+                              :long (str "open")
                               :short (some (char "o"))
                               :about (str "Opens the browser")
                               :value (value-kind/switch
                                        (->switch-slot :initial switch-state/off
                                                       :env (vec (str "SERVE_OPEN")))))
-               (->option-spec :long (str "color")
+               (->option-spec :conflicts-with (vec)
+                              :long (str "color")
                               :short none
                               :about (str "Colors the log")
                               :value (value-kind/switch
                                        (->switch-slot :initial switch-state/on
                                                       :env (vec))))
-               (->option-spec :long (str "verbose")
+               (->option-spec :conflicts-with (vec)
+                              :long (str "verbose")
                               :short (some (char "v"))
                               :about (str "Logs more")
                               :value value-kind/count)
-               (->option-spec :long (str "tag")
+               (->option-spec :conflicts-with (vec)
+                              :long (str "tag")
                               :short (some (char "t"))
                               :about (str "Tags the log")
-                              :value (value-kind/many (str "tag"))))
+                              :value (value-kind/many (->list-slot
+                                                        :placeholder (str "tag")
+                                                        :delimiter none))))
     :subcommands (vec)))
 
 (defn spec-requiring (name)
@@ -96,7 +104,8 @@
                   :about (str "Prints the log.")
                   :version none
                   :arguments (vec)
-                  :options (vec (->option-spec :long (str "format")
+                  :options (vec (->option-spec :conflicts-with (vec)
+                                               :long (str "format")
                                                :short none
                                                :about (str "How to print")
                                                :value (value-kind/one
@@ -121,7 +130,8 @@
                   :about (str "Builds and serves a site.")
                   :version (some (str "1.4.0"))
                   :arguments (vec)
-                  :options (vec (->option-spec :long (str "verbose")
+                  :options (vec (->option-spec :conflicts-with (vec)
+                                               :long (str "verbose")
                                                :short (some (char "v"))
                                                :about (str "Logs more")
                                                :value value-kind/count))
@@ -144,6 +154,7 @@
                                                    :presence (argument-presence/defaulted
                                                                (str "."))))
                   :options (vec (->option-spec
+                                  :conflicts-with (vec)
                                   :long (str "port")
                                   :short (some (char "p"))
                                   :about (str "A port")
@@ -174,7 +185,8 @@
                   :about (str "Deploys the site.")
                   :version none
                   :arguments (vec)
-                  :options (vec (->option-spec :long (str "token")
+                  :options (vec (->option-spec :conflicts-with (vec)
+                                               :long (str "token")
                                                :short none
                                                :about (str "The API token")
                                                :value (value-kind/one
@@ -197,3 +209,32 @@
                   :arguments arguments
                   :options (vec)
                   :subcommands (vec)))
+
+(defn spec-with-lists ()
+  (->command-spec
+    :name (str "add")
+    :about (str "Adds an item.")
+    :version none
+    :arguments (vec)
+    :options (vec (->option-spec :conflicts-with (vec)
+                                 :long (str "after")
+                                 :short none
+                                 :about (str "The items it comes after")
+                                 :value (value-kind/many (->list-slot
+                                                           :placeholder (str "after")
+                                                           :delimiter (some (char
+                                                                              ",")))))
+                  (text-option "description" (vec (str "description-file")))
+                  (text-option "description-file" (vec)))
+    :subcommands (vec)))
+
+(defn text-option (long conflicts)
+  (->option-spec :conflicts-with conflicts
+                 :long (str long)
+                 :short none
+                 :about (str "")
+                 :value (value-kind/one (->value-slot
+                                          :placeholder (str long)
+                                          :presence option-presence/optional
+                                          :env (vec)
+                                          :choices (vec)))))

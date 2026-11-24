@@ -1,13 +1,14 @@
 (module
   "Describes a command: its arguments, its options, and how each option takes a value.")
 
-(export ->argument-spec ->command-spec ->option-spec
-        ->switch-slot ->value-slot argument-presence
-        argument-spec command-spec find-long find-short
-        name->placeholder option-presence option-required?
-        option-spec repeated? required? short-takes-value?
-        switch-slot switch-state switch? takes-value?
-        value-kind value-slot)
+(export ->argument-spec ->command-spec ->list-slot
+        ->option-spec ->switch-slot ->value-slot
+        argument-presence argument-spec command-spec
+        find-long find-short list-slot name->placeholder
+        option-presence option-required? option-spec
+        repeated? required? short-takes-value? switch-slot
+        switch-state switch? takes-value? value-kind
+        value-slot)
 
 (defstruct command-spec
   :name string
@@ -33,13 +34,18 @@
   :long string
   :short (option char)
   :about string
-  :value value-kind)
+  :value value-kind
+  :conflicts-with (vec string))
 
 (defenum value-kind
   (switch switch-slot)
   count
   (one value-slot)
-  (many string))
+  (many list-slot))
+
+(defstruct list-slot
+  :placeholder string
+  :delimiter (option char))
 
 (defstruct switch-slot
   :initial switch-state
@@ -60,7 +66,8 @@
   required
   (defaulted string))
 
-(defn name->placeholder (name) (upper-case name))
+(defn name->placeholder (name)
+  (upper-case (as-str (join (collect (split name "-")) "_"))))
 
 (type find-long
   (fn ((ref command-spec) (ref str))

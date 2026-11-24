@@ -1,4 +1,5 @@
-(use errors ->invalid-text cli-error error->message)
+(use errors ->invalid-text ->option-conflict cli-error
+            error->message)
 
 (deftest names-an-unknown-option
   (assert (= (error->message (cli-error/unknown-option (str "--prot")))
@@ -41,3 +42,9 @@
 (deftest names-a-missing-command
   (assert (= (error->message cli-error/missing-command)
              "a command is required")))
+
+(deftest names-two-options-that-conflict
+  (assert (= (error->message (cli-error/conflicting-options
+                               (->option-conflict :written (str "-d")
+                                                  :other (str "--file"))))
+             "option `-d` cannot be used with `--file`")))
