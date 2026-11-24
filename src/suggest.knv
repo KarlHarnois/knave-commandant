@@ -1,0 +1,67 @@
+(module
+  "Finds the known name closest to a mistyped one, for a \"did you mean\" tip.")
+
+(export closest-name edit-distance)
+
+(defstruct candidate
+  :name string
+  :distance int)
+
+(defn closest-name (written names)
+  (map-some (reduce (close-candidates written names) none keep-nearer)
+            candidate->name))
+
+(defn edit-distance (left right)
+  (let (target (collect (chars right)))
+    (last-cell (reduce (chars left) (collect (range 0 (inc (len target))))
+                 (fn (row character)
+                   (next-row row character (ref target)))))))
+
+(defn close-candidates (written names)
+  (filter (map (iter names)
+            (fn (name)
+              (->candidate :name (clone name)
+                           :distance (edit-distance written (as-str name)))))
+          (fn (found)
+            (close-enough? written (:distance found)))))
+
+(defn close-enough? (written distance)
+  (<= distance
+      (max 1 (/ (len written) 2))))
+
+(defn keep-nearer (best next)
+  (match best
+    ((some found) (some (nearer found next)))
+    (none (some next))))
+
+(defn nearer (best next)
+  (if (< (:distance next) (:distance best))
+    next best))
+
+(defn candidate->name (found)
+  (let-match ((candidate name _) found) name))
+
+(defn last-cell (row)
+  (deref (at row (dec (len row)))))
+
+(defn next-row (row character target)
+  (let (next (vec (inc (deref (at row 0)))))
+    (for-each (range 1 (inc (len target)))
+      (fn (column)
+        (push! next
+               (cell-cost (ref row)
+                          (ref next)
+                          column
+                          (substitution-cost character target column)))))
+    next))
+
+(defn substitution-cost (character target column)
+  (if (= (deref (at target (dec column)))
+         character)
+    0 1))
+
+(defn cell-cost (row next column substitution)
+  (min (inc (deref (at row column)))
+       (inc (deref (at next (dec column))))
+       (+ (deref (at row (dec column)))
+          substitution)))

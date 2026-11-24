@@ -1,5 +1,5 @@
-(use lib argument-text cli-error matched-value option-value
-         outcome switch-state)
+(use lib argument-text cli-error error-report matched-value
+         option-value outcome spec->help switch-state)
 
 (use support/fixture environment-with no-words parse-texts
                      parse-with serve-spec)
@@ -24,6 +24,13 @@
 
 (defn port-text (text)
   (some (matched-value/one (some (str text)))))
+
+(defn report-after (texts)
+  (match (parse-texts texts)
+    ((usage-error failure)
+     (error-report (ref (serve-spec))
+                   (ref failure)))
+    (_ (str))))
 
 (deftest every-command-takes-short-and-long-help
   (assert (= (parse-texts (vec "serve-me" "-h")) outcome/help))
@@ -76,3 +83,11 @@
 (deftest a-mistyped-option-is-a-usage-error
   (assert (= (parse-texts (vec "--prot" "80"))
              (outcome/usage-error (cli-error/unknown-option (str "--prot"))))))
+
+(deftest a-mistyped-option-reports-the-closest-option
+  (assert (starts-with? (as-str (report-after (vec "--prot" "80")))
+                        "error: unknown option `--prot`\n\n  tip: a similar option exists: `--port`")))
+
+(deftest the-help-page-lists-every-option-and-the-builtins
+  (assert (= (count (lines (as-str (spec->help (ref (serve-spec)) 80))))
+             16)))

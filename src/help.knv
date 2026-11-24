@@ -1,0 +1,99 @@
+(module
+  "Writes a command's usage line and its help page, laid out in columns that fit a width.")
+
+(use help-rows argument-rows argument-term option-rows)
+(use spec command-spec)
+(use wrap wrap)
+
+(export spec->help spec->usage)
+
+(def options-mark "[OPTIONS]")
+
+(def indent "  ")
+
+(def column-gap "  ")
+
+(def minimum-description-width 20)
+
+(def section-break "\n\n")
+
+(def line-break "\n")
+
+(defstruct layout
+  :term-width int
+  :description-width int)
+
+(defn spec->help (spec width)
+  (let (arguments (argument-rows spec)
+        options (option-rows spec)
+        layout (page-layout (max (widest-term (ref arguments))
+                                 (widest-term (ref options)))
+                            width)
+        sections (vec (clone (:about spec))
+                      (str "Usage: " (spec->usage spec))))
+    (push-section! (mut sections)
+                   "Arguments:"
+                   (ref arguments)
+                   layout)
+    (push-section! (mut sections)
+                   "Options:"
+                   (ref options)
+                   layout)
+    (join sections section-break)))
+
+(type spec->usage
+  (fn ((ref command-spec)) string))
+
+(defn spec->usage (spec)
+  (let (parts (vec (clone (:name spec))
+                   (str options-mark)))
+    (for-each (iter (:arguments spec))
+      (fn (argument)
+        (push! parts (argument-term argument))))
+    (join parts " ")))
+
+(defn page-layout (term-width width)
+  (->layout
+    :term-width term-width
+    :description-width (max
+                         minimum-description-width
+                         (- width (len indent) term-width (len column-gap)))))
+
+(defn push-section! (sections title rows layout)
+  (when (not (empty? rows))
+    (push! sections
+           (str title line-break (rows->text rows layout)))))
+
+(defn rows->text (rows layout)
+  (join (collect (map (iter rows)
+                   (fn (row) (row->text row layout))))
+        line-break))
+
+(defn widest-term (rows)
+  (unwrap-or (max (map (iter rows)
+                    (fn (row) (len (:term row)))))
+             0))
+
+(defn row->text (row layout)
+  (let (lines (wrap (as-str (:description row))
+                    (:description-width layout))
+        term (padded (:term row) (:term-width layout)))
+    (join (collect (map (enumerate (iter lines))
+                     (fn (entry) (row-line (ref term) entry))))
+          line-break)))
+
+(defn row-line (term entry)
+  (let-match ((pair index line) entry)
+    (str indent (term-or-blank term index) column-gap line)))
+
+(defn term-or-blank (term index)
+  (if (= index 0)
+    (clone term)
+    (spaces (len term))))
+
+(defn padded (text width)
+  (str text (spaces (- width (len text)))))
+
+(defn spaces (count)
+  (reduce (range 0 count) (str)
+    (fn (text _) (str text " "))))

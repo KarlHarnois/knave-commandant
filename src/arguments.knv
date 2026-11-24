@@ -10,9 +10,9 @@
 (export resolve-arguments)
 
 (defn resolve-arguments (spec positionals)
-  (let-try (_ (check-no-extra spec positionals)
-            _ (check-no-missing spec positionals))
-    (ok (argument-matches spec positionals))))
+  (try (check-no-extra spec positionals))
+  (try (check-no-missing spec positionals))
+  (ok (argument-matches spec positionals)))
 
 (type check-no-extra
   (fn ((ref command-spec) (ref (vec string)))

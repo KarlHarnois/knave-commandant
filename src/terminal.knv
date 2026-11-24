@@ -1,0 +1,22 @@
+(module
+  "Reads the terminal width the help page wraps to from the environment.")
+
+(use environment first-set)
+
+(export terminal-width)
+
+(def default-width 80)
+
+(def width-variable "COLUMNS")
+
+(defn terminal-width (environment)
+  (unwrap-or (then-some (first-set environment
+                                   (ref (vec (str width-variable))))
+                        text->width)
+             default-width))
+
+(defn text->width (text)
+  (match (the (result int _)
+              (parse (as-str text)))
+    ((ok width) (some width))
+    ((err _) none)))

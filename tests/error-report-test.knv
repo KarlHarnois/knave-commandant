@@ -1,0 +1,38 @@
+(use error-report error-report)
+(use errors cli-error)
+(use support/fixture serve-spec spec-requiring)
+
+(defn report-for (failure)
+  (error-report (ref (serve-spec))
+                (ref failure)))
+
+(defn contains-text? (text part)
+  (> (count (split (as-str text) part)) 1))
+
+(deftest a-mistyped-option-gets-a-tip
+  (assert (= (report-for (cli-error/unknown-option (str "--prot")))
+             (str "error: unknown option `--prot`\n\n"
+                  "  tip: a similar option exists: `--port`\n\n"
+                  "Usage: serve [OPTIONS] [root]\n\n"
+                  "For more information, try `serve --help`."))))
+
+(deftest a-distant-option-gets-no-tip
+  (assert (= (report-for (cli-error/unknown-option (str "--zzzzzz")))
+             (str "error: unknown option `--zzzzzz`\n\n"
+                  "Usage: serve [OPTIONS] [root]\n\n"
+                  "For more information, try `serve --help`."))))
+
+(deftest a-builtin-can-be-the-tip
+  (assert (contains-text? (report-for (cli-error/unknown-option (str "--hepl")))
+                          "`--help`")))
+
+(deftest version-is-no-tip-without-a-version
+  (assert (not (contains-text? (error-report (ref (spec-requiring "file"))
+                                             (ref (cli-error/unknown-option (str
+                                                                              "--versoin"))))
+                               "tip"))))
+
+(deftest a-short-option-gets-no-tip
+  (assert (not (contains-text? (report-for (cli-error/unknown-option (str
+                                                                       "-x")))
+                               "tip"))))

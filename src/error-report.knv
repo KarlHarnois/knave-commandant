@@ -1,0 +1,59 @@
+(module
+  "Writes a usage error: the problem, a tip when a known option is close, the usage line, and where to find help.")
+
+(use errors cli-error error->message)
+(use help spec->usage)
+(use spec command-spec)
+(use suggest closest-name)
+
+(export error-report)
+
+(def long-prefix "--")
+
+(def help-long "help")
+
+(def version-long "version")
+
+(def part-break "\n\n")
+
+(defn error-report (spec failure)
+  (let (parts (vec (str "error: " (error->message failure))))
+    (push-tip! (mut parts) spec failure)
+    (push! parts (str "Usage: " (spec->usage spec)))
+    (push! parts
+           (str "For more information, try `" (:name spec) " --help`."))
+    (join parts part-break)))
+
+(defn push-tip! (parts spec failure)
+  (match (tip spec failure)
+    ((some text) (push! parts text))
+    (none (do))))
+
+(defn tip (spec failure)
+  (match failure
+    ((unknown-option written)
+     (option-tip spec (as-str written)))
+    (_ none)))
+
+(defn option-tip (spec written)
+  (map-some (closest-long spec written)
+    (fn (name)
+      (str "  tip: a similar option exists: `" long-prefix
+           name "`"))))
+
+(defn closest-long (spec written)
+  (if (starts-with? written long-prefix)
+    (closest-name (subs written (len long-prefix) (len written))
+                  (ref (long-names spec)))
+    none))
+
+(type long-names
+  (fn ((ref command-spec)) (vec string)))
+
+(defn long-names (spec)
+  (let (names (collect (map (iter (:options spec))
+                         (fn (option) (clone (:long option))))))
+    (push! names (str help-long))
+    (when (some? (:version spec))
+      (push! names (str version-long)))
+    names))
