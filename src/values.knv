@@ -3,10 +3,13 @@
 
 (use errors ->invalid-text cli-error)
 (use spec name->placeholder)
-(use matches argument-text many-texts matches one-text)
 
-(export cli-value from-text read-argument read-many
-        read-option read-optional value-names)
+(use matches argument-text argument-texts many-texts matches
+             one-text)
+
+(export cli-value from-text parsed read-argument
+        read-arguments read-many read-option read-optional
+        read-optional-argument value-names)
 
 (def long-prefix "--")
 
@@ -17,62 +20,6 @@
   (value-names
     (fn ((ref (option self))) (vec string))))
 
-(impl cli-value string
-  (from-text (text) (some (str text)))
-
-  (value-names (_) (vec)))
-
-(impl cli-value bool
-  (from-text (text) (parsed text))
-
-  (value-names (_)
-    (vec (str "true") (str "false"))))
-
-(impl cli-value char
-  (from-text (text) (parsed text))
-
-  (value-names (_) (vec)))
-
-(impl cli-value int
-  (from-text (text) (parsed text))
-
-  (value-names (_) (vec)))
-
-(impl cli-value i32
-  (from-text (text) (parsed text))
-
-  (value-names (_) (vec)))
-
-(impl cli-value u8
-  (from-text (text) (parsed text))
-
-  (value-names (_) (vec)))
-
-(impl cli-value u16
-  (from-text (text) (parsed text))
-
-  (value-names (_) (vec)))
-
-(impl cli-value u32
-  (from-text (text) (parsed text))
-
-  (value-names (_) (vec)))
-
-(impl cli-value u64
-  (from-text (text) (parsed text))
-
-  (value-names (_) (vec)))
-
-(impl cli-value usize
-  (from-text (text) (parsed text))
-
-  (value-names (_) (vec)))
-
-(impl cli-value float
-  (from-text (text) (parsed text))
-
-  (value-names (_) (vec)))
-
 (type read-argument
   (where ((t cli-value))
     (fn ((ref matches) (ref str))
@@ -80,9 +27,31 @@
 
 (defn read-argument (found name)
   (match (argument-text found name)
-    ((some text)
-     (converted text (str "<" (name->placeholder name) ">")))
+    ((some text) (converted text (argument-written name)))
     (none (err (cli-error/missing-argument (str name))))))
+
+(type read-optional-argument
+  (where ((t cli-value))
+    (fn ((ref matches) (ref str))
+      (result (option t) cli-error))))
+
+(defn read-optional-argument (found name)
+  (match (argument-text found name)
+    ((some text)
+     (map-ok (converted text (argument-written name)) some))
+    (none (ok none))))
+
+(type read-arguments
+  (where ((t cli-value))
+    (fn ((ref matches) (ref str))
+      (result (vec t) cli-error))))
+
+(defn read-arguments (found name)
+  (converted-all (argument-texts found name)
+                 (argument-written name)))
+
+(defn argument-written (name)
+  (str "<" (name->placeholder name) ">"))
 
 (type read-option
   (where ((t cli-value))
@@ -112,14 +81,21 @@
       (result (vec t) cli-error))))
 
 (defn read-many (found long)
-  (let (texts (many-texts found long)
-        written (str long-prefix long))
-    (loop (index 0
-           values (vec))
-      (if (>= index (len texts))
-        (ok values)
-        (let-try (value (converted (at texts index) (clone written)))
-          (recur (inc index) (appended values value)))))))
+  (converted-all (many-texts found long)
+                 (str long-prefix long)))
+
+(type converted-all
+  (where ((t cli-value))
+    (fn ((vec string) string)
+      (result (vec t) cli-error))))
+
+(defn converted-all (texts written)
+  (loop (index 0
+         values (vec))
+    (if (>= index (len texts))
+      (ok values)
+      (let-try (value (converted (at texts index) (clone written)))
+        (recur (inc index) (appended values value))))))
 
 (type converted
   (where ((t cli-value))

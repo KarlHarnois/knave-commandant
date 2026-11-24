@@ -1,3 +1,5 @@
+(use argument-order order-error)
+
 (use spec ->argument-spec ->option-spec argument-presence
           value-kind)
 
@@ -78,3 +80,7 @@
                           :value value-kind/count))
     (assert (= (unwrap-err (validate-spec (ref spec)))
                (spec-error/repeated-long (str "port"))))))
+
+(deftest a-required-argument-cannot-follow-a-default
+  (assert (= (unwrap-err (validate-spec (ref (with-argument "extra"))))
+             (spec-error/misordered-argument (order-error/after-optional (str "extra"))))))

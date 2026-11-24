@@ -70,8 +70,8 @@
 
 (defn argument-default-note (presence)
   (match presence
-    (argument-presence/required (str))
-    ((argument-presence/defaulted text) (default-note text))))
+    ((argument-presence/defaulted text) (default-note text))
+    (_ (str))))
 
 (defn option-row (option)
   (->help-row :term (option-term option)

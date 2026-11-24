@@ -6,8 +6,9 @@
           symbol? value-eq)
 
 (export always-set? argument? default-text defaulted? detail
-        given? many-type? parameter-details parameter-name
-        parameter-type required-parameter? type-named?)
+        given? many-type? option-type? parameter-details
+        parameter-name parameter-type required-parameter?
+        type-named?)
 
 (def parameter-name
   (fn (parameter)
@@ -60,6 +61,12 @@
   (fn (type)
     (if (list? type)
       (type-named? (first type) "vec")
+      false)))
+
+(def option-type?
+  (fn (type)
+    (if (list? type)
+      (type-named? (first type) "option")
       false)))
 
 (def type-named?

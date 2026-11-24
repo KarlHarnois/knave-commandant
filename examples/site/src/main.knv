@@ -24,10 +24,19 @@
 (defcommand page-add "Adds a page."
   (title string :about "The title of the page"))
 
-(defcommand page-list "Lists the pages.")
+(defcommand page-list "Lists the pages."
+  (filter (option string)
+          :about "Lists only the pages whose title holds it"))
+
+(defcommand page-remove "Removes pages."
+  (titles (vec string)
+          :required true
+          :about "The titles of the pages to remove"))
 
 (defcli page "Manages the pages."
-  (commands (add page-add) (list page-list)))
+  (commands (add page-add)
+            (list page-list)
+            (remove page-remove)))
 
 (defcli site "Builds and serves a static site."
   :version "1.4.0"

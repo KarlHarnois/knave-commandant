@@ -4,14 +4,15 @@
 (use code first list string symbol)
 
 (use macros/parameter-parts always-set? argument? many-type?
-                            parameter-name parameter-type
-                            type-named?)
+                            option-type? parameter-name
+                            parameter-type type-named?)
 
 (use matches read-count read-switch)
 (use spec switch-state)
 
-(use values read-argument read-many read-option
-            read-optional)
+(use values read-argument read-arguments read-many
+            read-option read-optional
+            read-optional-argument)
 
 (export matches-name parameter-binding parameter-field
         parameter-reader)
@@ -29,11 +30,26 @@
 (def parameter-reader
   (fn (parameter)
     (if (argument? parameter)
-      (template (read-argument (unquote (matches-name (first parameter)))
-                               (unquote (parameter-name parameter))))
+      (argument-reader parameter (parameter-type parameter))
       (option-reader parameter
                      (parameter-type parameter)
                      (parameter-name parameter)))))
+
+(def argument-reader
+  (fn (parameter type)
+    (if (many-type? type)
+      (template (read-arguments (unquote (matches-name (first parameter)))
+                                (unquote (parameter-name parameter))))
+      (single-argument-reader parameter type))))
+
+(def single-argument-reader
+  (fn (parameter type)
+    (if (option-type? type)
+      (template (read-optional-argument (unquote (matches-name (first
+                                                                 parameter)))
+                                        (unquote (parameter-name parameter))))
+      (template (read-argument (unquote (matches-name (first parameter)))
+                               (unquote (parameter-name parameter)))))))
 
 (def matches-name
   (fn (anchor) (symbol anchor "command-line-matches")))

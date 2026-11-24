@@ -10,10 +10,11 @@
          argument-presence option-presence outcome parse
          switch-state value-kind)
 
-(export command-spec-named environment-with no-environment
-        no-words parse-texts parse-with scanned-texts
-        serve-spec site-spec spec-requiring
-        spec-with-choices spec-with-token usage-error words)
+(export argument-named command-spec-named environment-with
+        no-environment no-words parse-texts parse-with
+        scanned-texts serve-spec site-spec spec-requiring
+        spec-with-arguments spec-with-choices
+        spec-with-token usage-error words)
 
 (defn parse-texts (texts)
   (parse-with (serve-spec) (no-environment) texts))
@@ -182,4 +183,17 @@
                                                           :presence option-presence/required
                                                           :env (vec (str "DEPLOY_TOKEN"))
                                                           :choices (vec)))))
+                  :subcommands (vec)))
+
+(defn argument-named (name presence)
+  (->argument-spec :name (str name)
+                   :about (str "")
+                   :presence presence))
+
+(defn spec-with-arguments (arguments)
+  (->command-spec :name (str "copy")
+                  :about (str "Copies files.")
+                  :version none
+                  :arguments arguments
+                  :options (vec)
                   :subcommands (vec)))

@@ -1,8 +1,9 @@
 (module
-  "Pairs the plain words of a command line with the command's arguments, in order.")
+  "Pairs the plain words of a command line with the command's arguments, and reports a word too many or an argument left out.")
 
 (use errors cli-error)
 (use matches ->argument-match argument-match)
+(use shares share shares-of split-of taken-total)
 
 (use spec argument-presence argument-spec command-spec
           required?)
@@ -10,70 +11,76 @@
 (export resolve-arguments)
 
 (defn resolve-arguments (spec positionals)
-  (try (check-no-extra spec positionals))
-  (try (check-no-missing spec positionals))
-  (ok (argument-matches spec positionals)))
+  (let (layout (split-of spec (len positionals))
+        shares (shares-of spec (ref layout)))
+    (try (check-no-extra positionals (ref layout)))
+    (try (check-no-missing spec (ref shares)))
+    (ok (argument-matches spec positionals (ref shares)))))
 
-(type check-no-extra
-  (fn ((ref command-spec) (ref (vec string)))
-    (result unit cli-error)))
-
-(defn check-no-extra (spec positionals)
-  (match (get positionals (len (:arguments spec)))
+(defn check-no-extra (positionals layout)
+  (match (get positionals (taken-total layout))
     ((some extra)
      (err (cli-error/unexpected-argument (clone extra))))
     (none (ok (do)))))
 
-(defn check-no-missing (spec positionals)
-  (match (find (iter (missing-arguments spec positionals))
-           (fn (argument)
-             (required? (deref argument))))
-    ((some argument)
-     (err (cli-error/missing-argument (clone (:name argument)))))
+(type check-no-missing
+  (fn ((ref command-spec) (ref (vec share)))
+    (result unit cli-error)))
+
+(defn check-no-missing (spec shares)
+  (match (find (range 0 (len shares))
+           (fn (index)
+             (missing? (at (:arguments spec) index)
+                       (at shares index))))
+    ((some index)
+     (err (cli-error/missing-argument (clone (:name (at (:arguments spec)
+                                                        index))))))
     (none (ok (do)))))
 
-(type missing-arguments
-  (fn ((ref command-spec) (ref (vec string)))
-    (vec (ref argument-spec))))
-
-(defn missing-arguments (spec positionals)
-  (collect (map (range (len positionals)
-                       (len (:arguments spec)))
-                (fn (index)
-                  (at (:arguments spec) index)))))
+(defn missing? (argument taken)
+  (and (required? argument)
+       (= (:count taken) 0)))
 
 (type argument-matches
-  (fn ((ref command-spec) (ref (vec string)))
+  (fn ((ref command-spec)
+       (ref (vec string))
+       (ref (vec share)))
     (vec argument-match)))
 
-(defn argument-matches (spec positionals)
-  (let (found (vec))
-    (for-each (range 0 (len (:arguments spec)))
-      (fn (index)
-        (push-argument-match! (mut found)
-                              (at (:arguments spec) index)
-                              (get positionals index))))
-    found))
+(defn argument-matches (spec positionals shares)
+  (collect (map (range 0 (len shares))
+             (fn (index)
+               (argument-match-at (at (:arguments spec) index)
+                                  positionals
+                                  (at shares index))))))
 
-(defn push-argument-match! (found argument given)
-  (match (argument-value argument given)
-    ((some value)
-     (push! found
-            (->argument-match :name (clone (:name argument))
-                              :value value)))
-    (none (do))))
-
-(type argument-value
+(type argument-match-at
   (fn ((ref argument-spec)
-       (option (ref string)))
-    (option string)))
+       (ref (vec string))
+       (ref share))
+    argument-match))
 
-(defn argument-value (argument given)
-  (match given
-    ((some text) (some (clone text)))
-    (none (default-text (:presence argument)))))
+(defn argument-match-at (argument positionals taken)
+  (->argument-match :name (clone (:name argument))
+                    :values (values-or-default argument
+                                               (slice-of positionals taken))))
 
-(defn default-text (presence)
+(defn slice-of (positionals taken)
+  (collect (map (range (:start taken)
+                       (+ (:start taken) (:count taken)))
+                (fn (index)
+                  (clone (at positionals index))))))
+
+(type values-or-default
+  (fn ((ref argument-spec) (vec string))
+    (vec string)))
+
+(defn values-or-default (argument given)
+  (if (empty? given)
+    (default-values (:presence argument))
+    given))
+
+(defn default-values (presence)
   (match presence
-    ((defaulted text) (some (clone text)))
-    (required none)))
+    ((argument-presence/defaulted text) (vec (clone text)))
+    (_ (vec))))

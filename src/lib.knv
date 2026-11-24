@@ -19,6 +19,7 @@
 (use macros/cli defcli)
 (use macros/command defcommand parse-command run-command)
 (use run process-environment run run-with)
+(use builtin-values)
 (use values cli-value from-text value-names)
 (use validate spec-error spec-error->message validate-spec)
 

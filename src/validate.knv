@@ -1,6 +1,9 @@
 (module
   "Finds the mistakes a spec can hold, such as two options with one name, before a parse hides them.")
 
+(use argument-order argument-order order-error
+                    order-error->message)
+
 (use commands descended subcommand-names)
 (use spec command-spec)
 
@@ -19,6 +22,7 @@
   (repeated-long string)
   (repeated-short char)
   (repeated-argument string)
+  (misordered-argument order-error)
   reserved-command
   (repeated-command string))
 
@@ -26,6 +30,8 @@
   (try (check-longs (long-names spec)))
   (try (check-shorts (short-names spec)))
   (try (check-arguments (argument-names spec)))
+  (try (map-err (argument-order spec)
+         (fn (failure) (spec-error/misordered-argument failure))))
   (try (check-commands (subcommand-names spec)))
   (validate-subcommands spec))
 
@@ -43,6 +49,8 @@
      (str "two options are named `-" name "`"))
     ((repeated-argument name)
      (str "two arguments are named <" name ">"))
+    ((misordered-argument failure)
+     (order-error->message failure))
     (reserved-command (str "command `" reserved-command
                            "` is built in, so a spec cannot define it"))
     ((repeated-command name)
