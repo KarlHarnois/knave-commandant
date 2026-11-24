@@ -14,7 +14,7 @@
 (export resolve)
 
 (defn resolve (spec environment scan)
-  (let (arguments (try (resolve-arguments spec (ref (:positionals scan)))))
+  (let-try (arguments (resolve-arguments spec (ref (:positionals scan))))
     (try (check-no-repeated spec (ref (:occurrences scan))))
     (ok (->matches :arguments arguments
                    :options (option-matches spec environment
