@@ -99,7 +99,7 @@ macro only where it binds names. That gives two layers.
 ### Layer 2: `defcommand` and `defcli` bind typed names
 
 The macro is justified because it defines names: a struct, an enum, and a
-conversion function. The parameter grammar extends `deftask`'s: a symbol is
+conversion function. The parameter grammar reads like `deftask`'s: a symbol is
 a positional, a keyword is an option.
 
 ```knave
@@ -220,11 +220,12 @@ Options:
 3. Rebuild `deftask` on top of the library. The prelude cannot depend on a
    git library, so this means moving layer 1 into Knave's standard library.
 
-Recommendation: do 2 now, keep 3 as the goal once the API has settled
-through rmap and ledelint. Do not make the library depend on `deftask`
-internals, since they are private to the prelude and change with the
-compiler. The gaps listed above are worth raising against rslisp on their
-own, starting with `-h` as an alias for `--help`.
+Decision: option 1. `defcommand` keeps its own grammar, which reads like
+`deftask`'s (a symbol is a positional, a keyword is an option) without
+accepting a `deftask` parameter list unchanged. A second grammar for the same
+parameter would cost more than the one-time rewrite of a task into a command.
+Option 3 stays the long-term goal once the API has settled. The `deftask`
+gaps listed above are worth raising against the compiler on their own.
 
 ## 6. Spike results
 
