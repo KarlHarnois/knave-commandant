@@ -32,6 +32,8 @@ Replace `<commit>` with the commit to pin.
 
 See [examples/serve](examples/serve/src/main.knv) for every kind of parameter.
 
+`run-command` prints help, versions and usage errors, then exits. To print them yourself, for example as JSON, call `(parse-command greet (process-environment) (command-line-args))`. It returns `(ok greet)` for the typed struct, or `(err outcome)` for help, a version or a usage error.
+
 ## Development
 
 Run each check before you push:

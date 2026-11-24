@@ -6,13 +6,14 @@
 (use error-report failure-report)
 (use help spec->help)
 (use matches matches)
-(use parse outcome parse)
+(use parse matches->typed outcome parse)
 (use spec command-spec)
 (use terminal terminal-width)
 (use validate spec-error->message validate-spec)
 (use errors ->usage-failure cli-error)
 
-(export command->response response run run-with)
+(export command->response process-environment response run
+        run-with)
 
 (def usage-exit-code 2)
 
@@ -41,12 +42,9 @@
 
 (defn run-with (spec convert)
   (let (found (run spec))
-    (match (convert (ref found))
+    (match (matches->typed (ref found) convert)
       ((ok value) value)
-      ((err failure)
-       (refuse-typed spec
-                     (->usage-failure :path (clone (:path found))
-                                      :error failure))))))
+      ((err failure) (refuse-typed spec failure)))))
 
 (defn run (spec)
   (respond (command->response spec
