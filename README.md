@@ -6,7 +6,7 @@ A [Knave](https://github.com/knave-lang/knave) library for building command line
 
 Add the library to the `libraries` section of your `project.knv`:
 
-```knave
+```clj
 (defproject my-tool
   (libraries
     (knave-commandant :git "https://github.com/KarlHarnois/knave-commandant"
