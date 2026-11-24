@@ -5,8 +5,8 @@
 (use values/matches ->argument-match argument-match)
 (use resolve/shares share shares-of split-of taken-total)
 
-(use spec/shapes argument-presence argument-spec
-                 command-spec required?)
+(use spec/shapes argument-spec command-spec presence
+                 required?)
 
 (export resolve-arguments)
 
@@ -82,5 +82,5 @@
 
 (defn default-values (presence)
   (match presence
-    ((argument-presence/defaulted text) (vec (clone text)))
+    ((presence/defaulted text) (vec (clone text)))
     (_ (vec))))

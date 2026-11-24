@@ -3,12 +3,12 @@
 
 (export ->argument-spec ->command-spec ->list-slot
         ->option-spec ->switch-slot ->value-slot
-        argument-presence argument-spec command-spec
-        find-long find-short list-slot long-flag long-prefix
-        name->placeholder option-presence option-required?
-        option-spec repeated? required? short-takes-value?
-        switch-slot switch-state switch? takes-value?
-        value-kind value-slot)
+        argument-spec command-spec find-long find-short
+        list-slot long-flag long-prefix name->placeholder
+        option-required? option-spec presence repeated?
+        repetition required? short-takes-value? switch-slot
+        switch-state switch? takes-value? value-kind
+        value-slot)
 
 (defstruct command-spec
   :name string
@@ -21,14 +21,17 @@
 (defstruct argument-spec
   :name string
   :about string
-  :presence argument-presence)
+  :presence presence
+  :repeats repetition)
 
-(defenum argument-presence
+(defenum presence
   required
   optional
-  (defaulted string)
-  one-or-more
-  zero-or-more)
+  (defaulted string))
+
+(defenum repetition
+  once
+  repeated)
 
 (defstruct option-spec
   :long string
@@ -57,14 +60,9 @@
 
 (defstruct value-slot
   :placeholder string
-  :presence option-presence
+  :presence presence
   :env (vec string)
   :choices (vec string))
-
-(defenum option-presence
-  optional
-  required
-  (defaulted string))
 
 (defn name->placeholder (name)
   (upper-case (as-str (join (collect (split name "-")) "_"))))
@@ -121,23 +119,14 @@
     ((one slot) (presence-required? (:presence slot)))
     (_ false)))
 
-(defn presence-required? (presence)
-  (match presence (option-presence/required true) (_ false)))
-
 (type required?
   (fn ((ref argument-spec)) bool))
 
 (defn required? (argument)
-  (match (:presence argument)
-    (argument-presence/required true)
-    (argument-presence/one-or-more true)
-    (_ false)))
-
-(type repeated?
-  (fn ((ref argument-spec)) bool))
+  (presence-required? (:presence argument)))
 
 (defn repeated? (argument)
-  (match (:presence argument)
-    (argument-presence/one-or-more true)
-    (argument-presence/zero-or-more true)
-    (_ false)))
+  (= (:repeats argument) repetition/repeated))
+
+(defn presence-required? (presence)
+  (match presence (required true) (_ false)))

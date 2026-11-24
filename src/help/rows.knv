@@ -1,8 +1,8 @@
 (module
   "Describes each argument and option of a command as one row of its help page.")
 
-(use spec/shapes argument-presence command-spec
-                 option-presence value-kind value-slot)
+(use spec/shapes command-spec presence value-kind
+                 value-slot)
 
 (use help/terms argument-term option-term)
 
@@ -58,7 +58,7 @@
 
 (defn argument-default-note (presence)
   (match presence
-    ((argument-presence/defaulted text) (default-note text))
+    ((presence/defaulted text) (default-note text))
     (_ (str))))
 
 (defn option-row (option)
@@ -80,7 +80,7 @@
 
 (defn slot-default-note (slot)
   (match (:presence slot)
-    ((option-presence/defaulted text) (default-note text))
+    ((presence/defaulted text) (default-note text))
     (_ (str))))
 
 (defn choices-note (names)

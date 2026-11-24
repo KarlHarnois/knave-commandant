@@ -1,7 +1,7 @@
 (use spec/argument-order order-error)
 
-(use spec/shapes ->argument-spec ->option-spec
-                 argument-presence value-kind)
+(use spec/shapes ->argument-spec ->option-spec presence
+                 repetition value-kind)
 
 (use support/fixture command-spec-named serve-spec site-spec
                      spec-with-lists)
@@ -22,9 +22,10 @@
 (defn with-argument (name)
   (let (spec (serve-spec))
     (push! (:arguments spec)
-           (->argument-spec :name (str name)
+           (->argument-spec :repeats repetition/once
+                            :name (str name)
                             :about (str "")
-                            :presence argument-presence/required))
+                            :presence presence/required))
     spec))
 
 (defn site-with-command (name)

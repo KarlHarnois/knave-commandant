@@ -1,9 +1,10 @@
 (use resolve/arguments resolve-arguments)
 (use errors/cli-error cli-error)
 (use values/matches ->argument-match)
-(use spec/shapes argument-presence)
+(use spec/shapes presence)
 
-(use support/fixture argument-named no-words serve-spec
+(use support/fixture argument-named no-words
+                     repeated-argument serve-spec
                      spec-requiring spec-with-arguments
                      words)
 
@@ -30,9 +31,8 @@
              (err (cli-error/missing-argument (str "file"))))))
 
 (defn copy-spec ()
-  (spec-with-arguments (vec
-                         (argument-named "source" argument-presence/one-or-more)
-                         (argument-named "target" argument-presence/required))))
+  (spec-with-arguments (vec (repeated-argument "source" presence/required)
+                            (argument-named "target" presence/required))))
 
 (deftest a-repeated-argument-leaves-the-last-word-to-the-one-after-it
   (assert (= (arguments-of (copy-spec) (vec "a" "b" "c"))
@@ -46,13 +46,13 @@
              (err (cli-error/missing-argument (str "source"))))))
 
 (deftest a-repeated-argument-can-take-no-words
-  (assert (= (arguments-of (spec-with-arguments (vec (argument-named "file"
-                                                                     argument-presence/zero-or-more)))
+  (assert (= (arguments-of (spec-with-arguments
+                             (vec (repeated-argument "file" presence/optional)))
                            (no-words))
              (ok (vec (->argument-match :name (str "file") :values (vec)))))))
 
 (deftest an-absent-optional-argument-has-no-value
-  (assert (= (arguments-of (spec-with-arguments (vec (argument-named "name"
-                                                                     argument-presence/optional)))
+  (assert (= (arguments-of (spec-with-arguments
+                             (vec (argument-named "name" presence/optional)))
                            (no-words))
              (ok (vec (->argument-match :name (str "name") :values (vec)))))))

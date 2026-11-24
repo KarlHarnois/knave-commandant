@@ -1,0 +1,54 @@
+(module
+  "Writes the spec of one `defcommand` argument.")
+
+(use code list)
+
+(use macros/parameters/kinds argument-kind choose kind-many
+                             kind-one kind-optional)
+
+(use macros/parameters/parts about default-text defaulted?
+                             parameter-name
+                             required-parameter?)
+
+(use spec/shapes ->argument-spec presence repetition)
+
+(export argument-spec)
+
+(def argument-spec
+  (fn (parameter)
+    (template (->argument-spec :name (str (unquote (parameter-name parameter)))
+                               :about (str (unquote (about parameter)))
+                               :presence (unquote (presence parameter))
+                               :repeats (unquote (repeats parameter))))))
+
+(def presence
+  (fn (parameter)
+    (if (defaulted? parameter)
+      (template (presence/defaulted (str (unquote (default-text parameter)))))
+      (undefaulted-argument parameter))))
+
+(def undefaulted-argument
+  (fn (parameter)
+    (choose (argument-kind parameter)
+            (list kind-many
+                  (repeated-presence parameter)
+                  kind-optional
+                  (quote presence/optional)
+                  kind-one
+                  (quote presence/required)))))
+
+(def repeated-presence
+  (fn (parameter)
+    (if (required-parameter? parameter)
+      (quote presence/required)
+      (quote presence/optional))))
+
+(def repeats
+  (fn (parameter)
+    (choose (argument-kind parameter)
+            (list kind-many
+                  (quote repetition/repeated)
+                  kind-optional
+                  (quote repetition/once)
+                  kind-one
+                  (quote repetition/once)))))

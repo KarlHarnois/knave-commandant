@@ -5,10 +5,10 @@
           list? nth number? rest string string? symbol-name
           symbol? value-eq)
 
-(export always-set? argument? default-text defaulted? detail
-        given? many-type? option-type? parameter-details
-        parameter-name parameter-type required-parameter?
-        type-named?)
+(export about always-set? argument? default-text defaulted?
+        detail given? many-type? option-type?
+        parameter-details parameter-name parameter-type
+        required-parameter? type-named?)
 
 (def parameter-name
   (fn (parameter)
@@ -88,3 +88,9 @@
       (if (number? value)
         (string value)
         (symbol-name value)))))
+
+(def about
+  (fn (parameter)
+    (if (given? (detail (parameter-details parameter) "about"))
+      (detail (parameter-details parameter) "about")
+      "")))

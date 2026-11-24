@@ -1,15 +1,16 @@
 (module
   "Checks that a command's arguments come in an order a command line can fill: required ones first, at most one repeated argument, and only required ones after it.")
 
-(use spec/shapes argument-presence argument-spec
-                 command-spec repeated? required?)
+(use spec/shapes argument-spec command-spec presence
+                 repeated? required?)
 
 (export argument-order order-error order-error->message)
 
 (defenum order-error
   (second-repeated string)
   (after-optional string)
-  (after-repeated string))
+  (after-repeated string)
+  (repeated-default string))
 
 (defn argument-order (spec) (order-from spec 0))
 
@@ -23,7 +24,10 @@
           "> must come before every optional argument"))
     ((after-repeated name)
      (str "argument <" name
-          "> follows a repeated argument, so it must be required"))))
+          "> follows a repeated argument, so it must be required"))
+    ((repeated-default name)
+     (str "argument <" name
+          "> repeats, so it cannot have a default"))))
 
 (type order-from
   (fn ((ref command-spec) int)
@@ -47,6 +51,8 @@
   (let (argument (at (:arguments spec) index)
         name (clone (:name argument)))
     (cond
+      ((and (repeated? argument) (defaulted? argument))
+       (some (order-error/repeated-default name)))
       ((and (repeated? argument) (earlier? spec index repeated?))
        (some (order-error/second-repeated name)))
       ((and (must-be-given? argument)
@@ -71,19 +77,17 @@
 (defn must-be-given? (argument)
   (or (required? argument) (repeated? argument)))
 
-(type optional?
+(type defaulted?
   (fn ((ref argument-spec)) bool))
+
+(defn defaulted? (argument)
+  (match (:presence argument)
+    ((defaulted _) true)
+    (_ false)))
 
 (defn optional? (argument)
-  (match (:presence argument)
-    (argument-presence/optional true)
-    ((argument-presence/defaulted _) true)
-    (_ false)))
-
-(type single-required?
-  (fn ((ref argument-spec)) bool))
+  (not (or (required? argument) (repeated? argument))))
 
 (defn single-required? (argument)
-  (match (:presence argument)
-    (argument-presence/required true)
-    (_ false)))
+  (and (required? argument)
+       (not (repeated? argument))))

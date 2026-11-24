@@ -1,0 +1,102 @@
+(module
+  "Writes the spec of one `defcommand` option.")
+
+(use code list symbol-name)
+
+(use macros/parameters/kinds choose kind-count kind-many
+                             kind-one kind-switch
+                             option-kind)
+
+(use macros/parameters/names conflicts-form env-form)
+
+(use macros/parameters/parts about default-text defaulted?
+                             detail given? parameter-details
+                             parameter-name parameter-type
+                             required-parameter?
+                             type-named?)
+
+(use spec/shapes ->list-slot ->option-spec ->switch-slot
+                 ->value-slot presence switch-state
+                 value-kind)
+
+(use values/convert value-names)
+
+(export option-spec)
+
+(def option-spec
+  (fn (parameter)
+    (template (->option-spec
+                :long (str (unquote (parameter-name parameter)))
+                :short (unquote (short-form parameter))
+                :about (str (unquote (about parameter)))
+                :value (unquote (value-form parameter
+                                            (parameter-type parameter)))
+                :conflicts-with (unquote (conflicts-form parameter))))))
+
+(def short-form
+  (fn (parameter)
+    (if (given? (detail (parameter-details parameter) "short"))
+      (template (some (char (unquote (symbol-name (detail (parameter-details
+                                                            parameter)
+                                                          "short"))))))
+      (quote none))))
+
+(def value-form
+  (fn (parameter type)
+    (choose (option-kind parameter)
+            (list kind-switch
+                  (switch-form parameter)
+                  kind-count
+                  (quote value-kind/count)
+                  kind-many
+                  (list-form parameter)
+                  kind-one
+                  (one-form parameter type)))))
+
+(def switch-form
+  (fn (parameter)
+    (template (value-kind/switch (->switch-slot
+                                   :initial (unquote (initial-form parameter))
+                                   :env (unquote (env-form parameter)))))))
+
+(def list-form
+  (fn (parameter)
+    (template (value-kind/many (->list-slot :placeholder (str (unquote (parameter-name
+                                                                         parameter)))
+                                            :delimiter (unquote (delimiter-form parameter)))))))
+
+(def one-form
+  (fn (parameter type)
+    (template (value-kind/one
+                (->value-slot
+                  :placeholder (str (unquote (parameter-name parameter)))
+                  :presence (unquote (option-presence-form parameter))
+                  :env (unquote (env-form parameter))
+                  :choices (value-names (ref (the (option (unquote type))
+                                                  none))))))))
+
+(def delimiter-form
+  (fn (parameter)
+    (if (given? (detail (parameter-details parameter) "delimiter"))
+      (template (some (char (unquote (detail (parameter-details parameter)
+                                             "delimiter")))))
+      (quote none))))
+
+(def initial-form
+  (fn (parameter)
+    (if (type-named? (detail (parameter-details parameter) "initial")
+                     "on")
+      (quote switch-state/on)
+      (quote switch-state/off))))
+
+(def option-presence-form
+  (fn (parameter)
+    (if (defaulted? parameter)
+      (template (presence/defaulted (str (unquote (default-text parameter)))))
+      (undefaulted-presence parameter))))
+
+(def undefaulted-presence
+  (fn (parameter)
+    (if (required-parameter? parameter)
+      (quote presence/required)
+      (quote presence/optional))))
