@@ -2,6 +2,7 @@
   "Turns the text of a matched argument or option into a typed value, through the `cli-value` trait.")
 
 (use errors ->invalid-text cli-error)
+(use spec name->placeholder)
 (use matches argument-text many-texts matches one-text)
 
 (export cli-value from-text read-argument read-many
@@ -79,7 +80,8 @@
 
 (defn read-argument (found name)
   (match (argument-text found name)
-    ((some text) (converted text (str "<" name ">")))
+    ((some text)
+     (converted text (str "<" (name->placeholder name) ">")))
     (none (err (cli-error/missing-argument (str name))))))
 
 (type read-option

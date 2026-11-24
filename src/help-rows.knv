@@ -1,14 +1,13 @@
 (module
   "Describes each argument and option of a command as one row of its help page.")
 
-(use spec argument-presence argument-spec command-spec
-          option-presence option-spec switch-state
+(use spec argument-presence command-spec option-presence
           value-kind value-slot)
 
-(export ->help-row argument-rows argument-term command-rows
-        help-row option-rows)
+(use terms argument-term option-term)
 
-(def no-short "    ")
+(export ->help-row argument-rows command-rows help-row
+        option-rows)
 
 (def help-row-term "-h, --help")
 
@@ -51,15 +50,6 @@
                          :description (str help-command-description))))
     rows))
 
-(type argument-term
-  (fn ((ref argument-spec)) string))
-
-(defn argument-term (argument)
-  (match (:presence argument)
-    (argument-presence/required (str "<" (:name argument) ">"))
-    ((argument-presence/defaulted _)
-     (str "[" (:name argument) "]"))))
-
 (defn push-version-row! (rows spec)
   (when (some? (:version spec))
     (push! rows
@@ -84,41 +74,9 @@
     ((argument-presence/defaulted text) (default-note text))))
 
 (defn option-row (option)
-  (->help-row :term (str (short-part (:short option))
-                         (long-part option)
-                         (value-part (:value option)))
+  (->help-row :term (option-term option)
               :description (str (:about option)
                                 (value-notes (:value option)))))
-
-(defn short-part (short)
-  (match short
-    ((some character) (str "-" character ", "))
-    (none (str no-short))))
-
-(type long-part
-  (fn ((ref option-spec)) string))
-
-(defn long-part (option)
-  (str "--"
-       (negation-mark (:value option))
-       (:long option)))
-
-(defn negation-mark (value)
-  (match value
-    ((switch slot) (initial-mark (:initial slot)))
-    (_ (str))))
-
-(defn initial-mark (initial)
-  (match initial
-    (on (str "[no-]"))
-    (off (str))))
-
-(defn value-part (value)
-  (match value
-    ((switch _) (str))
-    (count (str "..."))
-    ((one slot) (str " <" (:placeholder slot) ">"))
-    ((many placeholder) (str " <" placeholder ">..."))))
 
 (defn value-notes (value)
   (match value

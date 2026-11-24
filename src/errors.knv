@@ -1,6 +1,8 @@
 (module
   "Names each way a command line can break the rules of its command.")
 
+(use spec name->placeholder)
+
 (export ->invalid-text ->usage-failure cli-error
         error->message invalid-text usage-failure)
 
@@ -37,7 +39,9 @@
     ((unexpected-argument written)
      (str "unexpected argument `" written "`"))
     ((missing-argument name)
-     (str "missing argument <" name ">"))
+     (str "missing argument <"
+          (name->placeholder (as-str name))
+          ">"))
     ((unknown-command written)
      (str "unknown command `" written "`"))
     (missing-command (str "a command is required"))

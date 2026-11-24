@@ -20,13 +20,13 @@
   (assert (= (report-for (cli-error/unknown-option (str "--prot")))
              (str "error: unknown option `--prot`\n\n"
                   "  tip: a similar option exists: `--port`\n\n"
-                  "Usage: serve [OPTIONS] [root]\n\n"
+                  "Usage: serve [OPTIONS] [ROOT]\n\n"
                   "For more information, try `serve --help`."))))
 
 (deftest a-distant-option-gets-no-tip
   (assert (= (report-for (cli-error/unknown-option (str "--zzzzzz")))
              (str "error: unknown option `--zzzzzz`\n\n"
-                  "Usage: serve [OPTIONS] [root]\n\n"
+                  "Usage: serve [OPTIONS] [ROOT]\n\n"
                   "For more information, try `serve --help`."))))
 
 (deftest a-builtin-can-be-the-tip

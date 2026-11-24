@@ -140,5 +140,5 @@
                                 (ref failure)))
                (_ (str)))
              (str "error: option `--token` is required\n\n"
-                  "Usage: deploy [OPTIONS] --token <token>\n\n"
+                  "Usage: deploy [OPTIONS] --token <TOKEN>\n\n"
                   "For more information, try `deploy --help`."))))

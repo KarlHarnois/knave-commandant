@@ -22,7 +22,7 @@
 
 (deftest names-a-missing-argument
   (assert (= (error->message (cli-error/missing-argument (str "file")))
-             "missing argument <file>")))
+             "missing argument <FILE>")))
 
 (deftest names-a-missing-required-option
   (assert (= (error->message (cli-error/missing-option (str "--manager")))

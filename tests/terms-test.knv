@@ -1,0 +1,20 @@
+(use terms argument-term option-term required-option-term)
+
+(use support/fixture serve-spec spec-requiring
+                     spec-with-token)
+
+(deftest a-defaulted-argument-shows-in-brackets
+  (assert (= (argument-term (at (:arguments (serve-spec)) 0))
+             "[ROOT]")))
+
+(deftest a-required-argument-shows-in-angle-brackets
+  (assert (= (argument-term (at (:arguments (spec-requiring "file")) 0))
+             "<FILE>")))
+
+(deftest an-option-shows-its-short-long-and-value
+  (assert (= (option-term (at (:options (serve-spec)) 0))
+             "-p, --port <PORT>")))
+
+(deftest a-required-option-shows-its-long-and-value
+  (assert (= (required-option-term (at (:options (spec-with-token)) 0))
+             "--token <TOKEN>")))

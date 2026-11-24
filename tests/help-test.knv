@@ -6,15 +6,15 @@
 
 (def serve-help
   (str "Serves a folder over HTTP.\n" "\n"
-       "Usage: serve [OPTIONS] [root]\n" "\n" "Arguments:\n"
-       "  [root]              The folder to serve [default: .]\n"
+       "Usage: serve [OPTIONS] [ROOT]\n" "\n" "Arguments:\n"
+       "  [ROOT]              The folder to serve [default: .]\n"
        "\n" "Options:\n"
-       "  -p, --port <port>   The port to listen on [default: 8000]\n"
+       "  -p, --port <PORT>   The port to listen on [default: 8000]\n"
        "                      [env: SERVE_PORT, PORT]\n"
        "  -o, --open          Opens the browser [env: SERVE_OPEN]\n"
        "      --[no-]color    Colors the log\n"
        "  -v, --verbose...    Logs more\n"
-       "  -t, --tag <tag>...  Tags the log\n"
+       "  -t, --tag <TAG>...  Tags the log\n"
        "  -h, --help          Print help\n"
        "  -V, --version       Print version"))
 
@@ -29,11 +29,11 @@
 
 (deftest the-usage-lists-options-then-arguments
   (assert (= (spec->usage (ref (serve-spec)))
-             "serve [OPTIONS] [root]")))
+             "serve [OPTIONS] [ROOT]")))
 
 (deftest the-usage-marks-a-required-argument
   (assert (= (spec->usage (ref (spec-requiring "file")))
-             "copy [OPTIONS] <file>")))
+             "copy [OPTIONS] <FILE>")))
 
 (deftest the-help-page-aligns-and-wraps-to-the-width
   (assert (= (spec->help (ref (serve-spec)) 60)
@@ -59,4 +59,4 @@
 
 (deftest the-usage-lists-each-required-option
   (assert (= (spec->usage (ref (spec-with-token)))
-             "deploy [OPTIONS] --token <token>")))
+             "deploy [OPTIONS] --token <TOKEN>")))

@@ -27,7 +27,7 @@
 
 (deftest the-spec-lists-arguments-then-options
   (assert (= (spec->usage (ref (greet-spec)))
-             "greet [OPTIONS] <who>")))
+             "greet [OPTIONS] <WHO>")))
 
 (deftest a-command-line-becomes-the-typed-struct
   (assert (= (greet-after (vec "ana" "-n" "3" "--tone" "loud"))

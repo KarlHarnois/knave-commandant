@@ -4,8 +4,8 @@
 (export ->argument-spec ->command-spec ->option-spec
         ->switch-slot ->value-slot argument-presence
         argument-spec command-spec find-long find-short
-        option-presence option-required? option-spec
-        required? short-takes-value? switch-slot
+        name->placeholder option-presence option-required?
+        option-spec required? short-takes-value? switch-slot
         switch-state switch? takes-value? value-kind
         value-slot)
 
@@ -56,6 +56,8 @@
   optional
   required
   (defaulted string))
+
+(defn name->placeholder (name) (upper-case name))
 
 (type find-long
   (fn ((ref command-spec) (ref str))
