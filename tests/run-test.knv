@@ -1,11 +1,19 @@
-(use errors cli-error)
-(use matches ->matches)
-(use parse outcome)
-(use run outcome->response response)
-(use support/fixture serve-spec)
+(use run command->response response)
+(use spec ->option-spec value-kind)
+(use support/fixture no-environment serve-spec words)
 
-(defn response-for (outcome)
-  (outcome->response (ref (serve-spec)) outcome 80))
+(defn serve-response (texts)
+  (response-to (serve-spec) texts))
+
+(defn response-to (spec texts)
+  (command->response (ref spec)
+                     (no-environment)
+                     (words texts)))
+
+(defn proceeds? (response)
+  (match response
+    ((proceed _) true)
+    (_ false)))
 
 (defn reply-text (response)
   (match response
@@ -17,23 +25,30 @@
     ((refuse text) text)
     (_ (str))))
 
-(defn no-matches ()
-  (->matches :arguments (vec) :options (vec)))
+(defn spec-with-help-option ()
+  (let (spec (serve-spec))
+    (push! (:options spec)
+           (->option-spec :long (str "help")
+                          :short none
+                          :about (str "Shadows the built-in help")
+                          :value value-kind/count))
+    spec))
 
-(deftest parsed-matches-let-the-program-proceed
-  (assert (= (response-for (outcome/parsed (no-matches)))
-             (response/proceed (no-matches)))))
+(deftest a-valid-line-lets-the-program-proceed
+  (assert (proceeds? (serve-response (vec "site")))))
 
 (deftest help-replies-with-the-help-page
-  (assert (starts-with? (as-str (reply-text (response-for outcome/help)))
+  (assert (starts-with? (as-str (reply-text (serve-response (vec "--help"))))
                         "Serves a folder over HTTP.\n\nUsage: serve")))
 
 (deftest version-replies-with-the-name-and-version
-  (assert (= (response-for (outcome/version (str "1.0.0")))
+  (assert (= (serve-response (vec "-V"))
              (response/reply (str "serve 1.0.0")))))
 
 (deftest a-usage-error-refuses-with-a-report
-  (assert (starts-with? (as-str (refusal-text (response-for
-                                                (outcome/usage-error (cli-error/unknown-option
-                                                                       (str "--prot"))))))
+  (assert (starts-with? (as-str (refusal-text (serve-response (vec "--prot"))))
                         "error: unknown option `--prot`")))
+
+(deftest a-broken-spec-stops-before-parsing
+  (assert (= (response-to (spec-with-help-option) (vec "site"))
+             (response/broken (str "invalid command spec: option `--help` is built in, so a spec cannot define it")))))

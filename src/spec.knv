@@ -2,10 +2,11 @@
   "Describes a command: its arguments, its options, and how each option takes a value.")
 
 (export ->argument-spec ->command-spec ->option-spec
-        ->value-slot argument-presence argument-spec
-        command-spec find-long find-short option-spec
-        required? short-takes-value? switch-state switch?
-        takes-value? value-kind value-slot)
+        ->switch-slot ->value-slot argument-presence
+        argument-spec command-spec find-long find-short
+        option-spec required? short-takes-value? switch-slot
+        switch-state switch? takes-value? value-kind
+        value-slot)
 
 (defstruct command-spec
   :name string
@@ -27,14 +28,17 @@
   :long string
   :short (option char)
   :about string
-  :value value-kind
-  :env (vec string))
+  :value value-kind)
 
 (defenum value-kind
-  (switch switch-state)
+  (switch switch-slot)
   count
   (one value-slot)
   (many string))
+
+(defstruct switch-slot
+  :initial switch-state
+  :env (vec string))
 
 (defenum switch-state
   off
@@ -42,7 +46,8 @@
 
 (defstruct value-slot
   :placeholder string
-  :default (option string))
+  :default (option string)
+  :env (vec string))
 
 (type find-long
   (fn ((ref command-spec) (ref str))

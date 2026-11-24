@@ -42,6 +42,7 @@
     ((flag flag) (scan-flag! spec items index scan flag))
     ((flag-with-value flag value)
      (scan-assignment! spec index scan flag value))
+    (options-end (ok (step/advance (inc index))))
     ((word text)
      (push! (:positionals scan) (clone text))
      (ok (step/advance (inc index))))))
@@ -85,10 +86,16 @@
     (_ none)))
 
 (defn scan-assignment! (spec index scan flag value)
+  (if (some? (builtin spec flag))
+    (err (cli-error/unexpected-value (flag->written flag)))
+    (assign-to-hit! spec index scan flag value)))
+
+(defn assign-to-hit! (spec index scan flag value)
   (match (find-hit spec flag)
     ((some hit)
      (assign-hit! index scan hit (flag->written flag) value))
-    (none (err (cli-error/unknown-option (flag->written flag))))))
+    (none (err (cli-error/unknown-option
+                 (str (flag->written flag) "=" value))))))
 
 (defn assign-hit! (index scan hit written value)
   (match hit

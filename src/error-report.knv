@@ -10,6 +10,8 @@
 
 (def long-prefix "--")
 
+(def assignment "=")
+
 (def help-long "help")
 
 (def version-long "version")
@@ -43,9 +45,13 @@
 
 (defn closest-long (spec written)
   (if (starts-with? written long-prefix)
-    (closest-name (subs written (len long-prefix) (len written))
+    (closest-name (as-str (long-name-in written))
                   (ref (long-names spec)))
     none))
+
+(defn long-name-in (written)
+  (let (after-prefix (subs written (len long-prefix) (len written)))
+    (str (at (collect (split after-prefix assignment)) 0))))
 
 (type long-names
   (fn ((ref command-spec)) (vec string)))

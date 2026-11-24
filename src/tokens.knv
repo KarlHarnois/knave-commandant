@@ -16,6 +16,7 @@
   (long-name string)
   (long-with-value long-assignment)
   (short-cluster string)
+  options-end
   (word string))
 
 (defstruct long-assignment
@@ -46,7 +47,8 @@
 
 (defn tokenize-open-word (tokenizing word)
   (if (= (as-str word) end-of-options)
-    (assoc tokenizing :mode token-mode/options-closed)
+    (with-token (assoc tokenizing :mode token-mode/options-closed)
+                token/options-end)
     (with-token tokenizing (word->token (as-str word)))))
 
 (defn with-token (tokenizing token)

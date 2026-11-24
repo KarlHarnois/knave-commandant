@@ -64,8 +64,7 @@
                          (long-part option)
                          (value-part (:value option)))
               :description (str (:about option)
-                                (value-default-note (:value option))
-                                (env-note (:env option)))))
+                                (value-notes (:value option)))))
 
 (defn short-part (short)
   (match short
@@ -82,7 +81,7 @@
 
 (defn negation-mark (value)
   (match value
-    ((switch initial) (initial-mark initial))
+    ((switch slot) (initial-mark (:initial slot)))
     (_ (str))))
 
 (defn initial-mark (initial)
@@ -97,9 +96,12 @@
     ((one slot) (str " <" (:placeholder slot) ">"))
     ((many placeholder) (str " <" placeholder ">..."))))
 
-(defn value-default-note (value)
+(defn value-notes (value)
   (match value
-    ((one slot) (slot-default-note slot))
+    ((switch slot) (env-note (:env slot)))
+    ((one slot)
+     (str (slot-default-note slot)
+          (env-note (:env slot))))
     (_ (str))))
 
 (defn slot-default-note (slot)

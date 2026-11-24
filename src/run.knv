@@ -1,5 +1,5 @@
 (module
-  "Runs a command against the process: reads its words and environment, answers help and version, and stops on a usage error.")
+  "Runs a command against the process: reads its words and environment, answers help and version, and stops on a usage error or a broken spec.")
 
 (use environment ->environment ->variable)
 (use error-report error-report)
@@ -7,10 +7,13 @@
 (use matches matches)
 (use parse outcome parse)
 (use terminal terminal-width)
+(use validate spec-error->message validate-spec)
 
-(export outcome->response response run)
+(export command->response response run)
 
 (def usage-exit-code 2)
+
+(def broken-spec-exit-code 70)
 
 (def exit-run
   (rust "std::process::exit({0} as i32)" (fn (int) matches)))
@@ -22,15 +25,23 @@
 (defenum response
   (proceed matches)
   (reply string)
-  (refuse string))
+  (refuse string)
+  (broken string))
 
 (defn run (spec)
-  (let (environment (process-environment))
-    (respond (outcome->response spec
-                                (parse spec
-                                       (ref environment)
-                                       (ref (command-line-args)))
-                                (terminal-width (ref environment))))))
+  (respond (command->response spec
+                              (process-environment)
+                              (command-line-args))))
+
+(defn command->response (spec environment words)
+  (match (validate-spec spec)
+    ((ok _)
+     (outcome->response spec
+                        (parse spec (ref environment) (ref words))
+                        (terminal-width (ref environment))))
+    ((err failure)
+     (response/broken (str "invalid command spec: "
+                           (spec-error->message failure))))))
 
 (defn outcome->response (spec outcome width)
   (match outcome
@@ -45,7 +56,10 @@
   (match response
     ((proceed found) found)
     ((reply text) (println text) (exit-run 0))
-    ((refuse text) (eprintln text) (exit-run usage-exit-code))))
+    ((refuse text) (eprintln text) (exit-run usage-exit-code))
+    ((broken text)
+     (eprintln text)
+     (exit-run broken-spec-exit-code))))
 
 (defn process-environment ()
   (->environment :variables (collect (map (iter (process-variables))

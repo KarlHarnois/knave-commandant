@@ -1,28 +1,18 @@
 (use errors cli-error)
 (use items tokens->items)
-(use matches matched-value option-value)
+(use matches argument-text option-value)
 (use resolve resolve)
 (use scan scan-end scan-items)
-(use spec switch-state)
 
-(use support/fixture environment-with no-environment
-                     no-words serve-spec words)
+(use support/fixture no-environment no-words serve-spec
+                     words)
 
 (use tokens words->tokens)
 
-(defn option-after (texts long)
-  (option-with (no-environment) texts long))
-
-(defn option-with (environment texts long)
-  (match (resolved-with environment texts)
-    ((ok found)
-     (map-some (option-value (ref found) long) clone))
-    (_ none)))
-
-(defn resolved-with (environment texts)
+(defn resolved (texts)
   (let (spec (serve-spec))
     (resolve (ref spec)
-             (ref environment)
+             (ref (no-environment))
              (ref (scan-of (ref spec) texts)))))
 
 (defn scan-of (spec texts)
@@ -35,59 +25,15 @@
     ((scanned found) (some found))
     (_ none)))
 
-(defn port-text (text)
-  (some (matched-value/one (some (str text)))))
+(deftest fills-the-arguments
+  (assert (= (argument-text (ref (unwrap-ok (resolved (vec "site"))))
+                            "root")
+             (some (ref (str "site"))))))
 
-(deftest a-given-value-fills-the-option
-  (assert (= (option-after (vec "-p" "80") "port")
-             (port-text "80"))))
-
-(deftest an-absent-option-takes-its-default
-  (assert (= (option-after (no-words) "port")
-             (port-text "8000"))))
-
-(deftest an-environment-variable-fills-an-absent-option
-  (assert (= (option-with (environment-with "SERVE_PORT" "90")
-                          (no-words)
-                          "port")
-             (port-text "90"))))
-
-(deftest a-later-environment-variable-is-a-fallback
-  (assert (= (option-with (environment-with "PORT" "91")
-                          (no-words)
-                          "port")
-             (port-text "91"))))
-
-(deftest a-flag-beats-the-environment
-  (assert (= (option-with (environment-with "SERVE_PORT" "90")
-                          (vec "-p" "80")
-                          "port")
-             (port-text "80"))))
-
-(deftest an-absent-switch-keeps-its-initial-state
-  (assert (= (option-after (no-words) "open")
-             (some (matched-value/switch switch-state/off)))))
-
-(deftest a-given-switch-turns-on
-  (assert (= (option-after (vec "--open") "open")
-             (some (matched-value/switch switch-state/on)))))
-
-(deftest a-negation-turns-a-switch-off
-  (assert (= (option-after (vec "--no-color") "color")
-             (some (matched-value/switch switch-state/off)))))
-
-(deftest the-last-of-a-switch-and-its-negation-wins
-  (assert (= (option-after (vec "--no-color" "--color") "color")
-             (some (matched-value/switch switch-state/on)))))
-
-(deftest a-repeated-flag-counts
-  (assert (= (option-after (vec "-vvv") "verbose")
-             (some (matched-value/count 3)))))
-
-(deftest a-repeated-option-collects-its-values
-  (assert (= (option-after (vec "--tag" "a" "-t" "b") "tag")
-             (some (matched-value/many (vec (str "a") (str "b")))))))
+(deftest settles-every-option
+  (assert (some? (option-value (ref (unwrap-ok (resolved (no-words))))
+                               "tag"))))
 
 (deftest a-single-value-option-is-given-once
-  (assert (= (resolved-with (no-environment) (vec "--port" "1" "-p" "2"))
+  (assert (= (resolved (vec "--port" "1" "-p" "2"))
              (err (cli-error/repeated-option (str "-p"))))))

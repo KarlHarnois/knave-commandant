@@ -23,3 +23,9 @@
 (deftest wraps-an-empty-text-to-no-lines
   (assert (= (wrap "" 40)
              (the (vec string) (vec)))))
+
+(deftest keeps-the-text-line-breaks
+  (assert (= (wrap "First line\n\nSecond" 40)
+             (vec (str "First line")
+                  (str "")
+                  (str "Second")))))
