@@ -1,0 +1,29 @@
+(use knave-commandant defchoice defcommand)
+
+(defchoice log-format text json)
+
+(defcommand serve "Serves a folder over HTTP."
+  :version "1.0.0"
+  (root string :default "." :about "The folder to serve")
+  (:port u16
+         :short p
+         :default 8000
+         :env "SERVE_PORT"
+         :about "The port to listen on")
+  (:open switch
+         :short o
+         :about "Opens the browser once the server starts")
+  (:color switch :initial on :about "Colors the log")
+  (:verbose count :short v :about "Logs more, once per -v")
+  (:format log-format
+           :default text
+           :env ("SERVE_FORMAT" "LOG_FORMAT")
+           :about "How to print each request")
+  (:header (vec string)
+           :short H
+           :about "Adds a header to each response")
+  (:name string :about "Names the server in its log"))
+
+(defn main ()
+  (let (options (run-serve))
+    (prn options)))
