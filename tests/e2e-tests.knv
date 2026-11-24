@@ -1,0 +1,78 @@
+(use lib argument-text cli-error matched-value option-value
+         outcome switch-state)
+
+(use support/fixture environment-with no-words parse-texts
+                     parse-with serve-spec)
+
+(defn option-after (texts long)
+  (match (parse-texts texts)
+    ((parsed found)
+     (map-some (option-value (ref found) long) clone))
+    (_ none)))
+
+(defn port-with (environment texts)
+  (match (parse-with (serve-spec) environment texts)
+    ((parsed found)
+     (map-some (option-value (ref found) "port") clone))
+    (_ none)))
+
+(defn root-after (texts)
+  (match (parse-texts texts)
+    ((parsed found)
+     (map-some (argument-text (ref found) "root") clone))
+    (_ none)))
+
+(defn port-text (text)
+  (some (matched-value/one (some (str text)))))
+
+(deftest every-command-takes-short-and-long-help
+  (assert (= (parse-texts (vec "serve-me" "-h")) outcome/help))
+  (assert (= (parse-texts (vec "--help")) outcome/help)))
+
+(deftest a-versioned-command-takes-short-and-long-version
+  (assert (= (parse-texts (vec "-V"))
+             (outcome/version (str "1.0.0"))))
+  (assert (= (parse-texts (vec "--version"))
+             (outcome/version (str "1.0.0")))))
+
+(deftest a-value-is-written-four-ways
+  (assert (= (option-after (vec "--port" "80") "port")
+             (port-text "80")))
+  (assert (= (option-after (vec "--port=80") "port")
+             (port-text "80")))
+  (assert (= (option-after (vec "-p" "80") "port")
+             (port-text "80")))
+  (assert (= (option-after (vec "-p80") "port")
+             (port-text "80"))))
+
+(deftest short-flags-bundle-before-a-value
+  (assert (= (option-after (vec "-vvp80") "verbose")
+             (some (matched-value/count 2))))
+  (assert (= (option-after (vec "-vvp80") "port")
+             (port-text "80"))))
+
+(deftest options-and-arguments-mix-in-any-order
+  (assert (= (root-after (vec "--open" "site" "-p" "80"))
+             (some (str "site"))))
+  (assert (= (option-after (vec "site" "-p" "80") "port")
+             (port-text "80"))))
+
+(deftest a-double-dash-ends-the-options
+  (assert (= (root-after (vec "--" "--open"))
+             (some (str "--open")))))
+
+(deftest a-negation-turns-a-switch-off
+  (assert (= (option-after (vec "--no-color") "color")
+             (some (matched-value/switch switch-state/off)))))
+
+(deftest a-flag-beats-the-environment-which-beats-the-default
+  (assert (= (port-with (environment-with "PORT" "90") (vec "-p" "80"))
+             (port-text "80")))
+  (assert (= (port-with (environment-with "PORT" "90") (no-words))
+             (port-text "90")))
+  (assert (= (option-after (no-words) "port")
+             (port-text "8000"))))
+
+(deftest a-mistyped-option-is-a-usage-error
+  (assert (= (parse-texts (vec "--prot" "80"))
+             (outcome/usage-error (cli-error/unknown-option (str "--prot"))))))

@@ -1,28 +1,28 @@
-(use lib argument-text outcome)
-(use support/fixture no-words parse-texts)
+(use arguments resolve-arguments)
+(use errors cli-error)
+(use matches ->argument-match)
 
-(defn root-after (texts)
-  (match (parse-texts texts)
-    ((parsed found)
-     (map-some (argument-text (ref found) "root") clone))
-    (_ none)))
+(use support/fixture no-words serve-spec spec-requiring
+                     words)
+
+(defn arguments-of (spec texts)
+  (resolve-arguments (ref spec)
+                     (ref (words texts))))
 
 (deftest a-word-fills-the-argument
-  (assert (= (root-after (vec "site"))
-             (some (str "site")))))
+  (assert (= (arguments-of (serve-spec) (vec "site"))
+             (ok (vec (->argument-match :name (str "root")
+                                        :value (str "site")))))))
 
 (deftest an-absent-argument-takes-its-default
-  (assert (= (root-after (no-words))
-             (some (str ".")))))
+  (assert (= (arguments-of (serve-spec) (no-words))
+             (ok (vec (->argument-match :name (str "root")
+                                        :value (str ".")))))))
 
-(deftest a-lone-dash-is-an-argument
-  (assert (= (root-after (vec "-"))
-             (some (str "-")))))
+(deftest an-extra-word-is-an-error
+  (assert (= (arguments-of (serve-spec) (vec "one" "two"))
+             (err (cli-error/unexpected-argument (str "two"))))))
 
-(deftest a-double-dash-ends-the-options
-  (assert (= (root-after (vec "--" "--open"))
-             (some (str "--open")))))
-
-(deftest an-argument-may-follow-the-options
-  (assert (= (root-after (vec "--port" "80" "site"))
-             (some (str "site")))))
+(deftest a-required-argument-is-missing
+  (assert (= (arguments-of (spec-requiring "file") (no-words))
+             (err (cli-error/missing-argument (str "file"))))))

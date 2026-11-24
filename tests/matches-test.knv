@@ -1,0 +1,24 @@
+(use matches ->argument-match ->matches ->option-match
+             argument-text matched-value option-value)
+
+(defn found ()
+  (->matches :arguments (vec (->argument-match :name (str "root")
+                                               :value (str "site")))
+             :options (vec (->option-match :long (str "verbose")
+                                           :value (matched-value/count 2)))))
+
+(deftest reads-an-argument-by-name
+  (assert (= (argument-text (ref (found)) "root")
+             (some (ref (str "site"))))))
+
+(deftest an-unknown-argument-reads-nothing
+  (assert (= (argument-text (ref (found)) "path")
+             none)))
+
+(deftest reads-an-option-by-long-name
+  (assert (= (option-value (ref (found)) "verbose")
+             (some (ref (matched-value/count 2))))))
+
+(deftest an-unknown-option-reads-nothing
+  (assert (= (option-value (ref (found)) "quiet")
+             none)))

@@ -1,0 +1,30 @@
+(use errors cli-error)
+(use matches argument-text)
+(use parse outcome)
+(use support/fixture parse-texts)
+
+(defn root-after (texts)
+  (match (parse-texts texts)
+    ((parsed found)
+     (map-some (argument-text (ref found) "root") clone))
+    (_ none)))
+
+(deftest a-valid-line-parses-into-matches
+  (assert (= (root-after (vec "site"))
+             (some (str "site")))))
+
+(deftest help-becomes-the-help-outcome
+  (assert (= (parse-texts (vec "--help")) outcome/help)))
+
+(deftest version-becomes-the-version-outcome
+  (assert (= (parse-texts (vec "-V"))
+             (outcome/version (str "1.0.0")))))
+
+(deftest a-scan-error-becomes-a-usage-error
+  (assert (= (parse-texts (vec "--prot"))
+             (outcome/usage-error (cli-error/unknown-option (str "--prot"))))))
+
+(deftest a-resolve-error-becomes-a-usage-error
+  (assert (= (parse-texts (vec "one" "two"))
+             (outcome/usage-error (cli-error/unexpected-argument (str
+                                                                   "two"))))))

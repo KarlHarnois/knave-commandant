@@ -1,20 +1,12 @@
 (module
-  "Builds the `serve` spec the tests parse against, and parses words with it.")
+  "Builds the specs, environments and words the tests run against.")
 
 (use lib ->argument-spec ->command-spec ->environment
          ->option-spec ->value-slot ->variable
-         argument-presence option-value outcome parse
-         switch-state value-kind)
+         argument-presence parse switch-state value-kind)
 
-(export environment-with no-environment no-words
-        option-after parse-texts parse-with serve-spec
-        spec-requiring)
-
-(defn option-after (texts long)
-  (match (parse-texts texts)
-    ((parsed found)
-     (map-some (option-value (ref found) long) clone))
-    (_ none)))
+(export environment-with no-environment no-words parse-texts
+        parse-with serve-spec spec-requiring words)
 
 (defn parse-texts (texts)
   (parse-with (serve-spec) (no-environment) texts))
@@ -22,8 +14,11 @@
 (defn parse-with (spec environment texts)
   (parse (ref spec)
          (ref environment)
-         (ref (collect (map (iter texts)
-                         (fn (text) (str (deref text))))))))
+         (ref (words texts))))
+
+(defn words (texts)
+  (collect (map (iter texts)
+             (fn (text) (str (deref text))))))
 
 (defn serve-spec ()
   (->command-spec
