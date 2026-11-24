@@ -68,6 +68,14 @@
   (assert (= (root-after (vec "--" "--open"))
              (some (str "--open")))))
 
+(deftest a-double-dash-cannot-be-an-option-value
+  (assert (= (parse-texts (vec "--port" "--" "80"))
+             (outcome/usage-error (cli-error/missing-value (str "--port"))))))
+
+(deftest a-negative-number-is-an-argument
+  (assert (= (root-after (vec "-5"))
+             (some (str "-5")))))
+
 (deftest a-negation-turns-a-switch-off
   (assert (= (option-after (vec "--no-color") "color")
              (some (matched-value/switch switch-state/off)))))

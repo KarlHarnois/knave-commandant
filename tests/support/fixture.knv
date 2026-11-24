@@ -2,7 +2,7 @@
   "Builds the specs, environments and words the tests run against.")
 
 (use lib ->argument-spec ->command-spec ->environment
-         ->option-spec ->value-slot ->variable
+         ->option-spec ->switch-slot ->value-slot ->variable
          argument-presence parse switch-state value-kind)
 
 (export environment-with no-environment no-words parse-texts
@@ -29,34 +29,36 @@
                                      :about (str "The folder to serve")
                                      :presence (argument-presence/defaulted (str
                                                                               "."))))
-    :options (vec (->option-spec :long (str "port")
-                                 :short (some (char "p"))
-                                 :about (str "The port to listen on")
-                                 :value (value-kind/one (->value-slot
-                                                          :placeholder (str
-                                                                         "port")
-                                                          :default (some (str "8000"))))
-                                 :env (vec (str "SERVE_PORT") (str "PORT")))
-                  (->option-spec :long (str "open")
-                                 :short (some (char "o"))
-                                 :about (str "Opens the browser")
-                                 :value (value-kind/switch switch-state/off)
-                                 :env (vec))
-                  (->option-spec :long (str "color")
-                                 :short none
-                                 :about (str "Colors the log")
-                                 :value (value-kind/switch switch-state/on)
-                                 :env (vec))
-                  (->option-spec :long (str "verbose")
-                                 :short (some (char "v"))
-                                 :about (str "Logs more")
-                                 :value value-kind/count
-                                 :env (vec))
-                  (->option-spec :long (str "tag")
-                                 :short (some (char "t"))
-                                 :about (str "Tags the log")
-                                 :value (value-kind/many (str "tag"))
-                                 :env (vec)))))
+    :options (vec
+               (->option-spec :long (str "port")
+                              :short (some (char "p"))
+                              :about (str "The port to listen on")
+                              :value (value-kind/one
+                                       (->value-slot
+                                         :placeholder (str "port")
+                                         :default (some (str "8000"))
+                                         :env (vec (str "SERVE_PORT")
+                                                   (str "PORT")))))
+               (->option-spec :long (str "open")
+                              :short (some (char "o"))
+                              :about (str "Opens the browser")
+                              :value (value-kind/switch
+                                       (->switch-slot :initial switch-state/off
+                                                      :env (vec (str "SERVE_OPEN")))))
+               (->option-spec :long (str "color")
+                              :short none
+                              :about (str "Colors the log")
+                              :value (value-kind/switch
+                                       (->switch-slot :initial switch-state/on
+                                                      :env (vec))))
+               (->option-spec :long (str "verbose")
+                              :short (some (char "v"))
+                              :about (str "Logs more")
+                              :value value-kind/count)
+               (->option-spec :long (str "tag")
+                              :short (some (char "t"))
+                              :about (str "Tags the log")
+                              :value (value-kind/many (str "tag"))))))
 
 (defn spec-requiring (name)
   (->command-spec :name (str "copy")

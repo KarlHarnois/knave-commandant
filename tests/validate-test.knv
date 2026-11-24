@@ -1,0 +1,51 @@
+(use spec ->argument-spec ->option-spec argument-presence
+          value-kind)
+
+(use support/fixture serve-spec)
+(use validate spec-error spec-error->message validate-spec)
+
+(defn with-option (long short)
+  (let (spec (serve-spec))
+    (push! (:options spec)
+           (->option-spec :long (str long)
+                          :short short
+                          :about (str "")
+                          :value value-kind/count))
+    spec))
+
+(defn with-argument (name)
+  (let (spec (serve-spec))
+    (push! (:arguments spec)
+           (->argument-spec :name (str name)
+                            :about (str "")
+                            :presence argument-presence/required))
+    spec))
+
+(deftest a-well-formed-spec-is-valid
+  (assert (ok? (validate-spec (ref (serve-spec))))))
+
+(deftest a-spec-cannot-define-help
+  (assert (= (unwrap-err (validate-spec (ref (with-option "help" none))))
+             (spec-error/reserved-long (str "help")))))
+
+(deftest a-spec-cannot-define-short-version
+  (assert (= (unwrap-err (validate-spec (ref (with-option "show"
+                                                          (some (char "V"))))))
+             (spec-error/reserved-short (char "V")))))
+
+(deftest two-options-cannot-share-a-long-name
+  (assert (= (unwrap-err (validate-spec (ref (with-option "port" none))))
+             (spec-error/repeated-long (str "port")))))
+
+(deftest two-options-cannot-share-a-short-name
+  (assert (= (unwrap-err (validate-spec (ref (with-option "pages"
+                                                          (some (char "p"))))))
+             (spec-error/repeated-short (char "p")))))
+
+(deftest two-arguments-cannot-share-a-name
+  (assert (= (unwrap-err (validate-spec (ref (with-argument "root"))))
+             (spec-error/repeated-argument (str "root")))))
+
+(deftest names-a-repeated-short-option
+  (assert (= (spec-error->message (spec-error/repeated-short (char "p")))
+             "two options are named `-p`")))

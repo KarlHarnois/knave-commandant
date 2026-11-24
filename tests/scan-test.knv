@@ -56,3 +56,19 @@
 (deftest a-negation-takes-no-attached-value
   (assert (= (scan-of (vec "--no-color=yes"))
              (err (cli-error/unexpected-value (str "--no-color"))))))
+
+(deftest a-double-dash-is-not-a-value
+  (assert (= (scan-of (vec "--port" "--" "80"))
+             (err (cli-error/missing-value (str "--port"))))))
+
+(deftest a-negative-number-is-a-value
+  (assert (= (occurrence-count (vec "--port" "-5"))
+             (some 1))))
+
+(deftest help-takes-no-attached-value
+  (assert (= (scan-of (vec "--help=x"))
+             (err (cli-error/unexpected-value (str "--help"))))))
+
+(deftest an-unknown-assignment-keeps-its-whole-spelling
+  (assert (= (scan-of (vec "--=x"))
+             (err (cli-error/unknown-option (str "--=x"))))))

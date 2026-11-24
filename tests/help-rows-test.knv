@@ -46,3 +46,7 @@
 (deftest a-command-without-a-version-lists-only-help
   (assert (= (len (option-rows (ref (spec-requiring "file"))))
              1)))
+
+(deftest a-switch-notes-its-environment-variable
+  (assert (= (:description (option-row-at 1))
+             "Opens the browser [env: SERVE_OPEN]")))

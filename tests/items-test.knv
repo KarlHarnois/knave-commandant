@@ -29,3 +29,11 @@
 (deftest a-short-flag-is-written-with-one-dash
   (assert (= (flag->written (ref (flag/short (char "p"))))
              "-p")))
+
+(deftest a-negative-number-is-a-word
+  (assert (= (items-of (vec "-5"))
+             (vec (item/word (str "-5"))))))
+
+(deftest a-double-dash-stays-a-marker
+  (assert (= (items-of (vec "--" "x"))
+             (vec item/options-end (item/word (str "x"))))))

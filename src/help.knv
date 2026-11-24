@@ -76,8 +76,13 @@
 
 (defn row->text (row layout)
   (let (lines (wrap (as-str (:description row))
-                    (:description-width layout))
-        term (padded (:term row) (:term-width layout)))
+                    (:description-width layout)))
+    (if (empty? lines)
+      (str indent (:term row))
+      (described-row->text row lines layout))))
+
+(defn described-row->text (row lines layout)
+  (let (term (padded (:term row) (:term-width layout)))
     (join (collect (map (enumerate (iter lines))
                      (fn (entry) (row-line (ref term) entry))))
           line-break)))

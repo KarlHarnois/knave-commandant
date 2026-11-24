@@ -27,7 +27,8 @@
   (assert (= (tokens-of (vec "-"))
              (vec (token/word (str "-"))))))
 
-(deftest a-double-dash-turns-the-rest-into-words
+(deftest a-double-dash-marks-the-end-and-turns-the-rest-into-words
   (assert (= (tokens-of (vec "--" "--open" "-v"))
-             (vec (token/word (str "--open"))
+             (vec token/options-end
+                  (token/word (str "--open"))
                   (token/word (str "-v"))))))

@@ -1,4 +1,5 @@
 (use help spec->help spec->usage)
+(use spec ->option-spec value-kind)
 (use support/fixture serve-spec spec-requiring)
 
 (def serve-help
@@ -8,12 +9,21 @@
        "\n" "Options:\n"
        "  -p, --port <port>   The port to listen on [default: 8000]\n"
        "                      [env: SERVE_PORT, PORT]\n"
-       "  -o, --open          Opens the browser\n"
+       "  -o, --open          Opens the browser [env: SERVE_OPEN]\n"
        "      --[no-]color    Colors the log\n"
        "  -v, --verbose...    Logs more\n"
        "  -t, --tag <tag>...  Tags the log\n"
        "  -h, --help          Print help\n"
        "  -V, --version       Print version"))
+
+(defn spec-with-undescribed-option ()
+  (let (spec (serve-spec))
+    (push! (:options spec)
+           (->option-spec :long (str "quiet")
+                          :short none
+                          :about (str "")
+                          :value value-kind/count))
+    spec))
 
 (deftest the-usage-lists-options-then-arguments
   (assert (= (spec->usage (ref (serve-spec)))
@@ -30,3 +40,9 @@
 (deftest a-narrow-width-keeps-twenty-columns-for-descriptions
   (assert (= (spec->help (ref (serve-spec)) 10)
              (spec->help (ref (serve-spec)) 42))))
+
+(deftest an-option-without-a-description-keeps-its-row
+  (assert (> (count (split (as-str (spec->help (ref (spec-with-undescribed-option))
+                                               80))
+                           "\n      --quiet...\n"))
+             1)))

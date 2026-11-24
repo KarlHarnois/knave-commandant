@@ -1,7 +1,7 @@
 (module
   "Turns tokens into flags and words, splitting each short cluster with the command's spec.")
 
-(use spec short-takes-value?)
+(use spec command-spec short-takes-value?)
 (use tokens token)
 
 (export flag flag->written item tokens->items)
@@ -13,6 +13,7 @@
 (defenum item
   (flag flag)
   (flag-with-value flag string)
+  options-end
   (word string))
 
 (defenum flag
@@ -41,8 +42,36 @@
             (item/flag-with-value (flag/long (clone (:name assigned)))
                                   (clone (:value assigned)))))
     ((short-cluster cluster)
-     (push-cluster-items! items spec cluster))
+     (push-short-cluster! items spec cluster))
+    (options-end (push! items item/options-end))
     ((word text) (push! items (item/word (clone text))))))
+
+(defn push-short-cluster! (items spec cluster)
+  (if (number-word? spec cluster)
+    (push! items (item/word (str short-prefix cluster)))
+    (push-cluster-items! items spec cluster)))
+
+(defn number-word? (spec cluster)
+  (and (starts-with-digit? cluster)
+       (not (digit-short? spec))))
+
+(defn starts-with-digit? (cluster)
+  (let (characters (collect (chars (as-str cluster))))
+    (and (not (empty? characters))
+         (digit? (deref (at characters 0))))))
+
+(type digit-short?
+  (fn ((ref command-spec)) bool))
+
+(defn digit-short? (spec)
+  (any? (iter (:options spec))
+    (fn (option)
+      (short-digit? (:short option)))))
+
+(defn short-digit? (short)
+  (match short
+    ((some character) (digit? character))
+    (none false)))
 
 (defn push-cluster-items! (items spec cluster)
   (let (characters (collect (chars (as-str cluster))))

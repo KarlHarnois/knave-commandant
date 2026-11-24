@@ -1,5 +1,5 @@
 (module
-  "Breaks a text into lines of at most a given width, between words.")
+  "Breaks a text into lines of at most a given width, between words, keeping the text's own line breaks.")
 
 (export wrap)
 
@@ -10,9 +10,23 @@
   :current string)
 
 (defn wrap (text width)
-  (finish (reduce (filter (split text word-separator) word?)
-                  (->wrapping :lines (vec) :current (str))
-                  (fn (wrapping word) (add-word wrapping word width)))))
+  (let-match ((wrapping wrapped _) (reduce
+                                     (lines text)
+                                     (->wrapping :lines (vec) :current (str))
+                                     (fn (wrapping line)
+                                       (end-line
+                                         (wrap-words wrapping line width)))))
+    wrapped))
+
+(defn wrap-words (wrapping line width)
+  (reduce (filter (split line word-separator) word?) wrapping
+    (fn (wrapping word) (add-word wrapping word width))))
+
+(defn end-line (wrapping)
+  (let (next wrapping)
+    (push! (:lines next)
+           (clone (:current next)))
+    (with-current next (str))))
 
 (defn word? (part)
   (not (empty? (deref part))))
@@ -42,10 +56,3 @@
     (push! (:lines next)
            (clone (:current next)))
     (with-current next (str word))))
-
-(defn finish (wrapping)
-  (let-match ((wrapping lines current) wrapping)
-    (if (empty? current) lines (appended lines current))))
-
-(defn appended (lines line)
-  (let (all lines) (push! all line) all))

@@ -9,6 +9,11 @@
 (defn contains-text? (text part)
   (> (count (split (as-str text) part)) 1))
 
+(deftest an-unknown-assignment-gets-a-tip-from-its-name
+  (assert (contains-text? (report-for (cli-error/unknown-option (str
+                                                                  "--prot=80")))
+                          "`--port`")))
+
 (deftest a-mistyped-option-gets-a-tip
   (assert (= (report-for (cli-error/unknown-option (str "--prot")))
              (str "error: unknown option `--prot`\n\n"
