@@ -1,8 +1,10 @@
-(use lib argument-text cli-error error-report matched-value
-         option-value outcome spec->help switch-state)
+(use lib argument-text cli-error failure-report
+         matched-value option-value outcome spec->help
+         switch-state)
 
-(use support/fixture environment-with no-words parse-texts
-                     parse-with serve-spec)
+(use support/fixture environment-with no-environment
+                     no-words parse-texts parse-with
+                     serve-spec site-spec usage-error)
 
 (defn option-after (texts long)
   (match (parse-texts texts)
@@ -28,13 +30,22 @@
 (defn report-after (texts)
   (match (parse-texts texts)
     ((usage-error failure)
-     (error-report (ref (serve-spec))
-                   (ref failure)))
+     (failure-report (ref (serve-spec))
+                     (ref failure)))
+    (_ (str))))
+
+(defn site-report (texts)
+  (match (parse-with (site-spec) (no-environment) texts)
+    ((usage-error failure)
+     (failure-report (ref (site-spec))
+                     (ref failure)))
     (_ (str))))
 
 (deftest every-command-takes-short-and-long-help
-  (assert (= (parse-texts (vec "serve-me" "-h")) outcome/help))
-  (assert (= (parse-texts (vec "--help")) outcome/help)))
+  (assert (= (parse-texts (vec "serve-me" "-h"))
+             (outcome/help (vec))))
+  (assert (= (parse-texts (vec "--help"))
+             (outcome/help (vec)))))
 
 (deftest a-versioned-command-takes-short-and-long-version
   (assert (= (parse-texts (vec "-V"))
@@ -70,7 +81,7 @@
 
 (deftest a-double-dash-cannot-be-an-option-value
   (assert (= (parse-texts (vec "--port" "--" "80"))
-             (outcome/usage-error (cli-error/missing-value (str "--port"))))))
+             (usage-error (cli-error/missing-value (str "--port"))))))
 
 (deftest a-negative-number-is-an-argument
   (assert (= (root-after (vec "-5"))
@@ -90,7 +101,7 @@
 
 (deftest a-mistyped-option-is-a-usage-error
   (assert (= (parse-texts (vec "--prot" "80"))
-             (outcome/usage-error (cli-error/unknown-option (str "--prot"))))))
+             (usage-error (cli-error/unknown-option (str "--prot"))))))
 
 (deftest a-mistyped-option-reports-the-closest-option
   (assert (starts-with? (as-str (report-after (vec "--prot" "80")))
@@ -99,3 +110,22 @@
 (deftest the-help-page-lists-every-option-and-the-builtins
   (assert (= (count (lines (as-str (spec->help (ref (serve-spec)) 80))))
              16)))
+
+(deftest a-global-option-works-after-the-command
+  (assert (= (match (parse-with (site-spec)
+                                (no-environment)
+                                (vec "build" "-v" "site"))
+               ((parsed found)
+                (map-some (option-value (ref found) "verbose") clone))
+               (_ none))
+             (some (matched-value/count 1)))))
+
+(deftest a-mistyped-command-reports-the-closest-command
+  (assert (starts-with? (as-str (site-report (vec "pgae")))
+                        "error: unknown command `pgae`\n\n  tip: a similar command exists: `page`")))
+
+(deftest a-group-without-a-command-reports-its-own-usage
+  (assert (= (site-report (vec "page"))
+             (str "error: a command is required\n\n"
+                  "Usage: site page [OPTIONS] <COMMAND>\n\n"
+                  "For more information, try `site page --help`."))))

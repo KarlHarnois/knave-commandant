@@ -1,11 +1,14 @@
 (module
   "Finds the mistakes a spec can hold, such as two options with one name, before a parse hides them.")
 
+(use commands descended subcommand-names)
 (use spec command-spec)
 
 (export spec-error spec-error->message validate-spec)
 
 (def reserved-longs (vec "help" "version"))
+
+(def reserved-command "help")
 
 (def reserved-shorts
   (vec (char "h") (char "V")))
@@ -15,12 +18,16 @@
   (reserved-short char)
   (repeated-long string)
   (repeated-short char)
-  (repeated-argument string))
+  (repeated-argument string)
+  reserved-command
+  (repeated-command string))
 
 (defn validate-spec (spec)
   (try (check-longs (long-names spec)))
   (try (check-shorts (short-names spec)))
-  (check-arguments (argument-names spec)))
+  (try (check-arguments (argument-names spec)))
+  (try (check-commands (subcommand-names spec)))
+  (validate-subcommands spec))
 
 (defn spec-error->message (failure)
   (match failure
@@ -35,7 +42,26 @@
     ((repeated-short name)
      (str "two options are named `-" name "`"))
     ((repeated-argument name)
-     (str "two arguments are named <" name ">"))))
+     (str "two arguments are named <" name ">"))
+    (reserved-command (str "command `" reserved-command
+                           "` is built in, so a spec cannot define it"))
+    ((repeated-command name)
+     (str "two commands are named `" name "`"))))
+
+(defn validate-subcommands (spec)
+  (reduce (iter (:subcommands spec)) (ok (do))
+    (fn (so-far subcommand)
+      (then-ok so-far
+        (fn (_)
+          (validate-spec (ref (descended spec subcommand))))))))
+
+(defn check-commands (names)
+  (if (any? (iter names)
+        (fn (name)
+          (= (as-str name) reserved-command)))
+    (err spec-error/reserved-command)
+    (map-err (check-unique (ref names))
+      (fn (name) (spec-error/repeated-command name)))))
 
 (type long-names
   (fn ((ref command-spec)) (vec string)))

@@ -13,7 +13,8 @@
 (defn resolve (spec environment scan)
   (let-try (arguments (resolve-arguments spec (ref (:positionals scan))))
     (try (check-no-repeated spec (ref (:occurrences scan))))
-    (ok (->matches :arguments arguments
+    (ok (->matches :path (clone (:path scan))
+                   :arguments arguments
                    :options (option-matches spec environment
                                             (ref (:occurrences scan)))))))
 

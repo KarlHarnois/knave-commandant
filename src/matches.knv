@@ -4,11 +4,12 @@
 (use spec switch-state)
 
 (export ->argument-match ->matches ->option-match
-        argument-match argument-text many-texts
+        argument-match argument-text command-at many-texts
         matched-value matches one-text option-match
-        option-value read-count read-switch)
+        option-value read-count read-switch shifted)
 
 (defstruct matches
+  :path (vec string)
   :arguments (vec argument-match)
   :options (vec option-match))
 
@@ -65,3 +66,19 @@
               (fn (found)
                 (= (as-str (:long found)) long)))
             (fn (found) (:value found))))
+
+(type command-at
+  (fn ((ref matches)) string))
+
+(defn command-at (found)
+  (unwrap-or (map-some (first (:path found)) clone)
+             (str)))
+
+(type shifted
+  (fn ((ref matches)) matches))
+
+(defn shifted (found)
+  (assoc (clone found)
+         :path (collect (map (range 1 (len (:path found)))
+                          (fn (index)
+                            (clone (at (:path found) index)))))))

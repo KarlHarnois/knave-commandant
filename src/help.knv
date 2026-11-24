@@ -1,13 +1,17 @@
 (module
   "Writes a command's usage line and its help page, laid out in columns that fit a width.")
 
-(use help-rows argument-rows argument-term option-rows)
+(use help-rows argument-rows argument-term command-rows
+               option-rows)
+
 (use spec command-spec)
 (use wrap wrap)
 
 (export spec->help spec->usage)
 
 (def options-mark "[OPTIONS]")
+
+(def command-mark "<COMMAND>")
 
 (def indent "  ")
 
@@ -24,13 +28,19 @@
   :description-width int)
 
 (defn spec->help (spec width)
-  (let (arguments (argument-rows spec)
+  (let (commands (command-rows spec)
+        arguments (argument-rows spec)
         options (option-rows spec)
-        layout (page-layout (max (widest-term (ref arguments))
+        layout (page-layout (max (widest-term (ref commands))
+                                 (widest-term (ref arguments))
                                  (widest-term (ref options)))
                             width)
         sections (vec (clone (:about spec))
                       (str "Usage: " (spec->usage spec))))
+    (push-section! (mut sections)
+                   "Commands:"
+                   (ref commands)
+                   layout)
     (push-section! (mut sections)
                    "Arguments:"
                    (ref arguments)
@@ -50,6 +60,8 @@
     (for-each (iter (:arguments spec))
       (fn (argument)
         (push! parts (argument-term argument))))
+    (when (not (empty? (:subcommands spec)))
+      (push! parts (str command-mark)))
     (join parts " ")))
 
 (defn page-layout (term-width width)

@@ -1,6 +1,6 @@
 (use help spec->help spec->usage)
 (use spec ->option-spec value-kind)
-(use support/fixture serve-spec spec-requiring)
+(use support/fixture serve-spec site-spec spec-requiring)
 
 (def serve-help
   (str "Serves a folder over HTTP.\n" "\n"
@@ -46,3 +46,11 @@
                                                80))
                            "\n      --quiet...\n"))
              1)))
+
+(deftest the-usage-of-a-group-ends-with-its-command
+  (assert (= (spec->usage (ref (site-spec)))
+             "site [OPTIONS] <COMMAND>")))
+
+(deftest a-group-lists-its-commands-before-its-options
+  (assert (starts-with? (as-str (spec->help (ref (site-spec)) 80))
+                        "Builds and serves a site.\n\nUsage: site [OPTIONS] <COMMAND>\n\nCommands:\n  build")))

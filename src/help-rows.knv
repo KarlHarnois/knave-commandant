@@ -4,8 +4,8 @@
 (use spec argument-presence command-spec option-spec
           switch-state value-kind)
 
-(export ->help-row argument-rows argument-term help-row
-        option-rows)
+(export ->help-row argument-rows argument-term command-rows
+        help-row option-rows)
 
 (def no-short "    ")
 
@@ -16,6 +16,10 @@
 (def version-row-term "-V, --version")
 
 (def version-row-description "Print version")
+
+(def help-command-term "help")
+
+(def help-command-description "Print the help of a command")
 
 (defstruct help-row
   :term string
@@ -38,6 +42,14 @@
     (push-version-row! (mut rows) spec)
     rows))
 
+(defn command-rows (spec)
+  (let (rows (collect (map (iter (:subcommands spec)) command-row)))
+    (when (not (empty? rows))
+      (push! rows
+             (->help-row :term (str help-command-term)
+                         :description (str help-command-description))))
+    rows))
+
 (defn argument-term (argument)
   (match (:presence argument)
     (required (str "<" (:name argument) ">"))
@@ -48,6 +60,13 @@
     (push! rows
            (->help-row :term (str version-row-term)
                        :description (str version-row-description)))))
+
+(type command-row
+  (fn ((ref command-spec)) help-row))
+
+(defn command-row (subcommand)
+  (->help-row :term (clone (:name subcommand))
+              :description (clone (:about subcommand))))
 
 (defn argument-row (argument)
   (->help-row :term (argument-term argument)

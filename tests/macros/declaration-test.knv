@@ -1,0 +1,26 @@
+(use lib defcommand)
+
+(defcommand described "Does one thing."
+  :version "9.9.9"
+  (input string :about "The input")
+  (:flag switch :about "A flag"))
+
+(defcommand bare)
+
+(export matches->bare matches->described)
+
+(deftest the-about-text-comes-from-the-docstring
+  (assert (= (:about (described-spec)) "Does one thing.")))
+
+(deftest the-version-comes-from-the-settings
+  (assert (= (:version (described-spec))
+             (some (str "9.9.9")))))
+
+(deftest arguments-and-options-are-sorted-by-kind
+  (assert (= (len (:arguments (described-spec)))
+             1))
+  (assert (= (len (:options (described-spec))) 1)))
+
+(deftest a-bare-command-has-no-about-and-no-version
+  (assert (= (:about (bare-spec)) ""))
+  (assert (= (:version (bare-spec)) none)))

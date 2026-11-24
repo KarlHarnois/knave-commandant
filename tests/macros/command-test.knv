@@ -1,7 +1,7 @@
 (use lib ->environment ->invalid-text cli-error defchoice
          defcommand outcome parse spec->usage)
 
-(export run-greet)
+(export matches->greet)
 
 (defchoice tone plain loud)
 

@@ -1,7 +1,9 @@
-(use errors cli-error)
+(use errors ->usage-failure cli-error)
 (use matches argument-text)
 (use parse outcome)
-(use support/fixture parse-texts)
+
+(use support/fixture no-environment parse-texts parse-with
+                     site-spec usage-error)
 
 (defn root-after (texts)
   (match (parse-texts texts)
@@ -14,7 +16,8 @@
              (some (str "site")))))
 
 (deftest help-becomes-the-help-outcome
-  (assert (= (parse-texts (vec "--help")) outcome/help)))
+  (assert (= (parse-texts (vec "--help"))
+             (outcome/help (vec)))))
 
 (deftest version-becomes-the-version-outcome
   (assert (= (parse-texts (vec "-V"))
@@ -22,9 +25,30 @@
 
 (deftest a-scan-error-becomes-a-usage-error
   (assert (= (parse-texts (vec "--prot"))
-             (outcome/usage-error (cli-error/unknown-option (str "--prot"))))))
+             (usage-error (cli-error/unknown-option (str "--prot"))))))
 
 (deftest a-resolve-error-becomes-a-usage-error
   (assert (= (parse-texts (vec "one" "two"))
-             (outcome/usage-error (cli-error/unexpected-argument (str
-                                                                   "two"))))))
+             (usage-error (cli-error/unexpected-argument (str "two"))))))
+
+(deftest a-group-parse-records-the-command-path
+  (assert (= (match (parse-with (site-spec)
+                                (no-environment)
+                                (vec "page" "list"))
+               ((parsed found) (some (clone (:path found))))
+               (_ none))
+             (some (vec (str "page") (str "list"))))))
+
+(deftest help-for-a-command-carries-its-path
+  (assert (= (parse-with (site-spec)
+                         (no-environment)
+                         (vec "build" "--help"))
+             (outcome/help (vec (str "build"))))))
+
+(deftest a-resolve-error-carries-the-command-path
+  (assert (= (parse-with (site-spec)
+                         (no-environment)
+                         (vec "build" "a" "b"))
+             (outcome/usage-error (->usage-failure :path (vec (str "build"))
+                                                   :error (cli-error/unexpected-argument
+                                                            (str "b")))))))

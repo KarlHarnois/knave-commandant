@@ -4,10 +4,10 @@
 (use environment ->environment ->variable environment
                  variable)
 
-(use error-report error-report)
+(use error-report error-report failure-report)
 
-(use errors ->invalid-text cli-error error->message
-            invalid-text)
+(use errors ->invalid-text ->usage-failure cli-error
+            error->message invalid-text usage-failure)
 
 (use help spec->help spec->usage)
 
@@ -16,7 +16,8 @@
 
 (use parse outcome parse)
 (use macros/choice defchoice)
-(use macros/command defcommand)
+(use macros/cli defcli)
+(use macros/command defcommand run-command)
 (use run run run-with)
 (use values cli-value from-text value-names)
 (use validate spec-error spec-error->message validate-spec)
@@ -28,12 +29,13 @@
 
 (export ->argument-spec ->command-spec ->environment
         ->invalid-text ->option-spec ->switch-slot
-        ->value-slot ->variable argument-presence
-        argument-spec argument-text cli-error cli-value
-        command-spec defchoice defcommand environment
-        error->message error-report from-text invalid-text
-        matched-value matches option-spec option-value
-        outcome parse run run-with spec->help spec->usage
+        ->usage-failure ->value-slot ->variable
+        argument-presence argument-spec argument-text
+        cli-error cli-value command-spec defchoice defcli
+        defcommand environment error->message error-report
+        failure-report from-text invalid-text matched-value
+        matches option-spec option-value outcome parse run
+        run-command run-with spec->help spec->usage
         spec-error spec-error->message switch-slot
-        switch-state validate-spec value-kind value-names
-        value-slot variable)
+        switch-state usage-failure validate-spec value-kind
+        value-names value-slot variable)

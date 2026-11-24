@@ -1,7 +1,7 @@
-(use error-report error-report)
-(use errors ->invalid-text cli-error)
+(use error-report error-report failure-report)
+(use errors ->invalid-text ->usage-failure cli-error)
 
-(use support/fixture serve-spec spec-requiring
+(use support/fixture serve-spec site-spec spec-requiring
                      spec-with-choices)
 
 (defn report-for (failure)
@@ -57,3 +57,16 @@
                                                              :text (str
                                                                      "abc"))))
                                "tip"))))
+
+(deftest a-mistyped-command-gets-a-tip
+  (assert (contains-text? (error-report (ref (site-spec))
+                                        (ref (cli-error/unknown-command (str "biuld"))))
+                          "  tip: a similar command exists: `build`")))
+
+(deftest a-failure-reports-the-usage-of-its-command
+  (assert (contains-text? (failure-report
+                            (ref (site-spec))
+                            (ref (->usage-failure
+                                   :path (vec (str "page"))
+                                   :error cli-error/missing-command)))
+                          "Usage: site page [OPTIONS] <COMMAND>")))

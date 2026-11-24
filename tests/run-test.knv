@@ -1,6 +1,8 @@
 (use run command->response response)
 (use spec ->option-spec value-kind)
-(use support/fixture no-environment serve-spec words)
+
+(use support/fixture no-environment serve-spec site-spec
+                     words)
 
 (defn serve-response (texts)
   (response-to (serve-spec) texts))
@@ -52,3 +54,8 @@
 (deftest a-broken-spec-stops-before-parsing
   (assert (= (response-to (spec-with-help-option) (vec "site"))
              (response/broken (str "invalid command spec: option `--help` is built in, so a spec cannot define it")))))
+
+(deftest help-for-a-command-shows-that-command
+  (assert (starts-with? (as-str (reply-text (response-to (site-spec)
+                                                         (vec "help" "build"))))
+                        "Builds the site.\n\nUsage: site build")))

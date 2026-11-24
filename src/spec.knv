@@ -13,7 +13,8 @@
   :about string
   :version (option string)
   :arguments (vec argument-spec)
-  :options (vec option-spec))
+  :options (vec option-spec)
+  :subcommands (vec command-spec))
 
 (defstruct argument-spec
   :name string

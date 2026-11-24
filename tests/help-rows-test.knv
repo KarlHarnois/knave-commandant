@@ -1,7 +1,7 @@
 (use help-rows ->help-row argument-rows argument-term
-               option-rows)
+               command-rows option-rows)
 
-(use support/fixture serve-spec spec-requiring
+(use support/fixture serve-spec site-spec spec-requiring
                      spec-with-choices)
 
 (defn option-row-at (index)
@@ -56,3 +56,16 @@
   (assert (= (:description (at (option-rows (ref (spec-with-choices)))
                                0))
              "How to print [possible values: text, json]")))
+
+(deftest a-group-lists-each-command-and-help
+  (assert (= (command-rows (ref (site-spec)))
+             (vec (->help-row :term (str "build")
+                              :description (str "Builds the site."))
+                  (->help-row :term (str "page")
+                              :description (str "Manages the pages."))
+                  (->help-row :term (str "help")
+                              :description (str
+                                             "Print the help of a command"))))))
+
+(deftest a-leaf-lists-no-commands
+  (assert (empty? (command-rows (ref (serve-spec))))))

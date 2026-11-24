@@ -10,6 +10,7 @@
 
 (defn found ()
   (->matches
+    :path (vec)
     :arguments (vec (->argument-match :name (str "root") :value (str "site")))
     :options (vec (->option-match :long (str "port")
                                   :value (matched-value/one (some (str "80"))))

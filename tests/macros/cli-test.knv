@@ -1,0 +1,54 @@
+(use lib ->environment cli-error defcli defcommand outcome
+         parse spec->usage switch-state)
+
+(defcommand fetch "Fetches the changes."
+  (:all switch :short a :about "Fetches every remote"))
+
+(defcommand remote-add "Adds a remote."
+  (name string :about "The remote's name"))
+
+(defcli remote "Manages the remotes."
+  (commands (add remote-add)))
+
+(defcli tool "Tracks changes."
+  :version "0.3.0"
+  (:quiet count :short q :about "Prints less")
+  (commands fetch remote))
+
+(export matches->fetch matches->remote matches->remote-add
+        matches->tool)
+
+(defn tool-after (texts)
+  (match (parse (ref (tool-spec))
+                (ref (->environment :variables (vec)))
+                (ref (collect (map (iter texts)
+                                (fn (text) (str (deref text)))))))
+    ((parsed found) (matches->tool (ref found)))
+    (_ (err cli-error/missing-command))))
+
+(deftest the-spec-lists-each-command-under-its-word
+  (assert (= (collect (map (iter (:subcommands (tool-spec)))
+                        (fn (found) (clone (:name found)))))
+             (vec (str "fetch") (str "remote")))))
+
+(deftest an-aliased-command-takes-its-word
+  (assert (= (:name (at (:subcommands (remote-spec)) 0))
+             "add")))
+
+(deftest the-usage-ends-with-the-command
+  (assert (= (spec->usage (ref (tool-spec)))
+             "tool [OPTIONS] <COMMAND>")))
+
+(deftest a-command-becomes-its-enum-case
+  (assert (= (tool-after (vec "-q" "fetch" "--all"))
+             (ok (->tool :quiet 1
+                         :command (tool-command/fetch
+                                    (->fetch :all switch-state/on)))))))
+
+(deftest a-nested-group-becomes-a-nested-case
+  (assert (= (tool-after (vec "remote" "add" "origin"))
+             (ok (->tool :quiet 0
+                         :command (tool-command/remote
+                                    (->remote :command (remote-command/remote-add
+                                                         (->remote-add :name (str
+                                                                               "origin"))))))))))

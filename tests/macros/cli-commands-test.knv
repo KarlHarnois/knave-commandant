@@ -1,0 +1,31 @@
+(use lib cli-error defcli defcommand)
+(use matches ->matches)
+
+(defcommand log-show "Shows the log.")
+
+(defcommand log-clear "Clears the log.")
+
+(defcli log "Reads the log."
+  (commands (show log-show) (clear log-clear)))
+
+(export matches->log matches->log-clear matches->log-show)
+
+(defn chosen (word)
+  (->matches :path (vec (str word))
+             :arguments (vec)
+             :options (vec)))
+
+(deftest each-entry-becomes-a-subcommand-named-by-its-word
+  (assert (= (collect (map (iter (:subcommands (log-spec)))
+                        (fn (found) (clone (:name found)))))
+             (vec (str "show") (str "clear")))))
+
+(deftest the-word-picks-its-case
+  (assert (= (log-command-at (ref (chosen "clear")))
+             (ok (log-command/log-clear (->log-clear))))))
+
+(deftest a-path-without-a-command-is-a-missing-command
+  (assert (= (log-command-at (ref (->matches :path (vec)
+                                             :arguments (vec)
+                                             :options (vec))))
+             (err cli-error/missing-command))))

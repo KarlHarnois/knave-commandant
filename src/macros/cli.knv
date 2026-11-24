@@ -1,0 +1,111 @@
+(module
+  "Defines `defcli`, which groups commands under one program: an enum of its commands, a struct of its global options and the chosen command, its spec, its parse and its run.")
+
+(use prelude/macros header-shape)
+
+(use code empty? fail first keyword? list list? prepend rest
+          symbol symbol-name symbol? value-eq)
+
+(use errors cli-error)
+
+(use macros/declaration about-of bindings constructor-fields
+                        fields named settings-of specs
+                        version-form)
+
+(use macros/parameters matches-name)
+(use matches command-at matches shifted)
+(use spec ->command-spec)
+
+(use macros/cli-commands case-forms command-clauses
+                         subcommand-specs)
+
+(export defcli)
+
+(defmacro defcli (name parts ...)
+  "Defines a program whose first word picks one of its commands, each a
+  `defcommand` or another `defcli`. Its options are global: every command
+  takes them, before or after the command's name."
+  (cli-forms name
+             (about-of parts)
+             (settings-of parts)
+             (options-of parts)
+             (commands-of name parts)))
+
+(header-shape (defcli name docstring))
+
+(def cli-forms
+  (fn (name about settings options commands)
+    (template (do
+                (defenum (unquote (named name "" "-command"))
+                  (splice (case-forms commands)))
+                (defstruct (unquote name)
+                  (splice (fields options))
+                  (unquote (symbol name ":command"))
+                  (unquote (named name "" "-command")))
+                (defn (unquote (named name "" "-spec")) ()
+                  (->command-spec :name (str (unquote (symbol-name name)))
+                                  :about (str (unquote about))
+                                  :version (unquote (version-form settings))
+                                  :arguments (vec)
+                                  :options (vec (splice (specs options)))
+                                  :subcommands (vec (splice (subcommand-specs
+                                                              commands)))))
+                (type (unquote (named name "matches->" ""))
+                  (fn ((ref matches))
+                    (result (unquote name) cli-error)))
+                (defn (unquote (named name "matches->" "")) ((unquote (matches-name
+                                                                        name)))
+                  (let-try ((splice (bindings options)) (unquote (symbol
+                                                                   name
+                                                                   "command"))
+                            ((unquote (named name "" "-command-at"))
+                             (unquote (matches-name name))))
+                    (ok ((unquote (named name "->" ""))
+                         (splice (constructor-fields options))
+                         (unquote (symbol name ":command"))
+                         (unquote (symbol name "command"))))))
+                (type (unquote (named name "" "-command-at"))
+                  (fn ((ref matches))
+                    (result (unquote (named name "" "-command")) cli-error)))
+                (defn (unquote (named name "" "-command-at")) ((unquote (matches-name
+                                                                          name)))
+                  (let ((unquote (symbol name "word")) (command-at (unquote (matches-name
+                                                                              name)))
+                        (unquote (symbol name "rest")) (shifted (unquote (matches-name
+                                                                           name))))
+                    (cond
+                      (splice (command-clauses name commands))
+                      (else (err cli-error/missing-command)))))))))
+
+(def options-of
+  (fn (parts)
+    (if (empty? parts)
+      (list)
+      (if (option-list? (first parts))
+        (prepend (first parts)
+                 (options-of (rest parts)))
+        (options-of (rest parts))))))
+
+(def option-list?
+  (fn (part)
+    (if (list? part)
+      (keyword? (first part))
+      false)))
+
+(def commands-of
+  (fn (name parts)
+    (if (empty? parts)
+      (fail "`defcli` needs a `(commands ...)` list"
+        name
+        "list the commands, as in `(commands build serve)`")
+      (if (commands-list? (first parts))
+        (rest (first parts))
+        (commands-of name (rest parts))))))
+
+(def commands-list?
+  (fn (part)
+    (if (list? part)
+      (if (symbol? (first part))
+        (value-eq (symbol-name (first part)) "commands")
+        false)
+      false)))
