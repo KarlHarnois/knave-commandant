@@ -1,0 +1,63 @@
+(module
+  "Names what every command takes without declaring it: the help and version options, and the `help` command of a group.")
+
+(export builtin-action builtin-option builtin-options
+        builtin-options-of find-builtin-long
+        find-builtin-short help-command help-command-about
+        help-long help-short-name version-long
+        version-short-name)
+
+(def help-long "help")
+
+(def help-short-name "h")
+
+(def version-long "version")
+
+(def version-short-name "V")
+
+(def help-command "help")
+
+(def help-command-about "Print the help of a command")
+
+(defenum builtin-action
+  show-help
+  show-version)
+
+(defstruct builtin-option
+  :name string
+  :letter char
+  :summary string
+  :action builtin-action)
+
+(defn builtin-options ()
+  (vec (->builtin-option :name (str help-long)
+                         :letter (char "h")
+                         :summary (str "Print help")
+                         :action builtin-action/show-help)
+       (->builtin-option :name (str version-long)
+                         :letter (char "V")
+                         :summary (str "Print version")
+                         :action builtin-action/show-version)))
+
+(defn builtin-options-of (spec)
+  (collect (map (filter (iter (builtin-options))
+                  (fn (option)
+                    (offered? spec (:action option))))
+                clone)))
+
+(defn offered? (spec action)
+  (match action
+    (show-help true)
+    (show-version (some? (:version spec)))))
+
+(defn find-builtin-long (spec name)
+  (map-some (find (iter (builtin-options-of spec))
+              (fn (option)
+                (= (as-str (:name option)) name)))
+            clone))
+
+(defn find-builtin-short (spec character)
+  (map-some (find (iter (builtin-options-of spec))
+              (fn (option)
+                (= (:letter option) character)))
+            clone))

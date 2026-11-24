@@ -4,7 +4,7 @@
 (use errors/cli-error ->option-conflict cli-error
                       option-conflict)
 
-(use scan/state occurrence)
+(use scan/state occurrence occurrences-named)
 (use spec/shapes command-spec find-long)
 
 (export check-conflicts unknown-conflict)
@@ -38,14 +38,9 @@
             (->option-conflict :written written :other other)))
     (_ (do))))
 
-(type first-written
-  (fn ((ref (vec occurrence)) (ref string))
-    (option string)))
-
 (defn first-written (occurrences long)
-  (map-some (find (iter occurrences)
-              (fn (given) (= (:long given) long)))
-            (fn (given) (clone (:written given)))))
+  (map-some (first (occurrences-named occurrences (as-str long)))
+    (fn (given) (clone (:written given)))))
 
 (type unknown-conflict
   (fn ((ref command-spec))

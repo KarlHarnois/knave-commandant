@@ -1,12 +1,12 @@
 (module
   "Splits the command line words into long options, short option clusters and plain words.")
 
+(use spec/shapes long-prefix)
+
 (export ->long-assignment long-assignment token
         words->tokens)
 
 (def end-of-options "--")
-
-(def long-prefix "--")
 
 (def short-prefix "-")
 

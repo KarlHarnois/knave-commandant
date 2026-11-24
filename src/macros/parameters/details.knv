@@ -1,0 +1,97 @@
+(module
+  "Rejects a detail on a `defcommand` parameter that cannot take it: `:required`, `:default`, `:delimiter` or `:conflicts-with`. Each rule is a row of a table: whether it is broken, the error and the help.")
+
+(use code bool-not empty? fail first list nth rest value-eq)
+
+(use macros/parameters/kinds argument-kind kind-many
+                             kind-one option-kind)
+
+(use macros/parameters/parts argument? defaulted? detail
+                             given? parameter-details
+                             required-parameter?)
+
+(export check-details)
+
+(def check-details
+  (fn (parameter)
+    (reported parameter (first-broken (rules-for parameter)))))
+
+(def reported
+  (fn (parameter rule)
+    (if (empty? rule)
+      parameter
+      (fail (nth rule 1)
+        (first parameter)
+        (nth rule 2)))))
+
+(def rules-for
+  (fn (parameter)
+    (if (argument? parameter)
+      (argument-rules parameter (argument-kind parameter))
+      (option-rules parameter (option-kind parameter)))))
+
+(def argument-rules
+  (fn (parameter kind)
+    (list (rule (both (defaulted? parameter) (other-than? kind kind-one))
+                "a `vec` or `option` argument cannot take `:default`"
+                "give the argument a plain type to give it a default")
+          (rule (both (defaulted? parameter)
+                      (required-parameter? parameter))
+                "an argument cannot take both `:required` and `:default`"
+                "drop `:required`, since a default fills the argument")
+          (rule (both (required-parameter? parameter)
+                      (other-than? kind kind-many))
+                "only a `vec` argument can take `:required`"
+                "an argument of a plain type is already required")
+          (rule (has? parameter "delimiter")
+                "only a `vec` option can take `:delimiter`"
+                "give the option a `vec` type, or drop `:delimiter`")
+          (rule (has? parameter "conflicts-with")
+                "an argument cannot take `:conflicts-with`"
+                "put `:conflicts-with` on an option"))))
+
+(def option-rules
+  (fn (parameter kind)
+    (list (rule (both (required-parameter? parameter)
+                      (defaulted? parameter))
+                "an option cannot take both `:required` and `:default`"
+                "drop `:default`, or drop `:required` to make it optional")
+          (rule (both (required-parameter? parameter)
+                      (other-than? kind kind-one))
+                "only an option that takes one value can be required"
+                "a switch, a count or a `vec` option is never required")
+          (rule (both (has? parameter "delimiter")
+                      (other-than? kind kind-many))
+                "only a `vec` option can take `:delimiter`"
+                "give the option a `vec` type, or drop `:delimiter`"))))
+
+(def broken "broken")
+
+(def kept "kept")
+
+(def rule
+  (fn (broken? message help)
+    (list (if broken? broken kept) message help)))
+
+(def first-broken
+  (fn (rules)
+    (if (empty? rules)
+      (list)
+      (broken-or-next rules))))
+
+(def broken-or-next
+  (fn (rules)
+    (if (value-eq (first (first rules)) broken)
+      (first rules)
+      (first-broken (rest rules)))))
+
+(def has?
+  (fn (parameter key)
+    (given? (detail (parameter-details parameter) key))))
+
+(def other-than?
+  (fn (kind expected)
+    (bool-not (value-eq kind expected))))
+
+(def both
+  (fn (left right) (if left right false)))

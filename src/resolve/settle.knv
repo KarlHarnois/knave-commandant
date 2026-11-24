@@ -7,13 +7,14 @@
 (use values/matches ->option-match matched-value
                     option-match)
 
-(use scan/state occurrence occurrence-value)
+(use scan/state occurrence occurrence-value
+                occurrences-named)
 
 (use spec/shapes command-spec option-presence option-spec
                  switch-slot switch-state value-kind
                  value-slot)
 
-(export occurrences-of option-matches)
+(export option-matches)
 
 (def off-texts (vec "" "0" "false" "no" "off"))
 
@@ -27,20 +28,11 @@
   (collect (map (iter (:options spec))
              (fn (option)
                (->option-match :long (clone (:long option))
-                               :value (settled-value
-                                        environment
-                                        (occurrences-of option occurrences)
-                                        option))))))
-
-(type occurrences-of
-  (fn ((ref option-spec)
-       (ref (vec occurrence)))
-    (vec (ref occurrence))))
-
-(defn occurrences-of (option occurrences)
-  (collect (filter (iter occurrences)
-             (fn (found)
-               (= (:long found) (:long option))))))
+                               :value (settled-value environment
+                                                     (occurrences-named
+                                                       occurrences
+                                                       (as-str (:long option)))
+                                                     option))))))
 
 (type settled-value
   (fn ((ref environment)

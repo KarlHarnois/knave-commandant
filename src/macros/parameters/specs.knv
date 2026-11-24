@@ -1,11 +1,15 @@
 (module
   "Writes the spec of one `defcommand` parameter, and rejects the names every command already takes.")
 
-(use code symbol-name)
+(use code list symbol-name)
+
+(use macros/parameters/kinds argument-kind choose kind-count
+                             kind-many kind-one
+                             kind-optional kind-switch
+                             option-kind)
 
 (use macros/parameters/parts argument? default-text
                              defaulted? detail given?
-                             many-type? option-type?
                              parameter-details
                              parameter-name parameter-type
                              required-parameter?
@@ -18,8 +22,7 @@
 
 (use macros/parameters/names conflicts-form env-form)
 (use values/convert value-names)
-(use macros/parameters/option-details check-option-details)
-(use macros/parameters/required-details check-required-detail)
+(use macros/parameters/details check-details)
 (use macros/parameters/reserved check-reserved)
 
 (export parameter-spec)
@@ -27,9 +30,8 @@
 (def parameter-spec
   (fn (parameter)
     (if (argument? parameter)
-      (argument-spec (check-required-detail (check-option-details parameter)))
-      (option-spec (check-reserved (check-required-detail (check-option-details
-                                                            parameter)))))))
+      (argument-spec (check-details parameter))
+      (option-spec (check-reserved (check-details parameter))))))
 
 (def argument-spec
   (fn (parameter)
@@ -42,25 +44,23 @@
     (if (defaulted? parameter)
       (template (argument-presence/defaulted (str (unquote (default-text
                                                              parameter)))))
-      (undefaulted-argument parameter (parameter-type parameter)))))
+      (undefaulted-argument parameter))))
 
 (def undefaulted-argument
-  (fn (parameter type)
-    (if (many-type? type)
-      (repeated-presence parameter)
-      (single-presence type))))
+  (fn (parameter)
+    (choose (argument-kind parameter)
+            (list kind-many
+                  (repeated-presence parameter)
+                  kind-optional
+                  (quote argument-presence/optional)
+                  kind-one
+                  (quote argument-presence/required)))))
 
 (def repeated-presence
   (fn (parameter)
     (if (required-parameter? parameter)
       (quote argument-presence/one-or-more)
       (quote argument-presence/zero-or-more))))
-
-(def single-presence
-  (fn (type)
-    (if (option-type? type)
-      (quote argument-presence/optional)
-      (quote argument-presence/required))))
 
 (def option-spec
   (fn (parameter)
@@ -88,18 +88,27 @@
 
 (def value-form
   (fn (parameter type)
-    (if (type-named? type "switch")
-      (template (value-kind/switch (->switch-slot
-                                     :initial (unquote (initial-form parameter))
-                                     :env (unquote (env-form parameter)))))
-      (if (type-named? type "count")
-        (quote value-kind/count)
-        (if (many-type? type)
-          (template (value-kind/many (->list-slot :placeholder (str (unquote (parameter-name
-                                                                               parameter)))
-                                                  :delimiter (unquote (delimiter-form
-                                                                        parameter)))))
-          (one-form parameter type))))))
+    (choose (option-kind parameter)
+            (list kind-switch
+                  (switch-form parameter)
+                  kind-count
+                  (quote value-kind/count)
+                  kind-many
+                  (list-form parameter)
+                  kind-one
+                  (one-form parameter type)))))
+
+(def switch-form
+  (fn (parameter)
+    (template (value-kind/switch (->switch-slot
+                                   :initial (unquote (initial-form parameter))
+                                   :env (unquote (env-form parameter)))))))
+
+(def list-form
+  (fn (parameter)
+    (template (value-kind/many (->list-slot :placeholder (str (unquote (parameter-name
+                                                                         parameter)))
+                                            :delimiter (unquote (delimiter-form parameter)))))))
 
 (def one-form
   (fn (parameter type)

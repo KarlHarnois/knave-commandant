@@ -5,12 +5,11 @@
 (use errors/cli-error cli-error)
 (use scan/hits stop)
 (use scan/state scan step)
+(use spec/builtins help-command)
 (use spec/shapes command-spec)
 (use scan/tokens token)
 
 (export scan-word!)
-
-(def help-word "help")
 
 (type scan-word!
   (fn ((ref command-spec)
@@ -25,7 +24,7 @@
     ((not (subcommands? spec))
      (push! (:positionals scan) (clone text))
      (ok (step/advance (inc index))))
-    ((= (as-str text) help-word)
+    ((= (as-str text) help-command)
      (help-for! spec tokens index scan))
     (else (enter-subcommand! spec scan text))))
 

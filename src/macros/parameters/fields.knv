@@ -3,10 +3,13 @@
 
 (use code first list string symbol)
 
+(use macros/parameters/kinds argument-kind choose kind-count
+                             kind-many kind-one
+                             kind-optional kind-switch
+                             option-kind)
+
 (use macros/parameters/parts always-set? argument?
-                             many-type? option-type?
-                             parameter-name parameter-type
-                             type-named?)
+                             parameter-name parameter-type)
 
 (use values/matches read-count read-switch)
 (use spec/shapes switch-state)
@@ -31,26 +34,23 @@
 (def parameter-reader
   (fn (parameter)
     (if (argument? parameter)
-      (argument-reader parameter (parameter-type parameter))
+      (argument-reader parameter
+                       (matches-name (first parameter))
+                       (parameter-name parameter))
       (option-reader parameter
-                     (parameter-type parameter)
+                     (matches-name (first parameter))
                      (parameter-name parameter)))))
 
 (def argument-reader
-  (fn (parameter type)
-    (if (many-type? type)
-      (template (read-arguments (unquote (matches-name (first parameter)))
-                                (unquote (parameter-name parameter))))
-      (single-argument-reader parameter type))))
-
-(def single-argument-reader
-  (fn (parameter type)
-    (if (option-type? type)
-      (template (read-optional-argument (unquote (matches-name (first
-                                                                 parameter)))
-                                        (unquote (parameter-name parameter))))
-      (template (read-argument (unquote (matches-name (first parameter)))
-                               (unquote (parameter-name parameter)))))))
+  (fn (parameter found name)
+    (choose (argument-kind parameter)
+            (list kind-many
+                  (template (read-arguments (unquote found) (unquote name)))
+                  kind-optional
+                  (template (read-optional-argument (unquote found)
+                                                    (unquote name)))
+                  kind-one
+                  (template (read-argument (unquote found) (unquote name)))))))
 
 (def matches-name
   (fn (anchor) (symbol anchor "command-line-matches")))
@@ -63,29 +63,34 @@
 
 (def option-field-type
   (fn (parameter type)
-    (if (type-named? type "switch")
-      (quote switch-state)
-      (if (type-named? type "count")
-        (quote int)
-        (if (many-type? type)
-          type
-          (if (always-set? parameter)
-            type
-            (template (option (unquote type)))))))))
+    (choose (option-kind parameter)
+            (list kind-switch
+                  (quote switch-state)
+                  kind-count
+                  (quote int)
+                  kind-many type kind-one
+                  (one-field-type parameter type)))))
+
+(def one-field-type
+  (fn (parameter type)
+    (if (always-set? parameter)
+      type
+      (template (option (unquote type))))))
 
 (def option-reader
-  (fn (parameter type name)
-    (option-reader-for parameter type name
-                       (matches-name (first parameter)))))
+  (fn (parameter found name)
+    (choose (option-kind parameter)
+            (list kind-switch
+                  (template (ok (read-switch (unquote found) (unquote name))))
+                  kind-count
+                  (template (ok (read-count (unquote found) (unquote name))))
+                  kind-many
+                  (template (read-many (unquote found) (unquote name)))
+                  kind-one
+                  (one-reader parameter found name)))))
 
-(def option-reader-for
-  (fn (parameter type name found)
-    (if (type-named? type "switch")
-      (template (ok (read-switch (unquote found) (unquote name))))
-      (if (type-named? type "count")
-        (template (ok (read-count (unquote found) (unquote name))))
-        (if (many-type? type)
-          (template (read-many (unquote found) (unquote name)))
-          (if (always-set? parameter)
-            (template (read-option (unquote found) (unquote name)))
-            (template (read-optional (unquote found) (unquote name)))))))))
+(def one-reader
+  (fn (parameter found name)
+    (if (always-set? parameter)
+      (template (read-option (unquote found) (unquote name)))
+      (template (read-optional (unquote found) (unquote name))))))

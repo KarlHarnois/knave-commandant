@@ -23,9 +23,8 @@
 (use run process-environment run run-with)
 (use values/builtin)
 (use values/convert cli-value from-text value-names)
-
-(use spec/validate spec-error spec-error->message
-                   validate-spec)
+(use spec/spec-error spec-error spec-error->message)
+(use spec/validate validate-spec)
 
 (use spec/shapes ->argument-spec ->command-spec ->list-slot
                  ->option-spec ->switch-slot ->value-slot

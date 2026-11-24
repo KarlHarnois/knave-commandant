@@ -6,8 +6,8 @@
 (use support/fixture command-spec-named serve-spec site-spec
                      spec-with-lists)
 
-(use spec/validate spec-error spec-error->message
-                   validate-spec)
+(use spec/spec-error spec-error)
+(use spec/validate validate-spec)
 
 (defn with-option (long short)
   (let (spec (serve-spec))
@@ -57,10 +57,6 @@
 (deftest two-arguments-cannot-share-a-name
   (assert (= (unwrap-err (validate-spec (ref (with-argument "root"))))
              (spec-error/repeated-argument (str "root")))))
-
-(deftest names-a-repeated-short-option
-  (assert (= (spec-error->message (spec-error/repeated-short (char "p")))
-             "two options are named `-p`")))
 
 (deftest a-group-spec-is-valid
   (assert (ok? (validate-spec (ref (site-spec))))))

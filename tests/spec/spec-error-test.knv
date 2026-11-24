@@ -1,0 +1,19 @@
+(use spec/argument-order order-error)
+(use spec/spec-error spec-error spec-error->message)
+
+(deftest names-a-repeated-short-option
+  (assert (= (spec-error->message (spec-error/repeated-short (char "p")))
+             "two options are named `-p`")))
+
+(deftest names-a-built-in-long-option
+  (assert (= (spec-error->message (spec-error/reserved-long (str "help")))
+             "option `--help` is built in, so a spec cannot define it")))
+
+(deftest names-the-built-in-command
+  (assert (= (spec-error->message spec-error/reserved-command)
+             "command `help` is built in, so a spec cannot define it")))
+
+(deftest a-misordered-argument-uses-the-order-message
+  (assert (= (spec-error->message (spec-error/misordered-argument (order-error/second-repeated
+                                                                    (str "b"))))
+             "argument <b> repeats, but only one argument can")))

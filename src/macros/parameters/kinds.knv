@@ -1,0 +1,69 @@
+(module
+  "Names the kind of a `defcommand` parameter from its type, so each macro module picks its output by kind instead of testing the type again.")
+
+(use code empty? first list list? rest symbol-name symbol?
+          value-eq)
+
+(use macros/parameters/parts parameter-type)
+
+(export argument-kind choose kind-count kind-many kind-one
+        kind-optional kind-switch option-kind)
+
+(def kind-switch "switch")
+
+(def kind-count "count")
+
+(def kind-many "many")
+
+(def kind-optional "optional")
+
+(def kind-one "one")
+
+(def argument-kind
+  (fn (parameter)
+    (choose-or (type-kind (parameter-type parameter))
+               (list kind-many kind-many kind-optional kind-optional)
+               kind-one)))
+
+(def option-kind
+  (fn (parameter)
+    (choose-or (type-kind (parameter-type parameter))
+               (list kind-switch kind-switch kind-count
+                     kind-count kind-many kind-many)
+               kind-one)))
+
+(def choose
+  (fn (kind choices)
+    (choose-or kind choices (list))))
+
+(def type-kind
+  (fn (type)
+    (if (list? type)
+      (choose-or (head-name type)
+                 (list "vec" kind-many "option" kind-optional)
+                 kind-one)
+      (choose-or (name-of type)
+                 (list "switch" kind-switch "count" kind-count)
+                 kind-one))))
+
+(def head-name
+  (fn (type)
+    (if (empty? type)
+      ""
+      (name-of (first type)))))
+
+(def name-of
+  (fn (form)
+    (if (symbol? form) (symbol-name form) "")))
+
+(def choose-or
+  (fn (kind choices fallback)
+    (if (empty? choices)
+      fallback
+      (choose-next kind choices fallback))))
+
+(def choose-next
+  (fn (kind choices fallback)
+    (if (value-eq (first choices) kind)
+      (first (rest choices))
+      (choose-or kind (rest (rest choices)) fallback))))

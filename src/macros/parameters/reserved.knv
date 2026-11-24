@@ -7,11 +7,15 @@
 (use macros/parameters/parts detail parameter-details
                              parameter-name)
 
+(use spec/builtins help-long help-short-name version-long
+                   version-short-name)
+
 (export check-reserved)
 
-(def reserved-longs (list "help" "version"))
+(def reserved-longs (list help-long version-long))
 
-(def reserved-shorts (list "h" "V"))
+(def reserved-shorts
+  (list help-short-name version-short-name))
 
 (def check-reserved
   (fn (parameter)
