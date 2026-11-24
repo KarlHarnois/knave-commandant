@@ -1,11 +1,12 @@
 (module
-  "Holds what a parse found: the text of each argument and the value of each option.")
+  "Holds what a parse found, and reads the text of each argument and the value of each option.")
 
 (use spec switch-state)
 
 (export ->argument-match ->matches ->option-match
-        argument-match argument-text matched-value matches
-        option-match option-value)
+        argument-match argument-text many-texts
+        matched-value matches one-text option-match
+        option-value read-count read-switch)
 
 (defstruct matches
   :arguments (vec argument-match)
@@ -34,6 +35,26 @@
               (fn (found)
                 (= (as-str (:name found)) name)))
             (fn (found) (:value found))))
+
+(defn read-switch (found long)
+  (match (option-value found long)
+    ((some (switch state)) (deref state))
+    (_ switch-state/off)))
+
+(defn read-count (found long)
+  (match (option-value found long)
+    ((some (count total)) (deref total))
+    (_ 0)))
+
+(defn one-text (found long)
+  (match (option-value found long)
+    ((some (one text)) (clone text))
+    (_ none)))
+
+(defn many-texts (found long)
+  (match (option-value found long)
+    ((some (many texts)) (clone texts))
+    (_ (vec))))
 
 (type option-value
   (fn ((ref matches) (ref str))

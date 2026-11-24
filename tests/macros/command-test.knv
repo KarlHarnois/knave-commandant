@@ -1,0 +1,44 @@
+(use lib ->environment ->invalid-text cli-error defchoice
+         defcommand outcome parse spec->usage)
+
+(export run-greet)
+
+(defchoice tone plain loud)
+
+(defcommand greet "Greets someone."
+  :version "2.0.0"
+  (who string :about "Who to greet")
+  (:times u8 :short n :default 1 :about "How many times")
+  (:tone tone :default plain :about "How to greet"))
+
+(defn greet-after (texts)
+  (match (parse (ref (greet-spec))
+                (ref (->environment :variables (vec)))
+                (ref (collect (map (iter texts)
+                                (fn (text) (str (deref text)))))))
+    ((parsed found) (matches->greet (ref found)))
+    (_ (err (cli-error/missing-argument (str "not parsed"))))))
+
+(deftest the-spec-carries-the-name-about-and-version
+  (assert (= (:name (greet-spec)) "greet"))
+  (assert (= (:about (greet-spec)) "Greets someone."))
+  (assert (= (:version (greet-spec))
+             (some (str "2.0.0")))))
+
+(deftest the-spec-lists-arguments-then-options
+  (assert (= (spec->usage (ref (greet-spec)))
+             "greet [OPTIONS] <who>")))
+
+(deftest a-command-line-becomes-the-typed-struct
+  (assert (= (greet-after (vec "ana" "-n" "3" "--tone" "loud"))
+             (ok (->greet :who (str "ana") :times 3 :tone tone/loud)))))
+
+(deftest absent-options-take-their-defaults
+  (assert (= (greet-after (vec "ana"))
+             (ok (->greet :who (str "ana") :times 1 :tone tone/plain)))))
+
+(deftest a-value-out-of-range-is-an-invalid-value
+  (assert (= (greet-after (vec "ana" "-n" "300"))
+             (err (cli-error/invalid-value (->invalid-text
+                                             :written (str "--times")
+                                             :text (str "300")))))))

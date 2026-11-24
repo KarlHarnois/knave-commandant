@@ -1,0 +1,115 @@
+(module
+  "Writes the spec of one `defcommand` parameter, and rejects the names every command already takes.")
+
+(use code empty? first list prepend rest string?
+          symbol-name)
+
+(use macros/parameter-parts argument? default-text
+                            defaulted? detail given?
+                            many-type? parameter-details
+                            parameter-name parameter-type
+                            type-named?)
+
+(use spec ->argument-spec ->option-spec ->switch-slot
+          ->value-slot argument-presence switch-state
+          value-kind)
+
+(use values value-names)
+(use macros/reserved-names check-reserved)
+
+(export parameter-spec)
+
+(def parameter-spec
+  (fn (parameter)
+    (if (argument? parameter)
+      (argument-spec parameter)
+      (option-spec (check-reserved parameter)))))
+
+(def argument-spec
+  (fn (parameter)
+    (template (->argument-spec :name (str (unquote (parameter-name parameter)))
+                               :about (str (unquote (about parameter)))
+                               :presence (unquote (presence parameter))))))
+
+(def presence
+  (fn (parameter)
+    (if (defaulted? parameter)
+      (template (argument-presence/defaulted (str (unquote (default-text
+                                                             parameter)))))
+      (quote argument-presence/required))))
+
+(def option-spec
+  (fn (parameter)
+    (template (->option-spec :long (str (unquote (parameter-name parameter)))
+                             :short (unquote (short-form parameter))
+                             :about (str (unquote (about parameter)))
+                             :value (unquote (value-form parameter
+                                                         (parameter-type
+                                                           parameter)))))))
+
+(def about
+  (fn (parameter)
+    (if (given? (detail (parameter-details parameter) "about"))
+      (detail (parameter-details parameter) "about")
+      "")))
+
+(def short-form
+  (fn (parameter)
+    (if (given? (detail (parameter-details parameter) "short"))
+      (template (some (char (unquote (symbol-name (detail (parameter-details
+                                                            parameter)
+                                                          "short"))))))
+      (quote none))))
+
+(def value-form
+  (fn (parameter type)
+    (if (type-named? type "switch")
+      (template (value-kind/switch (->switch-slot
+                                     :initial (unquote (initial-form parameter))
+                                     :env (unquote (env-form parameter)))))
+      (if (type-named? type "count")
+        (quote value-kind/count)
+        (if (many-type? type)
+          (template (value-kind/many (str (unquote (parameter-name
+                                                     parameter)))))
+          (one-form parameter type))))))
+
+(def one-form
+  (fn (parameter type)
+    (template (value-kind/one
+                (->value-slot
+                  :placeholder (str (unquote (parameter-name parameter)))
+                  :default (unquote (default-form parameter))
+                  :env (unquote (env-form parameter))
+                  :choices (value-names (ref (the (option (unquote type))
+                                                  none))))))))
+
+(def initial-form
+  (fn (parameter)
+    (if (type-named? (detail (parameter-details parameter) "initial")
+                     "on")
+      (quote switch-state/on)
+      (quote switch-state/off))))
+
+(def default-form
+  (fn (parameter)
+    (if (defaulted? parameter)
+      (template (some (str (unquote (default-text parameter)))))
+      (quote none))))
+
+(def env-form
+  (fn (parameter)
+    (env-vec (detail (parameter-details parameter) "env"))))
+
+(def env-vec
+  (fn (names)
+    (if (string? names)
+      (template (vec (str (unquote names))))
+      (template (vec (splice (env-texts names)))))))
+
+(def env-texts
+  (fn (names)
+    (if (empty? names)
+      (list)
+      (prepend (template (str (unquote (first names))))
+               (env-texts (rest names))))))

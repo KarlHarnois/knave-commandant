@@ -1,7 +1,8 @@
 (module
   "Names each way a command line can break the rules of its command.")
 
-(export cli-error error->message)
+(export ->invalid-text cli-error error->message
+        invalid-text)
 
 (defenum cli-error
   (unknown-option string)
@@ -9,7 +10,13 @@
   (unexpected-value string)
   (repeated-option string)
   (unexpected-argument string)
-  (missing-argument string))
+  (missing-argument string)
+  (missing-option string)
+  (invalid-value invalid-text))
+
+(defstruct invalid-text
+  :written string
+  :text string)
 
 (defn error->message (failure)
   (match failure
@@ -24,4 +31,12 @@
     ((unexpected-argument written)
      (str "unexpected argument `" written "`"))
     ((missing-argument name)
-     (str "missing argument <" name ">"))))
+     (str "missing argument <" name ">"))
+    ((missing-option written)
+     (str "option `" written "` is required"))
+    ((invalid-value invalid)
+     (str "invalid value `"
+          (:text invalid)
+          "` for `"
+          (:written invalid)
+          "`"))))

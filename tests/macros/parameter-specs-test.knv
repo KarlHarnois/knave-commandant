@@ -1,0 +1,44 @@
+(use lib ->switch-slot argument-presence defcommand
+         switch-state value-kind)
+
+(export run-probe)
+
+(defcommand probe (path string :default ".")
+  (target string)
+  (:quiet switch :short q)
+  (:color switch :initial on :env "PROBE_COLOR")
+  (:depth u32
+          :default 3
+          :env ("PROBE_DEPTH" "DEPTH")
+          :about "How deep to go"))
+
+(defn option-at (index)
+  (clone (at (:options (probe-spec)) index)))
+
+(deftest a-defaulted-argument-records-its-default-text
+  (assert (= (:presence (at (:arguments (probe-spec)) 0))
+             (argument-presence/defaulted (str ".")))))
+
+(deftest an-argument-without-a-default-is-required
+  (assert (= (:presence (at (:arguments (probe-spec)) 1))
+             argument-presence/required)))
+
+(deftest a-short-name-is-recorded
+  (assert (= (:short (option-at 0))
+             (some (char "q")))))
+
+(deftest a-switch-records-its-initial-state-and-environment
+  (assert (= (:value (option-at 1))
+             (value-kind/switch (->switch-slot :initial switch-state/on
+                                               :env (vec (str
+                                                           "PROBE_COLOR")))))))
+
+(deftest a-value-option-records-its-default-and-environment-chain
+  (assert (= (:about (option-at 2)) "How deep to go"))
+  (assert (= (match (:value (option-at 2))
+               ((one slot)
+                (some (pair (clone (:default slot))
+                            (clone (:env slot)))))
+               (_ none))
+             (some (pair (some (str "3"))
+                         (vec (str "PROBE_DEPTH") (str "DEPTH")))))))

@@ -101,6 +101,7 @@
     ((switch slot) (env-note (:env slot)))
     ((one slot)
      (str (slot-default-note slot)
+          (choices-note (:choices slot))
           (env-note (:env slot))))
     (_ (str))))
 
@@ -108,6 +109,11 @@
   (match (:default slot)
     ((some text) (default-note text))
     (none (str))))
+
+(defn choices-note (names)
+  (if (empty? names)
+    (str)
+    (str " [possible values: " (join names ", ") "]")))
 
 (defn default-note (text) (str " [default: " text "]"))
 

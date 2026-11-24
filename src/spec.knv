@@ -47,7 +47,8 @@
 (defstruct value-slot
   :placeholder string
   :default (option string)
-  :env (vec string))
+  :env (vec string)
+  :choices (vec string))
 
 (type find-long
   (fn ((ref command-spec) (ref str))

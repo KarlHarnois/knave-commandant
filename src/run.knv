@@ -6,17 +6,20 @@
 (use help spec->help)
 (use matches matches)
 (use parse outcome parse)
+(use spec command-spec)
 (use terminal terminal-width)
 (use validate spec-error->message validate-spec)
+(use errors cli-error)
 
-(export command->response response run)
+(export command->response response run run-with)
 
 (def usage-exit-code 2)
 
 (def broken-spec-exit-code 70)
 
-(def exit-run
-  (rust "std::process::exit({0} as i32)" (fn (int) matches)))
+(def exit-with
+  (rust "std::process::exit({0} as i32)"
+    (where (t) (fn (int) t))))
 
 (def process-variables
   (rust "std::env::vars().collect::<Vec<(String, String)>>()"
@@ -27,6 +30,18 @@
   (reply string)
   (refuse string)
   (broken string))
+
+(type run-with
+  (where (t)
+    (fn ((ref command-spec)
+         (fn ((ref matches))
+           (result t cli-error)))
+      t)))
+
+(defn run-with (spec convert)
+  (match (convert (ref (run spec)))
+    ((ok value) value)
+    ((err failure) (refuse-typed spec (ref failure)))))
 
 (defn run (spec)
   (respond (command->response spec
@@ -43,6 +58,10 @@
      (response/broken (str "invalid command spec: "
                            (spec-error->message failure))))))
 
+(defn refuse-typed (spec failure)
+  (eprintln (error-report spec failure))
+  (exit-with usage-exit-code))
+
 (defn outcome->response (spec outcome width)
   (match outcome
     ((parsed found) (response/proceed found))
@@ -55,11 +74,11 @@
 (defn respond (response)
   (match response
     ((proceed found) found)
-    ((reply text) (println text) (exit-run 0))
-    ((refuse text) (eprintln text) (exit-run usage-exit-code))
+    ((reply text) (println text) (exit-with 0))
+    ((refuse text) (eprintln text) (exit-with usage-exit-code))
     ((broken text)
      (eprintln text)
-     (exit-run broken-spec-exit-code))))
+     (exit-with broken-spec-exit-code))))
 
 (defn process-environment ()
   (->environment :variables (collect (map (iter (process-variables))

@@ -1,5 +1,8 @@
+(use spec switch-state)
+
 (use matches ->argument-match ->matches ->option-match
-             argument-text matched-value option-value)
+             argument-text matched-value option-value
+             read-count read-switch)
 
 (defn found ()
   (->matches :arguments (vec (->argument-match :name (str "root")
@@ -22,3 +25,14 @@
 (deftest an-unknown-option-reads-nothing
   (assert (= (option-value (ref (found)) "quiet")
              none)))
+
+(deftest reads-a-count
+  (assert (= (read-count (ref (found)) "verbose")
+             2)))
+
+(deftest an-absent-count-reads-zero
+  (assert (= (read-count (ref (found)) "quiet") 0)))
+
+(deftest an-absent-switch-reads-off
+  (assert (= (read-switch (ref (found)) "open")
+             switch-state/off)))

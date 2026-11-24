@@ -15,6 +15,23 @@ Add the library to the `libraries` section of your `project.knv`:
 
 Replace `<commit>` with the commit to pin.
 
+## Usage
+
+```clj
+(use knave-commandant defcommand)
+
+(defcommand greet "Greets someone."
+  :version "1.0.0"
+  (who string :about "Who to greet")
+  (:loud switch :short l :about "Greets in capitals"))
+
+(defn main ()
+  (let (options (run-greet))
+    (println "Hello, " (:who options))))
+```
+
+See [examples/serve](examples/serve/src/main.knv) for every kind of parameter.
+
 ## Development
 
 Run each check before you push:

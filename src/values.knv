@@ -1,0 +1,142 @@
+(module
+  "Turns the text of a matched argument or option into a typed value, through the `cli-value` trait.")
+
+(use errors ->invalid-text cli-error)
+(use matches argument-text many-texts matches one-text)
+
+(export cli-value from-text read-argument read-many
+        read-option read-optional value-names)
+
+(def long-prefix "--")
+
+(deftrait cli-value
+  (from-text
+    (fn ((ref str)) (option self)))
+
+  (value-names
+    (fn ((ref (option self))) (vec string))))
+
+(impl cli-value string
+  (from-text (text) (some (str text)))
+
+  (value-names (_) (vec)))
+
+(impl cli-value bool
+  (from-text (text) (parsed text))
+
+  (value-names (_)
+    (vec (str "true") (str "false"))))
+
+(impl cli-value char
+  (from-text (text) (parsed text))
+
+  (value-names (_) (vec)))
+
+(impl cli-value int
+  (from-text (text) (parsed text))
+
+  (value-names (_) (vec)))
+
+(impl cli-value i32
+  (from-text (text) (parsed text))
+
+  (value-names (_) (vec)))
+
+(impl cli-value u8
+  (from-text (text) (parsed text))
+
+  (value-names (_) (vec)))
+
+(impl cli-value u16
+  (from-text (text) (parsed text))
+
+  (value-names (_) (vec)))
+
+(impl cli-value u32
+  (from-text (text) (parsed text))
+
+  (value-names (_) (vec)))
+
+(impl cli-value u64
+  (from-text (text) (parsed text))
+
+  (value-names (_) (vec)))
+
+(impl cli-value usize
+  (from-text (text) (parsed text))
+
+  (value-names (_) (vec)))
+
+(impl cli-value float
+  (from-text (text) (parsed text))
+
+  (value-names (_) (vec)))
+
+(type read-argument
+  (where ((t cli-value))
+    (fn ((ref matches) (ref str))
+      (result t cli-error))))
+
+(defn read-argument (found name)
+  (match (argument-text found name)
+    ((some text) (converted text (str "<" name ">")))
+    (none (err (cli-error/missing-argument (str name))))))
+
+(type read-option
+  (where ((t cli-value))
+    (fn ((ref matches) (ref str))
+      (result t cli-error))))
+
+(defn read-option (found long)
+  (match (one-text found long)
+    ((some text) (converted (ref text) (str long-prefix long)))
+    (none (err (cli-error/missing-option (str long-prefix long))))))
+
+(type read-optional
+  (where ((t cli-value))
+    (fn ((ref matches) (ref str))
+      (result (option t) cli-error))))
+
+(defn read-optional (found long)
+  (match (one-text found long)
+    ((some text)
+     (map-ok (converted (ref text) (str long-prefix long))
+             some))
+    (none (ok none))))
+
+(type read-many
+  (where ((t cli-value))
+    (fn ((ref matches) (ref str))
+      (result (vec t) cli-error))))
+
+(defn read-many (found long)
+  (let (texts (many-texts found long)
+        written (str long-prefix long))
+    (loop (index 0
+           values (vec))
+      (if (>= index (len texts))
+        (ok values)
+        (let-try (value (converted (at texts index) (clone written)))
+          (recur (inc index) (appended values value)))))))
+
+(type converted
+  (where ((t cli-value))
+    (fn ((ref string) string)
+      (result t cli-error))))
+
+(defn converted (text written)
+  (ok-or (from-text (as-str text))
+         (cli-error/invalid-value (->invalid-text :written written
+                                                  :text (clone text)))))
+
+(defn appended (items item)
+  (let (all items) (push! all item) all))
+
+(type parsed
+  (where ((t from-str))
+    (fn ((ref str)) (option t))))
+
+(defn parsed (text)
+  (match (parse text)
+    ((ok value) (some value))
+    ((err _) none)))

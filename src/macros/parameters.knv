@@ -1,0 +1,74 @@
+(module
+  "Writes the struct field, the local binding and the reader of one `defcommand` parameter.")
+
+(use code first list string symbol)
+
+(use macros/parameter-parts argument? defaulted? many-type?
+                            parameter-name parameter-type
+                            type-named?)
+
+(use matches read-count read-switch)
+(use spec switch-state)
+
+(use values read-argument read-many read-option
+            read-optional)
+
+(export matches-name parameter-binding parameter-field
+        parameter-reader)
+
+(def parameter-binding
+  (fn (parameter)
+    (symbol (first parameter) (parameter-name parameter))))
+
+(def parameter-field
+  (fn (parameter)
+    (list (symbol (first parameter)
+                  (string ":" (parameter-name parameter)))
+          (field-type parameter))))
+
+(def parameter-reader
+  (fn (parameter)
+    (if (argument? parameter)
+      (template (read-argument (unquote (matches-name (first parameter)))
+                               (unquote (parameter-name parameter))))
+      (option-reader parameter
+                     (parameter-type parameter)
+                     (parameter-name parameter)))))
+
+(def matches-name
+  (fn (anchor) (symbol anchor "command-line-matches")))
+
+(def field-type
+  (fn (parameter)
+    (if (argument? parameter)
+      (parameter-type parameter)
+      (option-field-type parameter (parameter-type parameter)))))
+
+(def option-field-type
+  (fn (parameter type)
+    (if (type-named? type "switch")
+      (quote switch-state)
+      (if (type-named? type "count")
+        (quote int)
+        (if (many-type? type)
+          type
+          (if (defaulted? parameter)
+            type
+            (template (option (unquote type)))))))))
+
+(def option-reader
+  (fn (parameter type name)
+    (option-reader-for parameter type name
+                       (matches-name (first parameter)))))
+
+(def option-reader-for
+  (fn (parameter type name found)
+    (if (type-named? type "switch")
+      (template (ok (read-switch (unquote found) (unquote name))))
+      (if (type-named? type "count")
+        (template (ok (read-count (unquote found) (unquote name))))
+        (if (many-type? type)
+          (template (read-many (unquote found) (unquote name)))
+          (if (defaulted? parameter)
+            (template (read-option (unquote found) (unquote name)))
+            (template (read-optional (unquote found) (unquote name)))))))))

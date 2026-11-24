@@ -1,7 +1,8 @@
 (use help-rows ->help-row argument-rows argument-term
                option-rows)
 
-(use support/fixture serve-spec spec-requiring)
+(use support/fixture serve-spec spec-requiring
+                     spec-with-choices)
 
 (defn option-row-at (index)
   (clone (at (option-rows (ref (serve-spec)))
@@ -50,3 +51,8 @@
 (deftest a-switch-notes-its-environment-variable
   (assert (= (:description (option-row-at 1))
              "Opens the browser [env: SERVE_OPEN]")))
+
+(deftest a-choice-option-lists-its-possible-values
+  (assert (= (:description (at (option-rows (ref (spec-with-choices)))
+                               0))
+             "How to print [possible values: text, json]")))
