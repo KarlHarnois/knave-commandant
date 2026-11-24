@@ -1,0 +1,69 @@
+(module
+  "Turns tokens into flags and words, splitting each short cluster with the command's spec.")
+
+(use spec short-takes-value?)
+(use tokens token)
+
+(export flag flag->written item tokens->items)
+
+(def long-prefix "--")
+
+(def short-prefix "-")
+
+(defenum item
+  (flag flag)
+  (flag-with-value flag string)
+  (word string))
+
+(defenum flag
+  (long string)
+  (short char))
+
+(defn flag->written (flag)
+  (match flag
+    ((long name) (str long-prefix name))
+    ((short character) (str short-prefix character))))
+
+(defn tokens->items (spec tokens)
+  (let (items (vec))
+    (for-each (iter tokens)
+      (fn (token)
+        (push-token-items! (mut items) spec token)))
+    items))
+
+(defn push-token-items! (items spec token)
+  (match token
+    ((long-name name)
+     (push! items
+            (item/flag (flag/long (clone name)))))
+    ((long-with-value assigned)
+     (push! items
+            (item/flag-with-value (flag/long (clone (:name assigned)))
+                                  (clone (:value assigned)))))
+    ((short-cluster cluster)
+     (push-cluster-items! items spec cluster))
+    ((word text) (push! items (item/word (clone text))))))
+
+(defn push-cluster-items! (items spec cluster)
+  (let (characters (collect (chars (as-str cluster))))
+    (loop (index 0)
+      (cond
+        ((>= index (len characters)) (do))
+        ((attached-value? spec (ref characters) index)
+         (push! items (attached-item (ref characters) index)))
+        (else (push! items
+                     (item/flag (flag/short (deref (at characters index)))))
+              (recur (inc index)))))))
+
+(defn attached-value? (spec characters index)
+  (and (< (inc index) (len characters))
+       (short-takes-value? spec (deref (at characters index)))))
+
+(defn attached-item (characters index)
+  (item/flag-with-value (flag/short (deref (at characters index)))
+                        (characters-from characters (inc index))))
+
+(defn characters-from (characters start)
+  (reduce (range start (len characters)) (str)
+    (fn (text index)
+      (str text (at characters index)))))

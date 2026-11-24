@@ -1,0 +1,104 @@
+(module
+  "Walks the flags and words of a command line and records each option it meets.")
+
+(use errors cli-error)
+(use hits builtin find-hit hit stop)
+(use items flag->written item)
+(use spec takes-value?)
+(use scan-state ->scan occurrence-value record! scan step)
+
+(export scan-end scan-items)
+
+(defenum scan-end
+  (scanned scan)
+  help
+  (version string))
+
+(defn scan-items (spec items)
+  (let (scan (->scan :positionals (vec) :occurrences (vec)))
+    (let-try (stop (walk! spec items (mut scan)))
+      (ok (stop->scan-end stop scan)))))
+
+(defn stop->scan-end (stop scan)
+  (match stop
+    (finished (scan-end/scanned scan))
+    (help-asked scan-end/help)
+    ((version-asked text) (scan-end/version text))))
+
+(defn walk! (spec items scan)
+  (loop (index 0)
+    (match (scan-at! spec items index scan)
+      ((ok (advance next)) (recur next))
+      ((ok (halt stop)) (ok stop))
+      ((err failure) (err failure)))))
+
+(defn scan-at! (spec items index scan)
+  (match (get items index)
+    ((some item) (scan-item! spec items index scan item))
+    (none (ok (step/halt stop/finished)))))
+
+(defn scan-item! (spec items index scan item)
+  (match item
+    ((flag flag) (scan-flag! spec items index scan flag))
+    ((flag-with-value flag value)
+     (scan-assignment! spec index scan flag value))
+    ((word text)
+     (push! (:positionals scan) (clone text))
+     (ok (step/advance (inc index))))))
+
+(defn scan-flag! (spec items index scan flag)
+  (match (builtin spec flag)
+    ((some stop) (ok (step/halt stop)))
+    (none (scan-option! spec items index scan flag))))
+
+(defn scan-option! (spec items index scan flag)
+  (match (find-hit spec flag)
+    ((some hit)
+     (take-hit! items index scan hit (flag->written flag)))
+    (none (err (cli-error/unknown-option (flag->written flag))))))
+
+(defn take-hit! (items index scan hit written)
+  (match hit
+    ((direct option)
+     (take-option! items index scan option written))
+    ((negation option)
+     (record! scan option written occurrence-value/negated
+              (inc index)))))
+
+(defn take-option! (items index scan option written)
+  (if (takes-value? (ref option))
+    (take-following-value! items index scan option written)
+    (record! scan option written occurrence-value/present
+             (inc index))))
+
+(defn take-following-value! (items index scan option written)
+  (match (following-word items index)
+    ((some text)
+     (record! scan option written
+              (occurrence-value/text text)
+              (+ index 2)))
+    (none (err (cli-error/missing-value written)))))
+
+(defn following-word (items index)
+  (match (get items (inc index))
+    ((some (word text)) (some (clone text)))
+    (_ none)))
+
+(defn scan-assignment! (spec index scan flag value)
+  (match (find-hit spec flag)
+    ((some hit)
+     (assign-hit! index scan hit (flag->written flag) value))
+    (none (err (cli-error/unknown-option (flag->written flag))))))
+
+(defn assign-hit! (index scan hit written value)
+  (match hit
+    ((direct option)
+     (assign-option! index scan option written value))
+    ((negation _) (err (cli-error/unexpected-value written)))))
+
+(defn assign-option! (index scan option written value)
+  (if (takes-value? (ref option))
+    (record! scan option written
+             (occurrence-value/text (clone value))
+             (inc index))
+    (err (cli-error/unexpected-value written))))

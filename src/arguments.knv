@@ -1,0 +1,79 @@
+(module
+  "Pairs the plain words of a command line with the command's arguments, in order.")
+
+(use errors cli-error)
+(use matches ->argument-match argument-match)
+
+(use spec argument-presence argument-spec command-spec
+          required?)
+
+(export resolve-arguments)
+
+(defn resolve-arguments (spec positionals)
+  (let-try (_ (check-no-extra spec positionals)
+            _ (check-no-missing spec positionals))
+    (ok (argument-matches spec positionals))))
+
+(type check-no-extra
+  (fn ((ref command-spec) (ref (vec string)))
+    (result unit cli-error)))
+
+(defn check-no-extra (spec positionals)
+  (match (get positionals (len (:arguments spec)))
+    ((some extra)
+     (err (cli-error/unexpected-argument (clone extra))))
+    (none (ok (do)))))
+
+(defn check-no-missing (spec positionals)
+  (match (find (iter (missing-arguments spec positionals))
+           (fn (argument)
+             (required? (deref argument))))
+    ((some argument)
+     (err (cli-error/missing-argument (clone (:name argument)))))
+    (none (ok (do)))))
+
+(type missing-arguments
+  (fn ((ref command-spec) (ref (vec string)))
+    (vec (ref argument-spec))))
+
+(defn missing-arguments (spec positionals)
+  (collect (map (range (len positionals)
+                       (len (:arguments spec)))
+                (fn (index)
+                  (at (:arguments spec) index)))))
+
+(type argument-matches
+  (fn ((ref command-spec) (ref (vec string)))
+    (vec argument-match)))
+
+(defn argument-matches (spec positionals)
+  (let (found (vec))
+    (for-each (range 0 (len (:arguments spec)))
+      (fn (index)
+        (push-argument-match! (mut found)
+                              (at (:arguments spec) index)
+                              (get positionals index))))
+    found))
+
+(defn push-argument-match! (found argument given)
+  (match (argument-value argument given)
+    ((some value)
+     (push! found
+            (->argument-match :name (clone (:name argument))
+                              :value value)))
+    (none (do))))
+
+(type argument-value
+  (fn ((ref argument-spec)
+       (option (ref string)))
+    (option string)))
+
+(defn argument-value (argument given)
+  (match given
+    ((some text) (some (clone text)))
+    (none (default-text (:presence argument)))))
+
+(defn default-text (presence)
+  (match presence
+    ((defaulted text) (some (clone text)))
+    (required none)))

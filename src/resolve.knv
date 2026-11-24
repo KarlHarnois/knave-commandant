@@ -1,0 +1,139 @@
+(module
+  "Turns a scan into matches: fills each argument, and settles each option from its flags, its environment variables or its default.")
+
+(use arguments resolve-arguments)
+(use environment environment first-set)
+(use errors cli-error)
+
+(use matches ->matches ->option-match matched-value
+             option-match)
+
+(use scan-state occurrence occurrence-value)
+(use spec command-spec option-spec switch-state value-kind)
+
+(export resolve)
+
+(defn resolve (spec environment scan)
+  (let-try (arguments (resolve-arguments spec (ref (:positionals scan)))
+            _ (check-no-repeated spec (ref (:occurrences scan))))
+    (ok (->matches :arguments arguments
+                   :options (option-matches spec environment
+                                            (ref (:occurrences scan)))))))
+
+(type check-no-repeated
+  (fn ((ref command-spec)
+       (ref (vec occurrence)))
+    (result unit cli-error)))
+
+(defn check-no-repeated (spec occurrences)
+  (match (find (iter (:options spec))
+           (fn (option) (repeated? option occurrences)))
+    ((some option)
+     (err (cli-error/repeated-option (second-written option occurrences))))
+    (none (ok (do)))))
+
+(defn repeated? (option occurrences)
+  (and (single-value? option)
+       (> (len (occurrences-of option occurrences)) 1)))
+
+(type single-value?
+  (fn ((ref option-spec)) bool))
+
+(defn single-value? (option)
+  (match (:value option)
+    ((one _) true)
+    (_ false)))
+
+(defn second-written (option occurrences)
+  (clone (:written (at (occurrences-of option occurrences) 1))))
+
+(type occurrences-of
+  (fn ((ref option-spec)
+       (ref (vec occurrence)))
+    (vec (ref occurrence))))
+
+(defn occurrences-of (option occurrences)
+  (collect (filter (iter occurrences)
+             (fn (found)
+               (= (:long found) (:long option))))))
+
+(type option-matches
+  (fn ((ref command-spec)
+       (ref environment)
+       (ref (vec occurrence)))
+    (vec option-match)))
+
+(defn option-matches (spec environment occurrences)
+  (collect (map (iter (:options spec))
+             (fn (option)
+               (->option-match :long (clone (:long option))
+                               :value (settled-value
+                                        environment
+                                        (occurrences-of option occurrences)
+                                        option))))))
+
+(type settled-value
+  (fn ((ref environment)
+       (vec (ref occurrence))
+       (ref option-spec))
+    matched-value))
+
+(defn settled-value (environment found option)
+  (match (:value option)
+    ((switch initial)
+     (matched-value/switch (switch-from (deref initial) (ref found))))
+    (count (matched-value/count (len found)))
+    ((one slot)
+     (matched-value/one
+       (one-value environment (ref found) option (:default slot))))
+    ((many _) (matched-value/many (texts (ref found))))))
+
+(type switch-from
+  (fn (switch-state (ref (vec (ref occurrence))))
+    switch-state))
+
+(defn switch-from (initial found)
+  (match (last found)
+    ((some occurrence) (occurrence->switch (:value occurrence)))
+    (none initial)))
+
+(defn occurrence->switch (value)
+  (match value (negated switch-state/off) (_ switch-state/on)))
+
+(type one-value
+  (fn ((ref environment)
+       (ref (vec (ref occurrence)))
+       (ref option-spec)
+       (ref (option string)))
+    (option string)))
+
+(defn one-value (environment found option default)
+  (match (first found)
+    ((some occurrence) (occurrence-text (:value occurrence)))
+    (none (fallback-value environment option default))))
+
+(defn fallback-value (environment option default)
+  (match (first-set environment (:env option))
+    ((some value) (some value))
+    (none (clone default))))
+
+(defn occurrence-text (value)
+  (match value
+    ((text written) (some (clone written)))
+    (_ none)))
+
+(type texts
+  (fn ((ref (vec (ref occurrence))))
+    (vec string)))
+
+(defn texts (found)
+  (let (collected (vec))
+    (for-each (iter found)
+      (fn (occurrence)
+        (push-text! (mut collected) (:value occurrence))))
+    collected))
+
+(defn push-text! (collected value)
+  (match (occurrence-text value)
+    ((some text) (push! collected text))
+    (none (do))))

@@ -1,0 +1,35 @@
+(module
+  "Parses a command line against a command's spec, as a pure function of the spec, the environment and the words.")
+
+(use errors cli-error)
+(use items tokens->items)
+(use matches matches)
+(use resolve resolve)
+(use scan scan-end scan-items)
+(use tokens words->tokens)
+
+(export outcome parse)
+
+(defenum outcome
+  (parsed matches)
+  help
+  (version string)
+  (usage-error cli-error))
+
+(defn parse (spec environment words)
+  (let (items (tokens->items spec (ref (words->tokens words))))
+    (match (scan-items spec (ref items))
+      ((ok end) (scan-end->outcome spec environment end))
+      ((err failure) (outcome/usage-error failure)))))
+
+(defn scan-end->outcome (spec environment end)
+  (match end
+    ((scanned scan)
+     (resolved->outcome (resolve spec environment (ref scan))))
+    (help outcome/help)
+    ((version text) (outcome/version text))))
+
+(defn resolved->outcome (resolved)
+  (match resolved
+    ((ok matches) (outcome/parsed matches))
+    ((err failure) (outcome/usage-error failure))))

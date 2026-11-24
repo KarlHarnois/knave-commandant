@@ -1,0 +1,26 @@
+(module
+  "Holds the environment variables a parse reads, so parsing stays a pure function.")
+
+(export ->environment ->variable environment first-set
+        variable)
+
+(defstruct environment
+  :variables (vec variable))
+
+(defstruct variable
+  :name string
+  :value string)
+
+(defn first-set (environment names)
+  (then-some (find (iter names)
+               (fn (name)
+                 (some? (variable-value environment name))))
+             (fn (name) (variable-value environment name))))
+
+(defn variable-value (environment name)
+  (map-some (find (iter (:variables environment))
+              (fn (variable)
+                (= (as-str (:name variable))
+                   (as-str name))))
+            (fn (variable)
+              (clone (:value variable)))))

@@ -1,0 +1,25 @@
+(module
+  "Builds command line programs that follow the common conventions by default.")
+
+(use environment ->environment ->variable environment
+                 variable)
+
+(use errors cli-error error->message)
+
+(use matches argument-text matched-value matches
+             option-value)
+
+(use parse outcome parse)
+
+(use spec ->argument-spec ->command-spec ->option-spec
+          ->value-slot argument-presence argument-spec
+          command-spec option-spec switch-state value-kind
+          value-slot)
+
+(export ->argument-spec ->command-spec ->environment
+        ->option-spec ->value-slot ->variable
+        argument-presence argument-spec argument-text
+        cli-error command-spec environment error->message
+        matched-value matches option-spec option-value
+        outcome parse switch-state value-kind value-slot
+        variable)
