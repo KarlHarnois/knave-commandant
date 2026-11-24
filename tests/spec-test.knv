@@ -1,0 +1,49 @@
+(use spec find-long find-short required? short-takes-value?
+          switch? takes-value?)
+
+(use support/fixture serve-spec spec-requiring)
+
+(defn long-named (name)
+  (map-some (find-long (ref (serve-spec)) name)
+    (fn (option) (clone option))))
+
+(deftest finds-an-option-by-long-name
+  (assert (= (map-some (long-named "port")
+               (fn (option) (clone (:long option))))
+             (some (str "port")))))
+
+(deftest finds-no-option-for-an-unknown-long-name
+  (assert (none? (long-named "prot"))))
+
+(deftest finds-an-option-by-short-name
+  (assert (some? (find-short (ref (serve-spec))
+                             (char "p")))))
+
+(deftest finds-no-option-for-an-unknown-short-name
+  (assert (none? (find-short (ref (serve-spec))
+                             (char "x")))))
+
+(deftest a-one-value-option-takes-a-value
+  (assert (takes-value? (ref (unwrap (long-named "port"))))))
+
+(deftest a-many-value-option-takes-a-value
+  (assert (takes-value? (ref (unwrap (long-named "tag"))))))
+
+(deftest a-count-takes-no-value
+  (assert (not (takes-value? (ref (unwrap (long-named "verbose")))))))
+
+(deftest a-short-name-of-a-value-option-takes-a-value
+  (assert (short-takes-value? (ref (serve-spec))
+                              (char "p"))))
+
+(deftest a-switch-is-a-switch
+  (assert (switch? (ref (unwrap (long-named "open"))))))
+
+(deftest a-count-is-no-switch
+  (assert (not (switch? (ref (unwrap (long-named "verbose")))))))
+
+(deftest a-required-argument-is-required
+  (assert (required? (at (:arguments (spec-requiring "file")) 0))))
+
+(deftest a-defaulted-argument-is-not-required
+  (assert (not (required? (at (:arguments (serve-spec)) 0)))))

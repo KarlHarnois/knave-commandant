@@ -1,0 +1,86 @@
+(module
+  "Splits the command line words into long options, short option clusters and plain words.")
+
+(export ->long-assignment long-assignment token
+        words->tokens)
+
+(def end-of-options "--")
+
+(def long-prefix "--")
+
+(def short-prefix "-")
+
+(def assignment "=")
+
+(defenum token
+  (long-name string)
+  (long-with-value long-assignment)
+  (short-cluster string)
+  (word string))
+
+(defstruct long-assignment
+  :name string
+  :value string)
+
+(defstruct tokenizing
+  :mode token-mode
+  :tokens (vec token))
+
+(defenum token-mode
+  options-open
+  options-closed)
+
+(defn words->tokens (words)
+  (let-match ((tokenizing _ tokens) (reduce (iter words)
+                                            (start-tokenizing)
+                                            tokenize-word))
+    tokens))
+
+(defn start-tokenizing ()
+  (->tokenizing :mode token-mode/options-open :tokens (vec)))
+
+(defn tokenize-word (tokenizing word)
+  (match (:mode tokenizing)
+    (options-open (tokenize-open-word tokenizing word))
+    (options-closed (with-token tokenizing (token/word (clone word))))))
+
+(defn tokenize-open-word (tokenizing word)
+  (if (= (as-str word) end-of-options)
+    (assoc tokenizing :mode token-mode/options-closed)
+    (with-token tokenizing (word->token (as-str word)))))
+
+(defn with-token (tokenizing token)
+  (let (next tokenizing)
+    (push! (:tokens next) token)
+    next))
+
+(defn word->token (word)
+  (cond
+    ((starts-with? word long-prefix)
+     (long-token (after-prefix word long-prefix)))
+    ((short-cluster? word)
+     (token/short-cluster (after-prefix word short-prefix)))
+    (else (token/word (str word)))))
+
+(defn short-cluster? (word)
+  (and (starts-with? word short-prefix)
+       (> (len word) (len short-prefix))))
+
+(defn after-prefix (word prefix)
+  (str (subs word (len prefix) (len word))))
+
+(defn long-token (written)
+  (match (split-assignment (as-str written))
+    ((some assigned) (token/long-with-value assigned))
+    (none (token/long-name written))))
+
+(defn split-assignment (written)
+  (let (parts (collect (split written assignment)))
+    (if (= (len parts) 1)
+      none
+      (some (assignment-at written (at parts 0))))))
+
+(defn assignment-at (written name)
+  (let (value-start (+ (len name) (len assignment)))
+    (->long-assignment :name (str name)
+                       :value (str (subs written value-start (len written))))))

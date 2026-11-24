@@ -1,0 +1,90 @@
+(module
+  "Describes a command: its arguments, its options, and how each option takes a value.")
+
+(export ->argument-spec ->command-spec ->option-spec
+        ->value-slot argument-presence argument-spec
+        command-spec find-long find-short option-spec
+        required? short-takes-value? switch-state switch?
+        takes-value? value-kind value-slot)
+
+(defstruct command-spec
+  :name string
+  :about string
+  :version (option string)
+  :arguments (vec argument-spec)
+  :options (vec option-spec))
+
+(defstruct argument-spec
+  :name string
+  :about string
+  :presence argument-presence)
+
+(defenum argument-presence
+  required
+  (defaulted string))
+
+(defstruct option-spec
+  :long string
+  :short (option char)
+  :about string
+  :value value-kind
+  :env (vec string))
+
+(defenum value-kind
+  (switch switch-state)
+  count
+  (one value-slot)
+  (many string))
+
+(defenum switch-state
+  off
+  on)
+
+(defstruct value-slot
+  :placeholder string
+  :default (option string))
+
+(type find-long
+  (fn ((ref command-spec) (ref str))
+    (option (ref option-spec))))
+
+(defn find-long (spec name)
+  (find (iter (:options spec))
+    (fn (option)
+      (= (as-str (:long option)) name))))
+
+(defn short-takes-value? (spec character)
+  (match (find-short spec character)
+    ((some option) (takes-value? option))
+    (none false)))
+
+(type find-short
+  (fn ((ref command-spec) char)
+    (option (ref option-spec))))
+
+(defn find-short (spec character)
+  (find (iter (:options spec))
+    (fn (option)
+      (= (:short option) (some character)))))
+
+(type takes-value?
+  (fn ((ref option-spec)) bool))
+
+(defn takes-value? (option)
+  (match (:value option)
+    ((one _) true)
+    ((many _) true)
+    (_ false)))
+
+(type switch?
+  (fn ((ref option-spec)) bool))
+
+(defn switch? (option)
+  (match (:value option)
+    ((switch _) true)
+    (_ false)))
+
+(defn required? (argument)
+  (match (:presence argument)
+    (required true)
+    (_ false)))

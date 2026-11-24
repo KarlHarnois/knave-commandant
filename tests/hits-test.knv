@@ -1,0 +1,44 @@
+(use hits builtin find-hit hit stop)
+(use items flag)
+(use support/fixture serve-spec spec-requiring)
+
+(defn builtin-for (flag)
+  (builtin (ref (serve-spec)) (ref flag)))
+
+(defn negated-long (name)
+  (match (find-hit (ref (serve-spec))
+                   (ref (flag/long (str name))))
+    ((some (negation option)) (some (clone (:long option))))
+    (_ none)))
+
+(deftest long-help-asks-for-help
+  (assert (= (builtin-for (flag/long (str "help")))
+             (some stop/help-asked))))
+
+(deftest short-help-asks-for-help
+  (assert (= (builtin-for (flag/short (char "h")))
+             (some stop/help-asked))))
+
+(deftest long-version-asks-for-the-version
+  (assert (= (builtin-for (flag/long (str "version")))
+             (some (stop/version-asked (str "1.0.0"))))))
+
+(deftest short-version-asks-for-the-version
+  (assert (= (builtin-for (flag/short (char "V")))
+             (some (stop/version-asked (str "1.0.0"))))))
+
+(deftest version-is-no-builtin-without-a-version
+  (assert (= (builtin (ref (spec-requiring "file"))
+                      (ref (flag/short (char "V"))))
+             none)))
+
+(deftest a-negation-names-a-switch
+  (assert (= (negated-long "no-color")
+             (some (str "color")))))
+
+(deftest only-a-switch-takes-a-negation
+  (assert (= (negated-long "no-port") none)))
+
+(deftest an-unknown-flag-hits-nothing
+  (assert (none? (find-hit (ref (serve-spec))
+                           (ref (flag/long (str "prot")))))))

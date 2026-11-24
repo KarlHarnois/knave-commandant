@@ -1,0 +1,58 @@
+(use errors cli-error)
+(use items tokens->items)
+(use scan scan-end scan-items)
+(use support/fixture serve-spec words)
+(use tokens words->tokens)
+
+(defn positionals-of (texts)
+  (match (scan-of texts)
+    ((ok (scanned found)) (some (clone (:positionals found))))
+    (_ none)))
+
+(defn occurrence-count (texts)
+  (match (scan-of texts)
+    ((ok (scanned found)) (some (len (:occurrences found))))
+    (_ none)))
+
+(defn scan-of (texts)
+  (let (spec (serve-spec))
+    (scan-items (ref spec)
+                (ref (tokens->items (ref spec)
+                                    (ref (words->tokens (ref (words
+                                                               texts)))))))))
+
+(deftest words-around-flags-stay-in-order
+  (assert (= (positionals-of (vec "a" "--open" "b"))
+             (some (vec (str "a") (str "b"))))))
+
+(deftest each-flag-records-an-occurrence
+  (assert (= (occurrence-count (vec "--open" "-p" "80" "-vv"))
+             (some 4))))
+
+(deftest help-stops-the-scan
+  (assert (= (scan-of (vec "-h" "--port"))
+             (ok scan-end/help))))
+
+(deftest version-stops-the-scan
+  (assert (= (scan-of (vec "--version"))
+             (ok (scan-end/version (str "1.0.0"))))))
+
+(deftest an-unknown-flag-is-an-error
+  (assert (= (scan-of (vec "--prot"))
+             (err (cli-error/unknown-option (str "--prot"))))))
+
+(deftest an-option-at-the-end-misses-its-value
+  (assert (= (scan-of (vec "--port"))
+             (err (cli-error/missing-value (str "--port"))))))
+
+(deftest a-flag-is-not-a-value
+  (assert (= (scan-of (vec "-p" "--open"))
+             (err (cli-error/missing-value (str "-p"))))))
+
+(deftest a-switch-takes-no-attached-value
+  (assert (= (scan-of (vec "--open=yes"))
+             (err (cli-error/unexpected-value (str "--open"))))))
+
+(deftest a-negation-takes-no-attached-value
+  (assert (= (scan-of (vec "--no-color=yes"))
+             (err (cli-error/unexpected-value (str "--no-color"))))))

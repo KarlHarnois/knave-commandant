@@ -1,0 +1,46 @@
+(module
+  "Holds what a parse found: the text of each argument and the value of each option.")
+
+(use spec switch-state)
+
+(export ->argument-match ->matches ->option-match
+        argument-match argument-text matched-value matches
+        option-match option-value)
+
+(defstruct matches
+  :arguments (vec argument-match)
+  :options (vec option-match))
+
+(defstruct argument-match
+  :name string
+  :value string)
+
+(defstruct option-match
+  :long string
+  :value matched-value)
+
+(defenum matched-value
+  (switch switch-state)
+  (count int)
+  (one (option string))
+  (many (vec string)))
+
+(type argument-text
+  (fn ((ref matches) (ref str))
+    (option (ref string))))
+
+(defn argument-text (matches name)
+  (map-some (find (iter (:arguments matches))
+              (fn (found)
+                (= (as-str (:name found)) name)))
+            (fn (found) (:value found))))
+
+(type option-value
+  (fn ((ref matches) (ref str))
+    (option (ref matched-value))))
+
+(defn option-value (matches long)
+  (map-some (find (iter (:options matches))
+              (fn (found)
+                (= (as-str (:long found)) long)))
+            (fn (found) (:value found))))

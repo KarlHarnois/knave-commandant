@@ -1,0 +1,79 @@
+(module
+  "Builds the specs, environments and words the tests run against.")
+
+(use lib ->argument-spec ->command-spec ->environment
+         ->option-spec ->value-slot ->variable
+         argument-presence parse switch-state value-kind)
+
+(export environment-with no-environment no-words parse-texts
+        parse-with serve-spec spec-requiring words)
+
+(defn parse-texts (texts)
+  (parse-with (serve-spec) (no-environment) texts))
+
+(defn parse-with (spec environment texts)
+  (parse (ref spec)
+         (ref environment)
+         (ref (words texts))))
+
+(defn words (texts)
+  (collect (map (iter texts)
+             (fn (text) (str (deref text))))))
+
+(defn serve-spec ()
+  (->command-spec
+    :name (str "serve")
+    :about (str "Serves a folder over HTTP.")
+    :version (some (str "1.0.0"))
+    :arguments (vec (->argument-spec :name (str "root")
+                                     :about (str "The folder to serve")
+                                     :presence (argument-presence/defaulted (str
+                                                                              "."))))
+    :options (vec (->option-spec :long (str "port")
+                                 :short (some (char "p"))
+                                 :about (str "The port to listen on")
+                                 :value (value-kind/one (->value-slot
+                                                          :placeholder (str
+                                                                         "port")
+                                                          :default (some (str "8000"))))
+                                 :env (vec (str "SERVE_PORT") (str "PORT")))
+                  (->option-spec :long (str "open")
+                                 :short (some (char "o"))
+                                 :about (str "Opens the browser")
+                                 :value (value-kind/switch switch-state/off)
+                                 :env (vec))
+                  (->option-spec :long (str "color")
+                                 :short none
+                                 :about (str "Colors the log")
+                                 :value (value-kind/switch switch-state/on)
+                                 :env (vec))
+                  (->option-spec :long (str "verbose")
+                                 :short (some (char "v"))
+                                 :about (str "Logs more")
+                                 :value value-kind/count
+                                 :env (vec))
+                  (->option-spec :long (str "tag")
+                                 :short (some (char "t"))
+                                 :about (str "Tags the log")
+                                 :value (value-kind/many (str "tag"))
+                                 :env (vec)))))
+
+(defn spec-requiring (name)
+  (->command-spec :name (str "copy")
+                  :about (str "Copies a file.")
+                  :version none
+                  :arguments (vec (->argument-spec
+                                    :name (str name)
+                                    :about (str "The file to copy")
+                                    :presence argument-presence/required))
+                  :options (vec)))
+
+(defn no-environment ()
+  (->environment :variables (vec)))
+
+(defn environment-with (name value)
+  (->environment :variables (vec (->variable :name (str name)
+                                             :value (str value)))))
+
+(defn no-words ()
+  (the (vec (ref str)) (vec)))

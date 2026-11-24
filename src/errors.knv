@@ -1,0 +1,27 @@
+(module
+  "Names each way a command line can break the rules of its command.")
+
+(export cli-error error->message)
+
+(defenum cli-error
+  (unknown-option string)
+  (missing-value string)
+  (unexpected-value string)
+  (repeated-option string)
+  (unexpected-argument string)
+  (missing-argument string))
+
+(defn error->message (failure)
+  (match failure
+    ((unknown-option written)
+     (str "unknown option `" written "`"))
+    ((missing-value written)
+     (str "option `" written "` needs a value"))
+    ((unexpected-value written)
+     (str "option `" written "` takes no value"))
+    ((repeated-option written)
+     (str "option `" written "` is given more than once"))
+    ((unexpected-argument written)
+     (str "unexpected argument `" written "`"))
+    ((missing-argument name)
+     (str "missing argument <" name ">"))))
