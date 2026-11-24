@@ -1,0 +1,27 @@
+(use lib matched-value option-value outcome)
+
+(use support/fixture environment-with no-words parse-with
+                     serve-spec)
+
+(defn port-with (name value texts)
+  (match (parse-with (serve-spec)
+                     (environment-with name value)
+                     texts)
+    ((parsed found)
+     (map-some (option-value (ref found) "port") clone))
+    (_ none)))
+
+(defn port-text (text)
+  (some (matched-value/one (some (str text)))))
+
+(deftest an-environment-variable-fills-an-absent-option
+  (assert (= (port-with "SERVE_PORT" "90" (no-words))
+             (port-text "90"))))
+
+(deftest a-later-environment-variable-is-a-fallback
+  (assert (= (port-with "PORT" "91" (no-words))
+             (port-text "91"))))
+
+(deftest a-flag-beats-the-environment
+  (assert (= (port-with "SERVE_PORT" "90" (vec "--port" "80"))
+             (port-text "80"))))

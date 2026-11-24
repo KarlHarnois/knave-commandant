@@ -1,0 +1,27 @@
+(use lib cli-error outcome)
+
+(use support/fixture no-environment parse-texts parse-with
+                     spec-requiring)
+
+(deftest long-help-asks-for-help
+  (assert (= (parse-texts (vec "--help")) outcome/help)))
+
+(deftest short-help-asks-for-help
+  (assert (= (parse-texts (vec "-h")) outcome/help)))
+
+(deftest help-wins-over-a-missing-value-after-it
+  (assert (= (parse-texts (vec "-h" "--port")) outcome/help)))
+
+(deftest long-version-prints-the-version
+  (assert (= (parse-texts (vec "--version"))
+             (outcome/version (str "1.0.0")))))
+
+(deftest short-version-prints-the-version
+  (assert (= (parse-texts (vec "-V"))
+             (outcome/version (str "1.0.0")))))
+
+(deftest version-is-unknown-without-a-version
+  (assert (= (parse-with (spec-requiring "file")
+                         (no-environment)
+                         (vec "-V"))
+             (outcome/usage-error (cli-error/unknown-option (str "-V"))))))
