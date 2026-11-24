@@ -1,0 +1,60 @@
+(module
+  "Writes how the help page and the usage line show an argument or an option, with its value in capitals.")
+
+(use spec argument-presence argument-spec name->placeholder
+          option-spec switch-state value-kind)
+
+(export argument-term option-term required-option-term)
+
+(def long-prefix "--")
+
+(def no-short "    ")
+
+(type argument-term
+  (fn ((ref argument-spec)) string))
+
+(defn argument-term (argument)
+  (let (shown (name->placeholder (as-str (:name argument))))
+    (match (:presence argument)
+      (argument-presence/required (str "<" shown ">"))
+      ((argument-presence/defaulted _) (str "[" shown "]")))))
+
+(defn option-term (option)
+  (str (short-part (:short option))
+       long-prefix
+       (negation-mark (:value option))
+       (:long option)
+       (value-part (:value option))))
+
+(type required-option-term
+  (fn ((ref option-spec)) string))
+
+(defn required-option-term (option)
+  (str long-prefix
+       (:long option)
+       (value-part (:value option))))
+
+(defn short-part (short)
+  (match short
+    ((some character) (str "-" character ", "))
+    (none (str no-short))))
+
+(defn negation-mark (value)
+  (match value
+    ((switch slot) (initial-mark (:initial slot)))
+    (_ (str))))
+
+(defn initial-mark (initial)
+  (match initial
+    (on (str "[no-]"))
+    (off (str))))
+
+(defn value-part (value)
+  (match value
+    ((switch _) (str))
+    (count (str "..."))
+    ((one slot) (value-term (:placeholder slot)))
+    ((many placeholder) (str (value-term placeholder) "..."))))
+
+(defn value-term (name)
+  (str " <" (name->placeholder (as-str name)) ">"))

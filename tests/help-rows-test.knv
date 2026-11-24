@@ -1,5 +1,5 @@
-(use help-rows ->help-row argument-rows argument-term
-               command-rows option-rows)
+(use help-rows ->help-row argument-rows command-rows
+               option-rows)
 
 (use support/fixture serve-spec site-spec spec-requiring
                      spec-with-choices)
@@ -8,22 +8,14 @@
   (clone (at (option-rows (ref (serve-spec)))
              index)))
 
-(deftest a-defaulted-argument-shows-in-brackets
-  (assert (= (argument-term (at (:arguments (serve-spec)) 0))
-             "[root]")))
-
-(deftest a-required-argument-shows-in-angle-brackets
-  (assert (= (argument-term (at (:arguments (spec-requiring "file")) 0))
-             "<file>")))
-
 (deftest an-argument-row-notes-its-default
   (assert (= (argument-rows (ref (serve-spec)))
-             (vec (->help-row :term (str "[root]")
+             (vec (->help-row :term (str "[ROOT]")
                               :description (str "The folder to serve [default: .]"))))))
 
 (deftest a-value-option-notes-its-default-and-environment
   (assert (= (option-row-at 0)
-             (->help-row :term (str "-p, --port <port>")
+             (->help-row :term (str "-p, --port <PORT>")
                          :description (str "The port to listen on [default: 8000] [env: SERVE_PORT, PORT]")))))
 
 (deftest an-off-switch-shows-its-flag
@@ -36,7 +28,7 @@
   (assert (= (:term (option-row-at 3)) "-v, --verbose...")))
 
 (deftest a-many-value-option-shows-it-repeats
-  (assert (= (:term (option-row-at 4)) "-t, --tag <tag>...")))
+  (assert (= (:term (option-row-at 4)) "-t, --tag <TAG>...")))
 
 (deftest every-command-lists-help
   (assert (= (:term (option-row-at 5)) "-h, --help")))

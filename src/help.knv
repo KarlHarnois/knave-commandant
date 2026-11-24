@@ -1,12 +1,9 @@
 (module
   "Writes a command's usage line and its help page, laid out in columns that fit a width.")
 
-(use help-rows argument-rows argument-term command-rows
-               option-rows)
-
-(use spec command-spec option-required? option-spec
-          value-kind)
-
+(use help-rows argument-rows command-rows option-rows)
+(use terms argument-term required-option-term)
+(use spec command-spec option-required?)
 (use wrap wrap)
 
 (export spec->help spec->usage)
@@ -14,8 +11,6 @@
 (def options-mark "[OPTIONS]")
 
 (def command-mark "<COMMAND>")
-
-(def long-prefix "--")
 
 (def indent "  ")
 
@@ -81,21 +76,6 @@
                   (fn (option)
                     (option-required? (deref option))))
                 required-option-term)))
-
-(type required-option-term
-  (fn ((ref option-spec)) string))
-
-(defn required-option-term (option)
-  (str long-prefix
-       (:long option)
-       " <"
-       (placeholder-of (ref (:value option)))
-       ">"))
-
-(defn placeholder-of (value)
-  (match value
-    ((one slot) (clone (:placeholder slot)))
-    (_ (str))))
 
 (defn page-layout (term-width width)
   (->layout
