@@ -18,7 +18,7 @@ Replace `<commit>` with the commit to pin.
 ## Usage
 
 ```clj
-(use knave-commandant defcommand)
+(use knave-commandant defcommand run-command)
 
 (defcommand greet "Greets someone."
   :version "1.0.0"
@@ -26,7 +26,7 @@ Replace `<commit>` with the commit to pin.
   (:loud switch :short l :about "Greets in capitals"))
 
 (defn main ()
-  (let (options (run-greet))
+  (let (options (run-command greet))
     (println "Hello, " (:who options))))
 ```
 

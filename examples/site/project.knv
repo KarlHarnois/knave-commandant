@@ -1,0 +1,3 @@
+(defproject site
+  :knave "0.21.2"
+  (libraries (knave-commandant :path "../..")))
