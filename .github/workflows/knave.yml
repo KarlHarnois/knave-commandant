@@ -1,4 +1,5 @@
-name: CI
+# `knave upgrade` rewrites this file. Put the project's own steps in another workflow.
+name: Knave
 
 on:
   push:
@@ -55,5 +56,7 @@ jobs:
         run: knave fmt --check
       - name: Lint
         run: knave lint
+      - name: Build
+        run: knave build
       - name: Test
         run: knave test
