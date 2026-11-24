@@ -1,4 +1,4 @@
-name: ledelint
+name: examples
 
 on:
   push:
@@ -8,8 +8,11 @@ permissions:
   contents: read
 
 jobs:
-  ledelint:
+  example:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        example: [serve, site]
     steps:
       - uses: actions/checkout@v4
       - name: Read the Knave version from project.knv
@@ -33,5 +36,15 @@ jobs:
         with:
           path: *knave-files
           key: ${{ steps.knave-cache.outputs.cache-primary-key }}
-      - name: Check the newspaper order
-        run: knave task ledelint
+      - name: Check the example
+        working-directory: examples/${{ matrix.example }}
+        run: knave check
+      - name: Check the layout
+        working-directory: examples/${{ matrix.example }}
+        run: knave fmt --check
+      - name: Lint
+        working-directory: examples/${{ matrix.example }}
+        run: knave lint
+      - name: Print the help
+        working-directory: examples/${{ matrix.example }}
+        run: knave run -- --help

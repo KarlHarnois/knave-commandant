@@ -41,5 +41,5 @@ knave check
 knave test
 knave fmt --check
 knave lint
-knave task ledelint
+knave task check-file-lengths
 ```
