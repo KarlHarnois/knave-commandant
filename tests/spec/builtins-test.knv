@@ -1,0 +1,37 @@
+(use spec/builtins builtin-action builtin-option
+                   builtin-options builtin-options-of
+                   find-builtin-long find-builtin-short
+                   help-long help-short-name version-long
+                   version-short-name)
+
+(use support/fixture serve-spec spec-requiring)
+
+(type names-of
+  (fn ((ref (vec builtin-option)))
+    (vec string)))
+
+(defn names-of (options)
+  (collect (map (iter options)
+             (fn (option) (clone (:name option))))))
+
+(deftest a-command-with-a-version-offers-help-and-version
+  (assert (= (names-of (ref (builtin-options-of (ref (serve-spec)))))
+             (vec (str help-long) (str version-long)))))
+
+(deftest a-command-without-a-version-offers-only-help
+  (assert (= (names-of (ref (builtin-options-of (ref (spec-requiring "file")))))
+             (vec (str help-long)))))
+
+(deftest finds-a-built-in-by-its-long-name
+  (assert (= (map-some (find-builtin-long (ref (serve-spec)) "version")
+               (fn (found) (clone (:action found))))
+             (some builtin-action/show-version))))
+
+(deftest finds-no-version-letter-without-a-version
+  (assert (none? (find-builtin-short (ref (spec-requiring "file"))
+                                     (char "V")))))
+
+(deftest the-letters-match-the-names-the-macros-reserve
+  (assert (= (collect (map (iter (builtin-options))
+                        (fn (option) (str (:letter option)))))
+             (vec (str help-short-name) (str version-short-name)))))

@@ -9,7 +9,8 @@
 (use parse matches->typed outcome parse)
 (use spec/shapes command-spec)
 (use help/terminal terminal-width)
-(use spec/validate spec-error->message validate-spec)
+(use spec/spec-error spec-error->message)
+(use spec/validate validate-spec)
 (use errors/cli-error ->usage-failure cli-error)
 
 (export command->response process-environment response run

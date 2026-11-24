@@ -6,20 +6,11 @@
 
 (use help/terms argument-term option-term)
 
+(use spec/builtins builtin-options-of help-command
+                   help-command-about)
+
 (export ->help-row argument-rows command-rows help-row
         option-rows)
-
-(def help-row-term "-h, --help")
-
-(def help-row-description "Print help")
-
-(def version-row-term "-V, --version")
-
-(def version-row-description "Print version")
-
-(def help-command-term "help")
-
-(def help-command-description "Print the help of a command")
 
 (defstruct help-row
   :term string
@@ -36,25 +27,22 @@
 
 (defn option-rows (spec)
   (let (rows (collect (map (iter (:options spec)) option-row)))
-    (push! rows
-           (->help-row :term (str help-row-term)
-                       :description (str help-row-description)))
-    (push-version-row! (mut rows) spec)
+    (for-each (builtin-options-of spec)
+      (fn (builtin)
+        (push! rows (builtin-row builtin))))
     rows))
+
+(defn builtin-row (builtin)
+  (->help-row :term (str "-" (:letter builtin) ", --" (:name builtin))
+              :description (clone (:summary builtin))))
 
 (defn command-rows (spec)
   (let (rows (collect (map (iter (:subcommands spec)) command-row)))
     (when (not (empty? rows))
       (push! rows
-             (->help-row :term (str help-command-term)
-                         :description (str help-command-description))))
+             (->help-row :term (str help-command)
+                         :description (str help-command-about))))
     rows))
-
-(defn push-version-row! (rows spec)
-  (when (some? (:version spec))
-    (push! rows
-           (->help-row :term (str version-row-term)
-                       :description (str version-row-description)))))
 
 (type command-row
   (fn ((ref command-spec)) help-row))

@@ -5,8 +5,8 @@
 (use scan/hits stop)
 (use spec/shapes command-spec option-spec)
 
-(export ->scan occurrence occurrence-value record! scan
-        step)
+(export ->scan occurrence occurrence-value occurrences-named
+        record! scan step)
 
 (defstruct scan
   :path (vec string)
@@ -38,3 +38,12 @@
                        :written written
                        :value value))
   (ok (step/advance next)))
+
+(type occurrences-named
+  (fn ((ref (vec occurrence)) (ref str))
+    (vec (ref occurrence))))
+
+(defn occurrences-named (occurrences long)
+  (collect (filter (iter occurrences)
+             (fn (found)
+               (= (as-str (:long found)) long)))))

@@ -3,18 +3,13 @@
 
 (use scan/items flag)
 
+(use spec/builtins builtin-action builtin-option
+                   find-builtin-long find-builtin-short)
+
 (use spec/shapes command-spec find-long find-short
                  option-spec switch?)
 
 (export builtin find-hit hit stop)
-
-(def help-long "help")
-
-(def version-long "version")
-
-(def help-short (char "h"))
-
-(def version-short (char "V"))
 
 (def negation-prefix "no-")
 
@@ -27,14 +22,25 @@
   (direct option-spec)
   (negation option-spec))
 
-(type builtin
-  (fn ((ref command-spec) (ref flag))
-    (option stop)))
-
 (defn builtin (spec flag)
+  (then-some (find-builtin spec flag)
+    (fn (found)
+      (stop-for spec (:action found)))))
+
+(type find-builtin
+  (fn ((ref command-spec) (ref flag))
+    (option builtin-option)))
+
+(defn find-builtin (spec flag)
   (match flag
-    ((long name) (long-builtin spec (as-str name)))
-    ((short character) (short-builtin spec (deref character)))))
+    ((long name) (find-builtin-long spec (as-str name)))
+    ((short character)
+     (find-builtin-short spec (deref character)))))
+
+(defn stop-for (spec action)
+  (match action
+    (show-help (some stop/help-asked))
+    (show-version (version-stop spec))))
 
 (type find-hit
   (fn ((ref command-spec) (ref flag))
@@ -47,18 +53,6 @@
      (map-some (find-short spec (deref character))
        (fn (option)
          (hit/direct (clone option)))))))
-
-(defn long-builtin (spec name)
-  (cond
-    ((= name help-long) (some stop/help-asked))
-    ((= name version-long) (version-stop spec))
-    (else none)))
-
-(defn short-builtin (spec character)
-  (cond
-    ((= character help-short) (some stop/help-asked))
-    ((= character version-short) (version-stop spec))
-    (else none)))
 
 (defn version-stop (spec)
   (map-some (clone (:version spec))

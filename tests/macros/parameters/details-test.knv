@@ -1,7 +1,24 @@
 (use lib ->environment ->option-conflict ->usage-failure
          cli-error defcommand outcome parse-command)
 
-(export matches->add-item)
+(export matches->add-item matches->deploy)
+
+(defcommand deploy "Deploys the site."
+  (:token string :required true :about "The API token"))
+
+(defn words (texts)
+  (collect (map (iter texts)
+             (fn (text) (str (deref text))))))
+
+(defn deploy-after (texts)
+  (parse-command deploy
+                 (->environment :variables (vec))
+                 (words texts)))
+
+(deftest a-required-option-becomes-a-plain-field
+  (assert (= (map-ok (deploy-after (vec "--token" "secret"))
+               (fn (deploy) (clone (:token deploy))))
+             (ok (str "secret")))))
 
 (defcommand add-item "Adds an item."
   (:after (vec u32)
@@ -13,8 +30,7 @@
 (defn add-after (texts)
   (parse-command add-item
                  (->environment :variables (vec))
-                 (collect (map (iter texts)
-                            (fn (text) (str (deref text)))))))
+                 (words texts)))
 
 (deftest a-delimited-vec-option-reads-each-part
   (assert (= (map-ok (add-after (vec "--after" "1,2" "--after" "3"))

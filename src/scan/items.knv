@@ -1,12 +1,12 @@
 (module
   "Turns tokens into flags and words, splitting each short cluster with the command's spec.")
 
-(use spec/shapes command-spec short-takes-value?)
+(use spec/shapes command-spec long-prefix
+                 short-takes-value?)
+
 (use scan/tokens token)
 
 (export flag flag->written item token->items tokens->items)
-
-(def long-prefix "--")
 
 (def short-prefix "-")
 

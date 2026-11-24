@@ -1,71 +1,15 @@
 (module
-  "Finds the mistakes a spec can hold, such as two options with one name, before a parse hides them.")
+  "Runs every check on a command's spec and on the spec of each command under it, before a parse hides a mistake.")
 
-(use spec/argument-order argument-order order-error
-                         order-error->message)
+(use spec/checks mistakes)
+(use spec/commands descended)
 
-(use spec/commands descended subcommand-names)
-(use resolve/conflicts unknown-conflict)
-(use spec/shapes command-spec)
-
-(export spec-error spec-error->message validate-spec)
-
-(def reserved-longs (vec "help" "version"))
-
-(def reserved-command "help")
-
-(def reserved-shorts
-  (vec (char "h") (char "V")))
-
-(defenum spec-error
-  (reserved-long string)
-  (reserved-short char)
-  (repeated-long string)
-  (repeated-short char)
-  (repeated-argument string)
-  (misordered-argument order-error)
-  (unknown-conflict string)
-  reserved-command
-  (repeated-command string))
+(export validate-spec)
 
 (defn validate-spec (spec)
-  (try (check-longs (long-names spec)))
-  (try (check-shorts (short-names spec)))
-  (try (check-conflict-names spec))
-  (try (check-arguments (argument-names spec)))
-  (try (map-err (argument-order spec)
-         (fn (failure) (spec-error/misordered-argument failure))))
-  (try (check-commands (subcommand-names spec)))
-  (validate-subcommands spec))
-
-(defn spec-error->message (failure)
-  (match failure
-    ((reserved-long name)
-     (str "option `--" name
-          "` is built in, so a spec cannot define it"))
-    ((reserved-short name)
-     (str "option `-" name
-          "` is built in, so a spec cannot define it"))
-    ((repeated-long name)
-     (str "two options are named `--" name "`"))
-    ((repeated-short name)
-     (str "two options are named `-" name "`"))
-    ((repeated-argument name)
-     (str "two arguments are named <" name ">"))
-    ((misordered-argument failure)
-     (order-error->message failure))
-    ((unknown-conflict name)
-     (str "an option conflicts with `--" name
-          "`, which is not an option"))
-    (reserved-command (str "command `" reserved-command
-                           "` is built in, so a spec cannot define it"))
-    ((repeated-command name)
-     (str "two commands are named `" name "`"))))
-
-(defn check-conflict-names (spec)
-  (match (unknown-conflict spec)
-    ((some name) (err (spec-error/unknown-conflict name)))
-    (none (ok (do)))))
+  (match (first (mistakes spec))
+    ((some mistake) (err (clone mistake)))
+    (none (validate-subcommands spec))))
 
 (defn validate-subcommands (spec)
   (reduce (iter (:subcommands spec)) (ok (do))
@@ -73,77 +17,3 @@
       (then-ok so-far
         (fn (_)
           (validate-spec (ref (descended spec subcommand))))))))
-
-(defn check-commands (names)
-  (if (any? (iter names)
-        (fn (name)
-          (= (as-str name) reserved-command)))
-    (err spec-error/reserved-command)
-    (map-err (check-unique (ref names))
-      (fn (name) (spec-error/repeated-command name)))))
-
-(type long-names
-  (fn ((ref command-spec)) (vec string)))
-
-(defn long-names (spec)
-  (collect (map (iter (:options spec))
-             (fn (option) (clone (:long option))))))
-
-(type short-names
-  (fn ((ref command-spec)) (vec char)))
-
-(defn short-names (spec)
-  (let (shorts (vec))
-    (for-each (iter (:options spec))
-      (fn (option)
-        (push-short! (mut shorts) option)))
-    shorts))
-
-(defn push-short! (shorts option)
-  (match (:short option)
-    ((some character) (push! shorts character))
-    (none (do))))
-
-(type argument-names
-  (fn ((ref command-spec)) (vec string)))
-
-(defn argument-names (spec)
-  (collect (map (iter (:arguments spec))
-             (fn (argument) (clone (:name argument))))))
-
-(defn check-longs (names)
-  (match (find (iter names)
-           (fn (name)
-             (reserved-long? (as-str name))))
-    ((some name) (err (spec-error/reserved-long (clone name))))
-    (none (map-err (check-unique (ref names))
-            (fn (name) (spec-error/repeated-long name))))))
-
-(defn reserved-long? (name)
-  (any? (iter reserved-longs)
-    (fn (reserved)
-      (= (deref reserved) name))))
-
-(defn check-shorts (names)
-  (match (find (iter names)
-           (fn (name)
-             (contains? reserved-shorts (deref (deref name)))))
-    ((some name) (err (spec-error/reserved-short (deref name))))
-    (none (map-err (check-unique (ref names))
-            (fn (name) (spec-error/repeated-short name))))))
-
-(defn check-arguments (names)
-  (map-err (check-unique (ref names))
-    (fn (name) (spec-error/repeated-argument name))))
-
-(defn check-unique (names)
-  (match (find (range 1 (len names))
-           (fn (index)
-             (seen-before? names (deref index))))
-    ((some index) (err (clone (at names index))))
-    (none (ok (do)))))
-
-(defn seen-before? (names index)
-  (any? (range 0 index)
-    (fn (earlier)
-      (= (at names earlier) (at names index)))))

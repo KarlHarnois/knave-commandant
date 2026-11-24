@@ -4,11 +4,11 @@
 (export ->argument-spec ->command-spec ->list-slot
         ->option-spec ->switch-slot ->value-slot
         argument-presence argument-spec command-spec
-        find-long find-short list-slot name->placeholder
-        option-presence option-required? option-spec
-        repeated? required? short-takes-value? switch-slot
-        switch-state switch? takes-value? value-kind
-        value-slot)
+        find-long find-short list-slot long-flag long-prefix
+        name->placeholder option-presence option-required?
+        option-spec repeated? required? short-takes-value?
+        switch-slot switch-state switch? takes-value?
+        value-kind value-slot)
 
 (defstruct command-spec
   :name string
@@ -68,6 +68,10 @@
 
 (defn name->placeholder (name)
   (upper-case (as-str (join (collect (split name "-")) "_"))))
+
+(def long-prefix "--")
+
+(defn long-flag (long) (str long-prefix long))
 
 (type find-long
   (fn ((ref command-spec) (ref str))

@@ -2,7 +2,7 @@
   "Turns the text of a matched argument or option into a typed value, through the `cli-value` trait.")
 
 (use errors/cli-error ->invalid-text cli-error)
-(use spec/shapes name->placeholder)
+(use spec/shapes long-flag name->placeholder)
 
 (use values/matches argument-text argument-texts many-texts
                     matches one-text)
@@ -10,8 +10,6 @@
 (export cli-value from-text parsed read-argument
         read-arguments read-many read-option read-optional
         read-optional-argument value-names)
-
-(def long-prefix "--")
 
 (deftrait cli-value
   (from-text
@@ -60,8 +58,8 @@
 
 (defn read-option (found long)
   (match (one-text found long)
-    ((some text) (converted (ref text) (str long-prefix long)))
-    (none (err (cli-error/missing-option (str long-prefix long))))))
+    ((some text) (converted (ref text) (long-flag long)))
+    (none (err (cli-error/missing-option (long-flag long))))))
 
 (type read-optional
   (where ((t cli-value))
@@ -71,7 +69,7 @@
 (defn read-optional (found long)
   (match (one-text found long)
     ((some text)
-     (map-ok (converted (ref text) (str long-prefix long))
+     (map-ok (converted (ref text) (long-flag long))
              some))
     (none (ok none))))
 
@@ -81,8 +79,7 @@
       (result (vec t) cli-error))))
 
 (defn read-many (found long)
-  (converted-all (many-texts found long)
-                 (str long-prefix long)))
+  (converted-all (many-texts found long) (long-flag long)))
 
 (type converted-all
   (where ((t cli-value))

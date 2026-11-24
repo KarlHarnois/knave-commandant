@@ -1,13 +1,11 @@
 (module
   "Writes how the help page and the usage line show an argument or an option, with its value in capitals.")
 
-(use spec/shapes argument-presence argument-spec
+(use spec/shapes argument-presence argument-spec long-prefix
                  name->placeholder option-spec switch-state
                  value-kind)
 
 (export argument-term option-term required-option-term)
-
-(def long-prefix "--")
 
 (def no-short "    ")
 

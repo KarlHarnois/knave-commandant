@@ -5,15 +5,13 @@
 (use resolve/conflicts check-conflicts)
 (use errors/cli-error cli-error)
 (use values/matches ->matches matches one-text)
-(use scan/state occurrence)
-(use resolve/settle occurrences-of option-matches)
+(use scan/state occurrence occurrences-named)
+(use resolve/settle option-matches)
 
-(use spec/shapes command-spec option-required? option-spec
-                 value-kind)
+(use spec/shapes command-spec long-flag option-required?
+                 option-spec value-kind)
 
 (export resolve)
-
-(def long-prefix "--")
 
 (defn resolve (spec environment scan)
   (let-try (arguments (resolve-arguments spec (ref (:positionals scan))))
@@ -35,7 +33,7 @@
   (match (find (iter (:options spec))
            (fn (option) (unset? option found)))
     ((some option)
-     (err (cli-error/missing-option (str long-prefix (:long option)))))
+     (err (cli-error/missing-option (long-flag (as-str (:long option))))))
     (none (ok (do)))))
 
 (defn unset? (option found)
@@ -56,7 +54,15 @@
 
 (defn repeated? (option occurrences)
   (and (single-value? option)
-       (> (len (occurrences-of option occurrences)) 1)))
+       (> (len (given option occurrences)) 1)))
+
+(type given
+  (fn ((ref option-spec)
+       (ref (vec occurrence)))
+    (vec (ref occurrence))))
+
+(defn given (option occurrences)
+  (occurrences-named occurrences (as-str (:long option))))
 
 (type single-value?
   (fn ((ref option-spec)) bool))
@@ -67,4 +73,4 @@
     (_ false)))
 
 (defn second-written (option occurrences)
-  (clone (:written (at (occurrences-of option occurrences) 1))))
+  (clone (:written (at (given option occurrences) 1))))

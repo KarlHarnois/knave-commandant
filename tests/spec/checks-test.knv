@@ -1,0 +1,27 @@
+(use spec/checks mistakes)
+(use spec/shapes ->option-spec value-kind)
+(use spec/spec-error spec-error)
+(use support/fixture serve-spec)
+
+(defn with-options (longs)
+  (let (spec (serve-spec))
+    (for-each (iter longs)
+      (fn (long)
+        (push! (:options spec)
+               (->option-spec :conflicts-with (vec)
+                              :long (str (deref long))
+                              :short none
+                              :about (str "")
+                              :value value-kind/count))))
+    spec))
+
+(deftest a-well-formed-spec-has-no-mistakes
+  (assert (empty? (mistakes (ref (serve-spec))))))
+
+(deftest every-check-reports-its-own-mistake
+  (assert (= (mistakes (ref (with-options (vec "help"))))
+             (vec (spec-error/reserved-long (str "help"))))))
+
+(deftest a-repeated-name-is-one-mistake
+  (assert (= (mistakes (ref (with-options (vec "port"))))
+             (vec (spec-error/repeated-long (str "port"))))))
