@@ -1,0 +1,6 @@
+(defproject knave-commandant
+  :knave "0.21.2"
+  (libraries
+    (ledelint :git "https://github.com/KarlHarnois/ledelint"
+              :rev "67d735e0d9c632fc04508b53d4c42dcd1102e95b"))
+  (lints (needless-type deny)))
