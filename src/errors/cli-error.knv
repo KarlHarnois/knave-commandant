@@ -28,7 +28,7 @@
 (defstruct invalid-text
   :written string
   :text string
-  :why string)
+  :why (option string))
 
 (defstruct option-conflict
   :written string
@@ -60,8 +60,8 @@
           (:text invalid)
           "` for `"
           (:written invalid)
-          "`: "
-          (:why invalid)))
+          "`"
+          (explained (:why invalid))))
     ((conflicting-options conflict)
      (str "option `"
           (:written conflict)
@@ -71,3 +71,8 @@
     ((unsupported-shell shell)
      (str "no completion for the shell `" shell
           "`, only for bash"))))
+
+(defn explained (why)
+  (match why
+    ((some reason) (str ": " reason))
+    (none (str))))

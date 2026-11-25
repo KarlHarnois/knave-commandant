@@ -16,9 +16,9 @@
                 (from-text (text)
                   (match text
                     (splice (case-clauses name cases))
-                    (_ (err (str "expected one of "
-                                 (join (vec (splice (case-texts cases)))
-                                       ", "))))))
+                    (_ (err (some (str "expected one of "
+                                       (join (vec (splice (case-texts cases)))
+                                             ", ")))))))
 
                 (value-names (_)
                   (vec (splice (case-texts cases))))))))

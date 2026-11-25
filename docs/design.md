@@ -181,14 +181,17 @@ file, and `tests/e2e-tests.knv` goes through the public interface.
     error as one sentence. clap does the same with `Error::kind`. The
     usage error is the library's own `cli-error`, not a copy made for
     callers, so a new case there breaks an exhaustive `match` on it.
-16. **A value type says why it refuses a text.** `from-text` returns the
-    value or a reason, and the error reads "invalid value `abc` for
-    `--port`: expected a whole number from 0 to 65535". Each built-in
-    type gives its own reason, a `defchoice` names its cases, and a
-    program's own type says what it knows, as in "a header is written
-    `name:value`". The reason replaces the old "possible values" tip,
-    so one sentence carries the whole error, for a terminal and for a
-    program that prints JSON.
+16. **A value type can say why it refuses a text.** `from-text` returns
+    the value, or `(err none)`, or `(err (some reason))`. Without a
+    reason the error is the plain "invalid value `abc` for `--port`",
+    so a type that only knows yes or no needs nothing more. With one it
+    reads "invalid value `abc` for `--port`: expected a whole number
+    from 0 to 65535". Each built-in type gives its own reason, a
+    `defchoice` names its cases, and a program's own type says what it
+    knows, as in "a header is written `name:value`". The reason
+    replaces the old "possible values" tip, so one sentence carries
+    the whole error, for a terminal and for a program that prints
+    JSON.
 
 ## 6. Limits from the compiler
 

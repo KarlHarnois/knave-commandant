@@ -33,7 +33,7 @@
   (assert (= (error->message (cli-error/invalid-value (->invalid-text
                                                         :written (str "--port")
                                                         :text (str "abc")
-                                                        :why (str "expected a whole number"))))
+                                                        :why (some (str "expected a whole number")))))
              "invalid value `abc` for `--port`: expected a whole number")))
 
 (deftest names-an-unknown-command
@@ -53,3 +53,10 @@
 (deftest names-a-shell-without-completion
   (assert (= (error->message (cli-error/unsupported-shell (str "fish")))
              "no completion for the shell `fish`, only for bash")))
+
+(deftest names-an-invalid-value-plainly-without-a-reason
+  (assert (= (error->message (cli-error/invalid-value (->invalid-text
+                                                        :written (str "--port")
+                                                        :text (str "abc")
+                                                        :why none)))
+             "invalid value `abc` for `--port`")))

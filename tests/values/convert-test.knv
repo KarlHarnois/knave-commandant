@@ -59,7 +59,7 @@
              (err (cli-error/invalid-value (->invalid-text :written (str
                                                                       "--port")
                                                            :text (str "80")
-                                                           :why (str "expected true or false")))))))
+                                                           :why (some (str "expected true or false"))))))))
 
 (deftest an-absent-optional-value-is-none
   (assert (= (the (result (option u16) _)

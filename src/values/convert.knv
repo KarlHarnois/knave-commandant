@@ -15,7 +15,8 @@
 
 (deftrait cli-value
   (from-text
-    (fn ((ref str)) (result self string)))
+    (fn ((ref str))
+      (result self (option string))))
 
   (value-names
     (fn ((ref (option self))) (vec string))))
@@ -114,9 +115,9 @@
 (type parsed
   (where ((t from-str))
     (fn ((ref str) (ref str))
-      (result t string))))
+      (result t (option string)))))
 
 (defn parsed (text expected)
   (match (parse text)
     ((ok value) (ok value))
-    ((err _) (err (str "expected " expected)))))
+    ((err _) (err (some (str "expected " expected))))))

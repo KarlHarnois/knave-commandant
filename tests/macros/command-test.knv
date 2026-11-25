@@ -1,9 +1,9 @@
-(use lib ->early-exit ->environment ->variable defchoice
-         defcommand output-stream parse-command spec->usage
-         stop-reason)
+(use lib ->early-exit ->environment ->variable cli-value
+         defchoice defcommand output-stream parse-command
+         spec->usage stop-reason)
 
 (export matches->copy matches->greet matches->hello
-        matches->say)
+        matches->say matches->unlock)
 
 (defchoice tone plain loud)
 
@@ -119,3 +119,58 @@
   (assert (starts-with? (as-str (:text (greet-stop
                                          (vec "ana" "--tone" "soft"))))
                         "error: invalid value `soft` for `--tone`: expected one of plain, loud\n\nUsage: greet")))
+
+(defstruct pin
+  :digits string)
+
+(impl cli-value pin
+  (from-text (text)
+    (ok-or (text->pin text) none))
+
+  (value-names (_) (vec)))
+
+(defn text->pin (text)
+  (if (= (len text) 4)
+    (some (->pin :digits (str text)))
+    none))
+
+(defstruct label
+  :text string)
+
+(impl cli-value label
+  (from-text (text)
+    (ok-or (text->label text)
+           (some (str "a label starts with `#`"))))
+
+  (value-names (_) (vec)))
+
+(defn text->label (text)
+  (if (starts-with? text "#")
+    (some (->label :text (str text)))
+    none))
+
+(defcommand unlock "Unlocks a door."
+  (code pin :about "The door's code")
+  (:label label :about "A label for the log"))
+
+(defn unlock-report (texts)
+  (clone (:text (unwrap-err (map-ok (parse-command unlock
+                                                   (->environment :variables (vec))
+                                                   (texts->words texts))
+                                    (fn (_) 0))))))
+
+(deftest a-custom-type-reads-its-value
+  (assert (= (parse-command unlock
+                            (->environment :variables (vec))
+                            (texts->words (vec "1234" "--label" "#front")))
+             (ok (->unlock :code (->pin :digits (str "1234"))
+                           :label (some (->label :text (str "#front"))))))))
+
+(deftest a-custom-type-without-a-reason-gets-the-plain-error
+  (assert (starts-with?
+            (as-str (unlock-report (vec "12")))
+            "error: invalid value `12` for `<CODE>`\n\nUsage: unlock")))
+
+(deftest a-custom-type-with-a-reason-ends-the-error-with-it
+  (assert (starts-with? (as-str (unlock-report (vec "1234" "--label" "front")))
+                        "error: invalid value `front` for `--label`: a label starts with `#`\n\nUsage: unlock")))
