@@ -1,0 +1,31 @@
+(use help/placeholders choices-listed? shown-placeholder)
+
+(defn names (texts)
+  (collect (map (iter texts)
+             (fn (text) (str (deref text))))))
+
+(deftest a-value-name-wins-over-the-choices
+  (assert (= (shown-placeholder "format"
+                                (ref (some (str "kind")))
+                                (ref (names (vec "text" "json"))))
+             "KIND")))
+
+(deftest a-few-choices-are-shown-as-written
+  (assert (= (shown-placeholder "format"
+                                (ref none)
+                                (ref (names (vec "text" "json"))))
+             "text|json")))
+
+(deftest without-choices-the-name-is-shown-in-capitals
+  (assert (= (shown-placeholder "body-file"
+                                (ref none)
+                                (ref (names (the (vec (ref str)) (vec)))))
+             "BODY_FILE")))
+
+(deftest choices-are-listed-only-when-few-and-unnamed
+  (assert (choices-listed? (ref none)
+                           (ref (names (vec "a" "b")))))
+  (assert (not (choices-listed? (ref (some (str "x")))
+                                (ref (names (vec "a" "b"))))))
+  (assert (not (choices-listed? (ref none)
+                                (ref (names (vec "a" "b" "c" "d" "e")))))))

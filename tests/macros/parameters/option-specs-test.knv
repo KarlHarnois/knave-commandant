@@ -47,8 +47,12 @@
 (deftest an-option-without-a-default-is-optional
   (assert (= (presence-at 4) (some presence/optional))))
 
-(deftest a-value-name-becomes-the-placeholder
-  (assert (= (match (:value (option-at 5))
-               ((one slot) (clone (:placeholder slot)))
-               (_ (str)))
-             "FILE")))
+(defn value-name-at (index)
+  (match (:value (option-at index))
+    ((one slot) (clone (:value-name slot)))
+    (_ none)))
+
+(deftest an-option-records-its-value-name-only-when-given
+  (assert (= (value-name-at 4) none))
+  (assert (= (value-name-at 5)
+             (some (str "FILE")))))

@@ -4,7 +4,7 @@
 (use spec/shapes presence)
 
 (use support/fixture argument-named repeated-argument
-                     serve-spec spec-requiring
+                     serve-spec spec-choosing spec-requiring
                      spec-with-lists spec-with-token)
 
 (deftest a-defaulted-argument-shows-in-brackets
@@ -38,3 +38,16 @@
 (deftest a-delimited-list-option-shows-its-separator
   (assert (= (option-term (at (:options (spec-with-lists)) 0))
              "    --after <AFTER>,...")))
+
+(defn choice-term (choices)
+  (option-term (at (:options (spec-choosing choices)) 0)))
+
+(deftest up-to-four-choices-stand-for-the-value
+  (assert (= (choice-term (vec "text" "json"))
+             "    --format <text|json>"))
+  (assert (= (choice-term (vec "a" "b" "c" "d"))
+             "    --format <a|b|c|d>")))
+
+(deftest more-than-four-choices-fall-back-to-the-name
+  (assert (= (choice-term (vec "a" "b" "c" "d" "e"))
+             "    --format <FORMAT>")))

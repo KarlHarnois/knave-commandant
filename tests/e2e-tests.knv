@@ -168,7 +168,8 @@
 
 (defn spec-with-value-name ()
   (spec-with-arguments (vec (->argument-spec :name (str "root")
-                                             :placeholder (str "path")
+                                             :value-name (some (str "path"))
+                                             :choices (vec)
                                              :about (str "")
                                              :presence presence/required
                                              :repeats repetition/once))))
