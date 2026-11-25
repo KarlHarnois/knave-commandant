@@ -9,7 +9,7 @@
 (use spec/shapes command-spec find-long find-short
                  option-spec switch?)
 
-(export builtin find-hit hit stop)
+(export builtin find-hit hit negation-prefix stop)
 
 (def negation-prefix "no-")
 

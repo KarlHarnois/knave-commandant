@@ -3,8 +3,8 @@
 
 (use spec/shapes long-prefix)
 
-(export ->long-assignment long-assignment token
-        words->tokens)
+(export ->long-assignment assignment long-assignment
+        short-prefix token words->tokens)
 
 (def end-of-options "--")
 

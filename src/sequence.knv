@@ -1,0 +1,7 @@
+(module
+  "Builds vectors without mutating the one it is given.")
+
+(export appended)
+
+(defn appended (items item)
+  (let (all items) (push! all item) all))

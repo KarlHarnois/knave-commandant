@@ -5,7 +5,7 @@
 (use spec/argument-order argument-order)
 (use spec/builtins builtin-options help-command)
 (use spec/commands subcommand-names)
-(use spec/shapes command-spec)
+(use spec/shapes command-spec long-names)
 (use spec/spec-error spec-error)
 
 (export mistakes)
@@ -46,13 +46,6 @@
     (err spec-error/reserved-command)
     (map-err (check-unique (ref names))
       (fn (name) (spec-error/repeated-command name)))))
-
-(type long-names
-  (fn ((ref command-spec)) (vec string)))
-
-(defn long-names (spec)
-  (collect (map (iter (:options spec))
-             (fn (option) (clone (:long option))))))
 
 (type short-names
   (fn ((ref command-spec)) (vec char)))

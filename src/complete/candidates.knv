@@ -3,13 +3,12 @@
 
 (use complete/flags flags-offered)
 (use complete/position expectation position-after)
+(use scan/tokens short-prefix)
 (use spec/builtins help-command)
 (use spec/commands subcommands?)
 (use spec/shapes option-spec repeated? value-kind)
 
 (export ->cursor complete completion cursor)
-
-(def option-start "-")
 
 (defstruct cursor
   :preceding (vec string)
@@ -43,7 +42,7 @@
 
 (defn open-completion (position current)
   (cond
-    ((starts-with? current option-start)
+    ((starts-with? current short-prefix)
      (completion/words (flags-offered position)))
     ((subcommands? (:scope position))
      (completion/words (command-names (:scope position))))
