@@ -34,9 +34,10 @@
 
 (defmacro parse-command (name environment words)
   "Parses `words` with the command `name`, defined by `defcommand` or
-  `defcli`, and returns `(ok value)` with its typed struct. Help, version and
-  usage errors come back as `(err early-exit)`, which holds the text, the
-  stream and the exit code. `(exit-early early-exit)` prints it and exits.
+  `defcli`, and returns `(ok value)` with its typed struct. Anything else
+  comes back as `(err early-exit)`, which holds the text, the stream and the
+  exit code: help, a version, a completion reply, a usage error (code 2) or a
+  mistake in the spec (code 70). `(exit-early early-exit)` prints it and exits.
   `parse-command` itself reads nothing from the process and never exits."
   (template (parse-line-into (ref ((unquote (named name "" "-spec"))))
                              (ref (unquote environment))
