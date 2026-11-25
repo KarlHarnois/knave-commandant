@@ -1,0 +1,65 @@
+(module
+  "Speaks to bash: the script that registers a program's completion, the cursor in the words bash hands over, and the reply it reads back.")
+
+(use complete/candidates ->cursor completion)
+(use spec/shapes long-prefix)
+
+(export bash-reply bash-script bash-words->cursor)
+
+(def assignment "=")
+
+(def words-directive "words")
+
+(def paths-directive "paths")
+
+(defn bash-script (program)
+  (let (function (str "_" (function-stem program) "_complete"))
+    (join (vec (str function "() {")
+               (str "  local reply")
+               (str "  mapfile -t reply < <(COMPLETE=bash \"${COMP_WORDS[0]}\" -- \"${COMP_WORDS[@]:1:COMP_CWORD}\" 2>/dev/null)")
+               (str "  COMPREPLY=(\"${reply[@]:1}\")")
+               (str "  if [[ ${reply[0]} == " paths-directive " ]]; then")
+               (str "    compopt -o default")
+               (str "  fi")
+               (str "}")
+               (str "complete -F " function " " program))
+          "\n")))
+
+(defn function-stem (program)
+  (join (collect (split program "-")) "_"))
+
+(defn bash-reply (completion)
+  (match completion
+    ((words texts) (join (directed words-directive texts) "\n"))
+    (paths (str paths-directive))))
+
+(defn directed (directive texts)
+  (let (lines (vec (str directive)))
+    (for-each (iter texts)
+      (fn (text) (push! lines (clone text))))
+    lines))
+
+(defn bash-words->cursor (words)
+  (if (empty? words)
+    (->cursor :preceding (vec) :current (str))
+    (->cursor :preceding (words-before words (dec (len words)))
+              :current (word-at words (dec (len words))))))
+
+(defn words-before (words end)
+  (let (kept (vec))
+    (for-each (range 0 end)
+      (fn (index)
+        (when (not (assigns? words index))
+          (push! kept (clone (at words index))))))
+    kept))
+
+(defn word-at (words index)
+  (if (assigns? words index)
+    (str)
+    (clone (at words index))))
+
+(defn assigns? (words index)
+  (and (> index 0)
+       (= (as-str (at words index)) assignment)
+       (starts-with? (as-str (at words (dec index)))
+                     long-prefix)))

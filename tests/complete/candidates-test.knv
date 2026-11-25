@@ -1,0 +1,70 @@
+(use complete/candidates ->cursor complete completion)
+(use lib presence)
+
+(use support/fixture argument-named no-words
+                     repeated-argument serve-spec site-spec
+                     spec-with-arguments spec-with-choices
+                     words)
+
+(defn completing (spec preceding current)
+  (complete (ref spec)
+            (->cursor :preceding (words preceding)
+                      :current (str current))))
+
+(defn offering (texts)
+  (completion/words (words texts)))
+
+(defn spec-with-level-argument ()
+  (spec-with-arguments (vec (assoc (argument-named "level" presence/required)
+                                   :choices (words (vec "low" "high"))))))
+
+(defn spec-with-repeated-argument ()
+  (spec-with-arguments (vec (repeated-argument "source" presence/required))))
+
+(deftest a-group-offers-its-commands
+  (assert (= (completing (site-spec) (no-words) "")
+             (offering (vec "help" "build" "page")))))
+
+(deftest a-prefix-narrows-the-commands
+  (assert (= (completing (site-spec) (no-words) "bu")
+             (offering (vec "build")))))
+
+(deftest a-command-offers-the-commands-under-it
+  (assert (= (completing (site-spec) (vec "page") "")
+             (offering (vec "help" "add" "list")))))
+
+(deftest a-dash-offers-the-options
+  (assert (= (completing (spec-with-choices) (no-words) "-")
+             (offering (vec "--format" "--help")))))
+
+(deftest a-value-offers-its-choices
+  (assert (= (completing (spec-with-choices) (vec "--format") "")
+             (offering (vec "text" "json")))))
+
+(deftest a-prefix-narrows-the-choices
+  (assert (= (completing (spec-with-choices) (vec "--format") "j")
+             (offering (vec "json")))))
+
+(deftest a-value-without-choices-offers-paths
+  (assert (= (completing (serve-spec) (vec "--port") "")
+             completion/paths)))
+
+(deftest an-argument-without-choices-offers-paths
+  (assert (= (completing (serve-spec) (no-words) "")
+             completion/paths)))
+
+(deftest an-argument-offers-its-choices
+  (assert (= (completing (spec-with-level-argument) (no-words) "h")
+             (offering (vec "high")))))
+
+(deftest a-line-with-every-argument-offers-nothing
+  (assert (= (completing (serve-spec) (vec "site") "")
+             (offering (no-words)))))
+
+(deftest a-repeated-argument-keeps-offering
+  (assert (= (completing (spec-with-repeated-argument) (vec "a" "b") "")
+             completion/paths)))
+
+(deftest a-dash-after-the-end-of-options-is-an-argument
+  (assert (= (completing (serve-spec) (vec "--") "-")
+             completion/paths)))

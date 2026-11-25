@@ -34,7 +34,8 @@ everything in the "default" column without the author writing anything.
 | Streams | data on stdout, messages on stderr | help to stdout, errors to stderr |
 | Abbreviations | no guessing of subcommand prefixes | never, so new commands never break old scripts |
 | Secrets | not passed as flag values | doc guidance, maybe a `:secret` lint |
-| Extras | shell completions, man page or markdown help generated from the same spec | not built yet, the spec value allows it |
+| Completion | Tab completes commands, options and fixed values | default for bash: `source <(COMPLETE=bash prog)` |
+| Extras | man page or markdown help generated from the same spec | not built yet, the spec value allows it |
 
 ## 2. Libraries worth borrowing from
 
@@ -90,6 +91,7 @@ program that prints its own way, such as JSON.
 | `values/` | matches to typed values, through the `cli-value` trait |
 | `errors/` | the usage errors, their report and the "similar name" tips |
 | `help/` | the usage line and the help page |
+| `complete/` | what can complete the word under the cursor, and the bash script that asks |
 | `macros/` | `defcommand`, `defcli`, `defchoice` |
 
 `parse.knv` joins the stages and `run.knv` is the only module that
@@ -129,6 +131,18 @@ after. `tests/` mirrors `src/` file for file, and
 10. **`run-command` is a macro, not a generated function.** A generated
     `run-<name>` per command was unused in every `defcli` program and
     tripped the unreachable-definition lint.
+11. **The program completes its own command line.** With `COMPLETE=bash`
+    in the environment, `prog` prints a bash script, and
+    `prog -- <words>` prints what can complete the last word. The script
+    is a fixed stub that calls the program on each Tab, so the logic is
+    written once, in Knave, as a pure function of the spec. An
+    environment variable is the trigger because a `completions` command
+    would be read as the first argument of a program without
+    subcommands.
+12. **Completion never fails on a half-written line.** It skips unknown
+    words and options. A value or an argument without choices completes
+    as a path, through bash's own completion. Only bash is supported:
+    bash shows no descriptions, so candidates carry none.
 
 ## 6. Limits from the compiler
 

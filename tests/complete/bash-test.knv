@@ -1,0 +1,51 @@
+(use complete/bash bash-reply bash-script
+                   bash-words->cursor)
+
+(use complete/candidates ->cursor completion)
+(use support/fixture no-words words)
+
+(defn cursor-of (texts)
+  (bash-words->cursor (ref (words texts))))
+
+(defn cursor-at (preceding current)
+  (->cursor :preceding (words preceding)
+            :current (str current)))
+
+(deftest the-script-registers-the-program
+  (assert (contains? (bash-script "serve")
+                     "complete -F _serve_complete serve")))
+
+(deftest the-script-asks-the-program-for-the-words-up-to-the-cursor
+  (assert (contains? (bash-script "serve")
+                     "COMPLETE=bash \"${COMP_WORDS[0]}\" -- \"${COMP_WORDS[@]:1:COMP_CWORD}\"")))
+
+(deftest a-dash-in-the-program-name-is-kept-out-of-the-function-name
+  (assert (contains? (bash-script "my-tool")
+                     "complete -F _my_tool_complete my-tool")))
+
+(deftest words-are-replied-under-their-directive
+  (assert (= (bash-reply (completion/words (words (vec "text" "json"))))
+             "words\ntext\njson")))
+
+(deftest paths-are-replied-as-a-directive-alone
+  (assert (= (bash-reply completion/paths) "paths")))
+
+(deftest the-last-word-is-under-the-cursor
+  (assert (= (cursor-of (vec "build" "--po"))
+             (cursor-at (vec "build") "--po"))))
+
+(deftest no-words-leave-an-empty-cursor
+  (assert (= (cursor-of (no-words))
+             (cursor-at (no-words) ""))))
+
+(deftest an-assignment-bash-split-is-read-as-an-option-and-its-value
+  (assert (= (cursor-of (vec "--format" "=" "js"))
+             (cursor-at (vec "--format") "js"))))
+
+(deftest an-assignment-without-a-value-leaves-an-empty-word
+  (assert (= (cursor-of (vec "--format" "="))
+             (cursor-at (vec "--format") ""))))
+
+(deftest an-equals-sign-after-a-plain-word-is-a-word
+  (assert (= (cursor-of (vec "site" "=" ""))
+             (cursor-at (vec "site" "=") ""))))

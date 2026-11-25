@@ -1,0 +1,36 @@
+(use complete/flags flags-offered)
+(use complete/position position-after)
+
+(use support/fixture no-words serve-spec site-spec
+                     spec-with-lists words)
+
+(defn flags-after (spec preceding)
+  (flags-offered (ref (position-after (ref spec)
+                                      (ref (words preceding))))))
+
+(deftest every-option-is-offered-with-the-built-in-ones
+  (assert (= (flags-after (serve-spec) (no-words))
+             (words (vec "--port" "--open" "--color"
+                         "--no-color" "--verbose" "--tag"
+                         "--help" "--version")))))
+
+(deftest an-option-given-once-is-not-offered-again
+  (assert (= (flags-after (serve-spec)
+                          (vec "--port" "80" "--open" "--no-color"))
+             (words (vec "--verbose" "--tag" "--help" "--version")))))
+
+(deftest a-repeatable-option-stays-offered
+  (assert (= (flags-after (site-spec) (vec "-v"))
+             (words (vec "--verbose" "--help" "--version")))))
+
+(deftest an-option-is-not-offered-beside-one-it-conflicts-with
+  (assert (= (flags-after (spec-with-lists) (vec "--description" "x"))
+             (words (vec "--after" "--help")))))
+
+(deftest a-conflict-hides-the-option-it-names
+  (assert (= (flags-after (spec-with-lists) (vec "--description-file=x"))
+             (words (vec "--after" "--help")))))
+
+(deftest a-command-offers-the-options-of-its-parent
+  (assert (= (flags-after (site-spec) (vec "build"))
+             (words (vec "--port" "--verbose" "--help")))))

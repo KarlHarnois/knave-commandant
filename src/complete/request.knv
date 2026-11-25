@@ -1,0 +1,54 @@
+(module
+  "Recognizes a shell asking for completion through the environment, and answers it with the script or with the candidates.")
+
+(use complete/bash bash-reply bash-script
+                   bash-words->cursor)
+
+(use complete/candidates complete)
+(use environment first-set)
+(use spec/shapes command-spec)
+
+(export completion-request completion-request-of
+        completion-variable)
+
+(def completion-variable "COMPLETE")
+
+(def bash "bash")
+
+(def words-marker "--")
+
+(defenum completion-request
+  absent
+  (answered string)
+  (unsupported string))
+
+(defn completion-request-of (spec environment words)
+  (match (first-set environment
+                    (ref (vec (str completion-variable))))
+    ((some shell) (shell-request spec (as-str shell) words))
+    (none completion-request/absent)))
+
+(defn shell-request (spec shell words)
+  (cond
+    ((not (asks? words)) completion-request/absent)
+    ((= shell bash)
+     (completion-request/answered (bash-answer spec words)))
+    (else (completion-request/unsupported (str shell)))))
+
+(defn asks? (words)
+  (or (empty? words)
+      (= (as-str (at words 0)) words-marker)))
+
+(type bash-answer
+  (fn ((ref command-spec) (ref (vec string)))
+    string))
+
+(defn bash-answer (spec words)
+  (if (empty? words)
+    (bash-script (as-str (:name spec)))
+    (bash-reply (complete spec
+                          (bash-words->cursor (ref (after-marker words)))))))
+
+(defn after-marker (words)
+  (collect (map (range 1 (len words))
+             (fn (index) (clone (at words index))))))

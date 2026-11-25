@@ -1,0 +1,53 @@
+(use complete/position expectation position-after)
+(use support/fixture serve-spec site-spec words)
+
+(defn after (spec preceding)
+  (position-after (ref spec)
+                  (ref (words preceding))))
+
+(defn awaited-option (position)
+  (match (:expecting position)
+    ((value-of option) (some (clone (:long option))))
+    (_ none)))
+
+(defn open? (position)
+  (match (:expecting position)
+    (anything true)
+    (_ false)))
+
+(deftest a-command-name-enters-that-command
+  (assert (= (:name (:scope (after (site-spec) (vec "page" "add"))))
+             "site page add")))
+
+(deftest an-unknown-command-stays-in-the-group
+  (assert (= (:name (:scope (after (site-spec) (vec "bogus"))))
+             "site")))
+
+(deftest an-option-taking-a-value-awaits-it
+  (assert (= (awaited-option (after (serve-spec) (vec "--port")))
+             (some (str "port")))))
+
+(deftest a-short-option-taking-a-value-awaits-it
+  (assert (= (awaited-option (after (serve-spec) (vec "-vp")))
+             (some (str "port")))))
+
+(deftest an-attached-value-is-awaited-no-more
+  (assert (open? (after (serve-spec) (vec "-p80")))))
+
+(deftest an-assigned-value-is-awaited-no-more
+  (assert (open? (after (serve-spec) (vec "--port=80")))))
+
+(deftest an-unknown-option-is-skipped
+  (assert (open? (after (serve-spec) (vec "--bogus")))))
+
+(deftest each-plain-word-fills-an-argument
+  (assert (= (:arguments-filled (after (serve-spec) (vec "--port" "80" "site")))
+             1)))
+
+(deftest every-word-after-the-end-of-options-fills-an-argument
+  (assert (= (:arguments-filled (after (serve-spec) (vec "--" "--port" "80")))
+             2)))
+
+(deftest the-options-given-are-remembered
+  (assert (= (:given (after (serve-spec) (vec "-o" "--no-color")))
+             (words (vec "open" "color")))))
