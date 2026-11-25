@@ -138,7 +138,9 @@ after. `tests/` mirrors `src/` file for file, and
     written once, in Knave, as a pure function of the spec. An
     environment variable is the trigger because a `completions` command
     would be read as the first argument of a program without
-    subcommands.
+    subcommands. The request is an `outcome` of the pure parse, so a
+    program that calls `parse-command` prints the `completion` text and
+    completes like one that calls `run-command`.
 12. **Completion never fails on a half-written line.** It skips unknown
     words and options. A value or an argument without choices completes
     as a path, through bash's own completion. Only bash is supported:

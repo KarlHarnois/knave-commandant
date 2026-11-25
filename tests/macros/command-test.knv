@@ -1,5 +1,5 @@
 (use lib ->environment ->invalid-text ->usage-failure
-         cli-error defchoice defcommand outcome
+         ->variable cli-error defchoice defcommand outcome
          parse-command spec->usage)
 
 (export matches->copy matches->greet matches->hello
@@ -98,3 +98,11 @@
              "say [OPTIONS] <plain|loud>"))
   (assert (= (:choices (at (:arguments (say-spec)) 0))
              (vec (str "plain") (str "loud")))))
+
+(deftest a-completion-request-comes-back-for-the-caller-to-print
+  (assert (= (parse-command copy
+                            (->environment :variables (vec
+                                                        (->variable :name (str "COMPLETE")
+                                                                    :value (str "bash"))))
+                            (texts->words (vec "--" "-")))
+             (err (outcome/completion (str "words\n--help"))))))

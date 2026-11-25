@@ -2,9 +2,9 @@
 (use values/matches argument-text matches)
 (use parse outcome parse-into)
 
-(use support/fixture no-environment parse-texts parse-with
-                     site-spec spec-with-token usage-error
-                     words)
+(use support/fixture environment-with no-environment
+                     parse-texts parse-with site-spec
+                     spec-with-token usage-error words)
 
 (defn root-after (texts)
   (match (parse-texts texts)
@@ -95,3 +95,21 @@
              (err (outcome/usage-error (->usage-failure
                                          :path (vec (str "build"))
                                          :error cli-error/missing-command))))))
+
+(deftest a-completion-request-becomes-the-completion-outcome
+  (assert (= (parse-with (site-spec)
+                         (environment-with "COMPLETE" "bash")
+                         (vec "--" "pa"))
+             (outcome/completion (str "words\npage")))))
+
+(deftest a-completion-request-for-another-shell-is-a-usage-error
+  (assert (= (parse-with (site-spec)
+                         (environment-with "COMPLETE" "fish")
+                         (vec "--" "pa"))
+             (usage-error (cli-error/unsupported-shell (str "fish"))))))
+
+(deftest ordinary-words-parse-despite-the-completion-variable
+  (assert (= (parse-with (site-spec)
+                         (environment-with "COMPLETE" "bash")
+                         (vec "--help"))
+             (outcome/help (vec)))))
