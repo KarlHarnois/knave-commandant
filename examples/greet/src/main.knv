@@ -1,5 +1,6 @@
-(use knave-commandant defcommand exit-early parse-command
-                      process-environment switch-state)
+(use knave-commandant defcommand error->message exit-early
+                      parse-command process-environment
+                      stop-reason switch-state)
 
 (defcommand greet "Greets someone."
   :version "1.0.0"
@@ -11,7 +12,15 @@
                         (process-environment)
                         (command-line-args))
     ((ok options) (println (greeting options)))
-    ((err stop) (exit-early stop))))
+    ((err stop) (exit-early (in-one-line stop)))))
+
+(defn in-one-line (stop)
+  (match (:reason stop)
+    ((stop-reason/usage failure)
+     (assoc stop
+            :text (str "greet: "
+                       (error->message (ref (:error failure))))))
+    (_ stop)))
 
 (defn greeting (options)
   (voiced (:loud options)

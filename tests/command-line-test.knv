@@ -1,7 +1,8 @@
 (use command-line ->early-exit output-stream parse-line
-                  parse-line-into)
+                  parse-line-into stop-reason)
 
-(use errors/cli-error cli-error)
+(use errors/cli-error ->usage-failure cli-error)
+(use spec/spec-error spec-error)
 (use help/page spec->help)
 (use spec/shapes ->option-spec value-kind)
 (use values/matches argument-text matches)
@@ -23,10 +24,14 @@
 (defn site-stop (texts)
   (stop (site-spec) (no-environment) texts))
 
-(defn answer (text)
+(defn answer (text reason)
   (->early-exit :text text
                 :stream output-stream/standard-output
-                :code 0))
+                :code 0
+                :reason reason))
+
+(defn usage-at (path failure)
+  (stop-reason/usage (->usage-failure :path (words path) :error failure)))
 
 (defn spec-with-help-option ()
   (let (spec (serve-spec))
@@ -68,13 +73,15 @@
 
 (deftest help-is-an-answer-on-standard-output
   (assert (= (serve-stop (vec "--help"))
-             (answer (spec->help (ref (serve-spec)) 80)))))
+             (answer (spec->help (ref (serve-spec)) 80)
+                     (stop-reason/help (vec))))))
 
 (deftest help-wraps-to-the-width-in-the-environment
   (assert (= (stop (serve-spec)
                    (environment-with "COLUMNS" "40")
                    (vec "-h"))
-             (answer (spec->help (ref (serve-spec)) 40)))))
+             (answer (spec->help (ref (serve-spec)) 40)
+                     (stop-reason/help (vec))))))
 
 (deftest help-for-a-command-shows-that-command
   (assert (starts-with? (as-str (:text (site-stop (vec "help" "build"))))
@@ -82,7 +89,8 @@
 
 (deftest version-answers-with-the-name-and-version
   (assert (= (serve-stop (vec "-V"))
-             (answer (str "serve 1.0.0")))))
+             (answer (str "serve 1.0.0")
+                     (stop-reason/version (str "1.0.0"))))))
 
 (deftest a-usage-error-is-a-report-on-standard-error-with-code-2
   (let (refusal (serve-stop (vec "--prot")))
@@ -107,7 +115,7 @@
   (assert (= (stop (site-spec)
                    (environment-with "COMPLETE" "bash")
                    (vec "--" "pa"))
-             (answer (str "words\npage")))))
+             (answer (str "words\npage") stop-reason/completion))))
 
 (deftest a-completion-request-for-another-shell-is-refused
   (let (refusal (stop (site-spec)
@@ -124,7 +132,9 @@
                    (vec "site"))
              (->early-exit :text (str "invalid command spec: option `--help` is built in, so a spec cannot define it")
                            :stream output-stream/standard-error
-                           :code 70))))
+                           :code 70
+                           :reason (stop-reason/broken-spec (spec-error/reserved-long
+                                                              (str "help")))))))
 
 (deftest a-conversion-turns-the-matches-into-a-value
   (assert (= (site-into (vec "page" "list") path-length)
@@ -136,3 +146,21 @@
     (assert (starts-with?
               (as-str (:text refusal))
               "error: missing argument <ROOT>\n\nUsage: site build"))))
+
+(deftest help-for-a-command-names-its-path-as-the-reason
+  (assert (= (:reason (site-stop (vec "help" "build")))
+             (stop-reason/help (vec (str "build"))))))
+
+(deftest a-usage-error-is-the-reason-with-its-details
+  (assert (= (:reason (serve-stop (vec "--prot")))
+             (usage-at (no-words)
+                       (cli-error/unknown-option (str "--prot"))))))
+
+(deftest a-usage-error-in-a-command-names-its-path
+  (assert (= (:reason (site-stop (vec "page")))
+             (usage-at (vec "page") cli-error/missing-command))))
+
+(deftest a-conversion-error-is-a-usage-reason-at-the-command-path
+  (assert (= (:reason (unwrap-err (site-into (vec "build") refused)))
+             (usage-at (vec "build")
+                       (cli-error/missing-argument (str "root"))))))

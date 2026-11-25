@@ -1,6 +1,8 @@
-(use lib ->argument-spec ->early-exit argument-text
+(use lib ->argument-spec ->early-exit ->usage-failure
+         argument-text cli-error error->message
          matched-value option-value output-stream parse-line
-         presence repetition spec->help switch-state)
+         presence repetition spec->help stop-reason
+         switch-state)
 
 (use support/fixture environment-with no-environment
                      no-words serve-spec site-spec
@@ -36,15 +38,43 @@
 (defn port-text (text)
   (some (matched-value/one (some (str text)))))
 
-(defn answer (text)
+(defn answer (text reason)
   (->early-exit :text text
                 :stream output-stream/standard-output
-                :code 0))
+                :code 0
+                :reason reason))
 
-(defn refusal (text)
+(defn refusal (text failure)
   (->early-exit :text text
                 :stream output-stream/standard-error
-                :code 2))
+                :code 2
+                :reason (stop-reason/usage (->usage-failure :path (vec)
+                                                            :error failure))))
+
+(defn kind-of (parsed)
+  (match parsed
+    ((ok _) "value")
+    ((err stop) (reason-kind (:reason stop)))))
+
+(defn reason-kind (reason)
+  (match reason
+    ((stop-reason/help _) "help")
+    ((stop-reason/version _) "version")
+    (stop-reason/completion "completion")
+    ((stop-reason/usage _) "usage")
+    ((stop-reason/broken-spec _) "broken spec")))
+
+(defn own-sentence (parsed)
+  (match parsed
+    ((err stop) (usage-sentence (:reason stop)))
+    ((ok _) (str))))
+
+(defn usage-sentence (reason)
+  (match reason
+    ((stop-reason/usage failure)
+     (str "usage: "
+          (error->message (ref (:error failure)))))
+    (_ (str))))
 
 (defn report-of (spec texts)
   (match (line spec (no-environment) texts)
@@ -59,15 +89,19 @@
 
 (deftest every-command-takes-short-and-long-help
   (assert (= (serve-line (vec "serve-me" "-h"))
-             (err (answer (spec->help (ref (serve-spec)) 80)))))
+             (err (answer (spec->help (ref (serve-spec)) 80)
+                          (stop-reason/help (vec))))))
   (assert (= (serve-line (vec "--help"))
-             (err (answer (spec->help (ref (serve-spec)) 80))))))
+             (err (answer (spec->help (ref (serve-spec)) 80)
+                          (stop-reason/help (vec)))))))
 
 (deftest a-versioned-command-takes-short-and-long-version
   (assert (= (serve-line (vec "-V"))
-             (err (answer (str "serve 1.0.0")))))
+             (err (answer (str "serve 1.0.0")
+                          (stop-reason/version (str "1.0.0"))))))
   (assert (= (serve-line (vec "--version"))
-             (err (answer (str "serve 1.0.0"))))))
+             (err (answer (str "serve 1.0.0")
+                          (stop-reason/version (str "1.0.0")))))))
 
 (deftest a-value-is-written-four-ways
   (assert (= (option-after (vec "--port" "80") "port")
@@ -117,11 +151,11 @@
 
 (deftest a-mistyped-option-is-a-usage-error
   (assert (= (serve-line (vec "--prot" "80"))
-             (err (refusal (str
-                             "error: unknown option `--prot`\n\n"
-                             "  tip: a similar option exists: `--port`\n\n"
-                             "Usage: serve [OPTIONS] [ROOT]\n\n"
-                             "For more information, try `serve --help`."))))))
+             (err (refusal (str "error: unknown option `--prot`\n\n"
+                                "  tip: a similar option exists: `--port`\n\n"
+                                "Usage: serve [OPTIONS] [ROOT]\n\n"
+                                "For more information, try `serve --help`.")
+                           (cli-error/unknown-option (str "--prot")))))))
 
 (deftest a-mistyped-option-reports-the-closest-option
   (assert (starts-with? (as-str (report-after (vec "--prot" "80")))
@@ -187,3 +221,23 @@
              (str "error: missing argument <PATH>\n\n"
                   "Usage: copy [OPTIONS] <PATH>\n\n"
                   "For more information, try `copy --help`."))))
+
+(deftest a-caller-tells-each-kind-of-stop-apart
+  (assert (= (kind-of (serve-line (vec "site")))
+             "value"))
+  (assert (= (kind-of (serve-line (vec "--help")))
+             "help"))
+  (assert (= (kind-of (serve-line (vec "-V")))
+             "version"))
+  (assert (= (kind-of (serve-line (vec "--prot")))
+             "usage"))
+  (assert (= (kind-of (line (serve-spec)
+                            (environment-with "COMPLETE" "bash")
+                            (vec "--" "-")))
+             "completion")))
+
+(deftest a-caller-writes-its-own-sentence-for-a-usage-error
+  (assert (= (own-sentence (serve-line (vec "--prot")))
+             "usage: unknown option `--prot`"))
+  (assert (= (own-sentence (serve-line (vec "--port")))
+             "usage: option `--port` needs a value")))
