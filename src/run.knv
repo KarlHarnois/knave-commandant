@@ -63,7 +63,9 @@
                            (spec-error->message failure))))))
 
 (defn refuse-typed (spec failure)
-  (eprintln (failure-report spec (ref failure)))
+  (eprintln (failure-report spec
+                            (ref failure)
+                            (terminal-width (ref (process-environment)))))
   (exit-with usage-exit-code))
 
 (defn outcome->response (spec outcome width)
@@ -74,7 +76,7 @@
     ((version text)
      (response/reply (str (:name spec) " " text)))
     ((usage-error failure)
-     (response/refuse (failure-report spec (ref failure))))
+     (response/refuse (failure-report spec (ref failure) width)))
     ((completion reply) (response/reply reply))))
 
 (defn help-at (spec path width)
