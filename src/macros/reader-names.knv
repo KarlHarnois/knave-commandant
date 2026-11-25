@@ -1,0 +1,18 @@
+(module
+  "Names the two functions `defchoice` writes beside its enum, so `defcommand` asks for the same names: `text->name` reads a case, and `name-names` lists them.")
+
+(use code string symbol symbol-name)
+
+(export names-name reader-name)
+
+(def reader-prefix "text->")
+
+(def names-suffix "-names")
+
+(def reader-name
+  (fn (type)
+    (symbol type (string reader-prefix (symbol-name type)))))
+
+(def names-name
+  (fn (type)
+    (symbol type (string (symbol-name type) names-suffix))))

@@ -1,0 +1,10 @@
+(use lib defchoice)
+
+(defchoice log-level quiet loud)
+
+(deftest the-reader-of-a-choice-is-named-after-it
+  (assert (= (text->log-level "loud") (ok log-level/loud))))
+
+(deftest the-names-of-a-choice-are-named-after-it
+  (assert (= (log-level-names)
+             (vec (str "quiet") (str "loud")))))

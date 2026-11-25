@@ -1,11 +1,13 @@
 (module
-  "Picks the function that reads one text of a `defcommand` parameter's type, and the names that type accepts: the `:parse` detail, the reader of a built-in type, or the `text->name` function that `defchoice` writes.")
+  "Picks the function that reads one text of a `defcommand` parameter's type, and the names that type accepts: the `:parse` detail, the reader of a built-in type, or the two functions that `defchoice` writes.")
 
-(use code list string symbol symbol-name value-eq)
+(use code list symbol-name value-eq)
 (use macros/parameters/kinds choose-or)
 
 (use macros/parameters/parts detail given? parameter-details
                              value-type)
+
+(use macros/reader-names names-name reader-name)
 
 (use values/builtin bool-names text->bool text->char
                     text->float text->i32 text->int
@@ -13,10 +15,6 @@
                     text->u64 text->u8 text->usize)
 
 (export names-form reader-form)
-
-(def reader-prefix "text->")
-
-(def names-suffix "-names")
 
 (def no-names "none")
 
@@ -71,15 +69,13 @@
   (fn (type)
     (choose-or (symbol-name type)
                builtin-readers
-               (symbol type (string reader-prefix (symbol-name type))))))
+               (reader-name type))))
 
 (def type-names
   (fn (type)
     (names-or-none (choose-or (symbol-name type)
                               builtin-names
-                              (list (symbol type
-                                            (string (symbol-name type)
-                                                    names-suffix)))))))
+                              (list (names-name type))))))
 
 (def names-or-none
   (fn (form)
