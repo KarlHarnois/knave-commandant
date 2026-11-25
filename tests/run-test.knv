@@ -1,6 +1,11 @@
-(use environment first-set)
-(use run process-environment)
+(use environment ->environment ->variable)
+(use run pairs->environment)
 
-(deftest the-process-environment-holds-the-variables-of-the-process
-  (assert (some? (first-set (ref (process-environment))
-                            (ref (vec (str "PATH")))))))
+(deftest each-pair-becomes-a-variable-with-its-name-and-value
+  (assert (= (pairs->environment (ref (vec (pair (str "PORT") (str "80"))
+                                           (pair (str "HOME")
+                                                 (str "/home/ana")))))
+             (->environment :variables (vec (->variable :name (str "PORT")
+                                                        :value (str "80"))
+                                            (->variable :name (str "HOME")
+                                                        :value (str "/home/ana")))))))

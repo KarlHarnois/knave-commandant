@@ -7,7 +7,8 @@
 (use spec/shapes command-spec)
 (use values/matches matches)
 
-(export exit-early process-environment run run-with)
+(export exit-early pairs->environment process-environment
+        run run-with)
 
 (def exit-with
   (rust "std::process::exit({0} as i32)"
@@ -50,8 +51,10 @@
     (standard-error (eprintln text))))
 
 (defn process-environment ()
-  (->environment :variables (collect (map (iter (process-variables))
-                                          pair->variable))))
+  (pairs->environment (ref (process-variables))))
+
+(defn pairs->environment (pairs)
+  (->environment :variables (collect (map (iter pairs) pair->variable))))
 
 (defn pair->variable (entry)
   (let-match ((pair name value) entry)
