@@ -17,6 +17,8 @@ Replace `<commit>` with the commit to pin.
 
 ## Usage
 
+A command takes arguments and options:
+
 ```clj
 (use knave-commandant defcommand run-command)
 
@@ -30,7 +32,47 @@ Replace `<commit>` with the commit to pin.
     (println "Hello, " (:who options))))
 ```
 
-See [examples/serve](examples/serve/src/main.knv) for every kind of parameter.
+`defcli` groups commands under one program, and `defchoice` names a fixed set of values:
+
+```clj
+(use knave-commandant defchoice defcli defcommand
+                      run-command)
+
+(defchoice log-format text json)
+
+(defcommand build "Builds the site."
+  (dir string :default "." :about "The folder to build"))
+
+(defcommand serve "Serves the site."
+  (:port u16
+         :short p
+         :default 8000
+         :env "SITE_PORT"
+         :about "The port to listen on")
+  (:format log-format
+           :default text
+           :about "How to print each request"))
+
+(defcli site "Builds and serves a site."
+  :version "1.0.0"
+  (:verbose count :short v :about "Logs more, once per -v")
+  (commands build serve))
+
+(defn main ()
+  (match (:command (run-command site))
+    ((site-command/build options)
+     (println "Building " (:dir options)))
+    ((site-command/serve options)
+     (println "Serving on port " (:port options)))))
+```
+
+Each program completes its own command line in bash:
+
+```sh
+source <(COMPLETE=bash site)
+```
+
+See [examples/serve](examples/serve/src/main.knv) for every kind of parameter, and [examples/site](examples/site/src/main.knv) for nested commands.
 
 ## Development
 
