@@ -43,10 +43,6 @@
                           :value value-kind/count))
     spec))
 
-(type path-length
-  (fn ((ref matches))
-    (result int cli-error)))
-
 (defn path-length (found)
   (ok (len (:path found))))
 

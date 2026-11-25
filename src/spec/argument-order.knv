@@ -1,8 +1,7 @@
 (module
   "Checks that a command's arguments come in an order a command line can fill: required ones first, at most one repeated argument, and only required ones after it.")
 
-(use spec/shapes argument-spec command-spec presence
-                 repeated? required?)
+(use spec/shapes presence repeated? required?)
 
 (export argument-order order-error order-error->message)
 
@@ -29,10 +28,6 @@
      (str "argument <" name
           "> repeats, so it cannot have a default"))))
 
-(type order-from
-  (fn ((ref command-spec) int)
-    (result unit order-error)))
-
 (defn order-from (spec index)
   (if (>= index (len (:arguments spec)))
     (ok (do))
@@ -42,10 +37,6 @@
   (match (violation-at spec index)
     ((some failure) (err failure))
     (none (order-from spec (inc index)))))
-
-(type violation-at
-  (fn ((ref command-spec) int)
-    (option order-error)))
 
 (defn violation-at (spec index)
   (let (argument (at (:arguments spec) index)
@@ -63,12 +54,6 @@
        (some (order-error/after-repeated name)))
       (else none))))
 
-(type earlier?
-  (fn ((ref command-spec)
-       int
-       (fn ((ref argument-spec)) bool))
-    bool))
-
 (defn earlier? (spec index test)
   (any? (range 0 index)
     (fn (earlier)
@@ -76,9 +61,6 @@
 
 (defn must-be-given? (argument)
   (or (required? argument) (repeated? argument)))
-
-(type defaulted?
-  (fn ((ref argument-spec)) bool))
 
 (defn defaulted? (argument)
   (match (:presence argument)

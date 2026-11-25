@@ -80,16 +80,9 @@
   (unwrap-or (clone (:value-name argument))
              (clone (:name argument))))
 
-(type long-names
-  (fn ((ref command-spec)) (vec string)))
-
 (defn long-names (spec)
   (collect (map (iter (:options spec))
              (fn (option) (clone (:long option))))))
-
-(type find-long
-  (fn ((ref command-spec) (ref str))
-    (option (ref option-spec))))
 
 (defn find-long (spec name)
   (find (iter (:options spec))
@@ -101,17 +94,10 @@
     ((some option) (takes-value? option))
     (none false)))
 
-(type find-short
-  (fn ((ref command-spec) char)
-    (option (ref option-spec))))
-
 (defn find-short (spec character)
   (find (iter (:options spec))
     (fn (option)
       (= (:short option) (some character)))))
-
-(type takes-value?
-  (fn ((ref option-spec)) bool))
 
 (defn takes-value? (option)
   (match (:value option)
@@ -119,16 +105,10 @@
     ((many _) true)
     (_ false)))
 
-(type switch?
-  (fn ((ref option-spec)) bool))
-
 (defn switch? (option)
   (match (:value option)
     ((switch _) true)
     (_ false)))
-
-(type option-required?
-  (fn ((ref option-spec)) bool))
 
 (defn option-required? (option)
   (match (:value option)

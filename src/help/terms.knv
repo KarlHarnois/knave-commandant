@@ -4,8 +4,8 @@
 (use help/placeholders shown-placeholder)
 
 (use spec/shapes argument-spec long-prefix name->placeholder
-                 option-spec repetition required?
-                 switch-state value-kind value-slot)
+                 repetition required? switch-state
+                 value-kind)
 
 (export argument-term option-term required-option-term)
 
@@ -42,9 +42,6 @@
        (value-part (as-str (:long option))
                    (:value option))))
 
-(type required-option-term
-  (fn ((ref option-spec)) string))
-
 (defn required-option-term (option)
   (str long-prefix
        (:long option)
@@ -78,9 +75,6 @@
     ((some separator)
      (str (value-term (:placeholder slot)) separator "..."))
     (none (str (value-term (:placeholder slot)) "..."))))
-
-(type slot-placeholder
-  (fn ((ref str) (ref value-slot)) string))
 
 (defn slot-placeholder (long slot)
   (shown-placeholder long

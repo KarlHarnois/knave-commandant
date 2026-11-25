@@ -5,7 +5,7 @@
 (use spec/argument-order argument-order)
 (use spec/builtins builtin-options help-command)
 (use spec/commands subcommand-names)
-(use spec/shapes command-spec long-names)
+(use spec/shapes long-names)
 (use spec/spec-error spec-error)
 
 (export mistakes)
@@ -47,9 +47,6 @@
     (map-err (check-unique (ref names))
       (fn (name) (spec-error/repeated-command name)))))
 
-(type short-names
-  (fn ((ref command-spec)) (vec char)))
-
 (defn short-names (spec)
   (let (shorts (vec))
     (for-each (iter (:options spec))
@@ -61,9 +58,6 @@
   (match (:short option)
     ((some character) (push! shorts character))
     (none (do))))
-
-(type argument-names
-  (fn ((ref command-spec)) (vec string)))
 
 (defn argument-names (spec)
   (collect (map (iter (:arguments spec))

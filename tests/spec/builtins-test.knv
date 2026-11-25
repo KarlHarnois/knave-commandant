@@ -1,14 +1,10 @@
-(use spec/builtins builtin-action builtin-option
-                   builtin-options builtin-options-of
-                   find-builtin-long find-builtin-short
-                   help-long help-short-name version-long
+(use spec/builtins builtin-action builtin-options
+                   builtin-options-of find-builtin-long
+                   find-builtin-short help-long
+                   help-short-name version-long
                    version-short-name)
 
 (use support/fixture serve-spec spec-requiring)
-
-(type names-of
-  (fn ((ref (vec builtin-option)))
-    (vec string)))
 
 (defn names-of (options)
   (collect (map (iter options)

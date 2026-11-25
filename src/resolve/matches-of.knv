@@ -4,12 +4,10 @@
 (use resolve/arguments resolve-arguments)
 (use resolve/conflicts check-conflicts)
 (use errors/cli-error cli-error)
-(use values/matches ->matches matches one-text)
-(use scan/state occurrence occurrences-named)
+(use values/matches ->matches one-text)
+(use scan/state occurrences-named)
 (use resolve/settle option-matches)
-
-(use spec/shapes command-spec long-flag option-required?
-                 option-spec value-kind)
+(use spec/shapes long-flag option-required? value-kind)
 
 (export resolve)
 
@@ -25,10 +23,6 @@
       (try (check-required spec (ref found)))
       (ok found))))
 
-(type check-required
-  (fn ((ref command-spec) (ref matches))
-    (result unit cli-error)))
-
 (defn check-required (spec found)
   (match (find (iter (:options spec))
            (fn (option) (unset? option found)))
@@ -39,11 +33,6 @@
 (defn unset? (option found)
   (and (option-required? option)
        (none? (one-text found (as-str (:long option))))))
-
-(type check-no-repeated
-  (fn ((ref command-spec)
-       (ref (vec occurrence)))
-    (result unit cli-error)))
 
 (defn check-no-repeated (spec occurrences)
   (match (find (iter (:options spec))
@@ -56,16 +45,8 @@
   (and (single-value? option)
        (> (len (given option occurrences)) 1)))
 
-(type given
-  (fn ((ref option-spec)
-       (ref (vec occurrence)))
-    (vec (ref occurrence))))
-
 (defn given (option occurrences)
   (occurrences-named occurrences (as-str (:long option))))
-
-(type single-value?
-  (fn ((ref option-spec)) bool))
 
 (defn single-value? (option)
   (match (:value option)

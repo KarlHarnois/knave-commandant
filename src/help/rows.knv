@@ -1,9 +1,7 @@
 (module
   "Describes each argument and option of a command as one row of its help page.")
 
-(use spec/shapes command-spec presence value-kind
-                 value-slot)
-
+(use spec/shapes command-spec presence value-kind)
 (use help/placeholders choices-listed?)
 (use help/terms argument-term option-term)
 
@@ -16,9 +14,6 @@
 (defstruct help-row
   :term string
   :description string)
-
-(type argument-rows
-  (fn ((ref command-spec)) (vec help-row)))
 
 (defn argument-rows (spec)
   (collect (map (iter (:arguments spec)) argument-row)))
@@ -44,9 +39,6 @@
              (->help-row :term (str help-command)
                          :description (str help-command-about))))
     rows))
-
-(type command-row
-  (fn ((ref command-spec)) help-row))
 
 (defn command-row (subcommand)
   (->help-row :term (clone (:name subcommand))
@@ -76,16 +68,10 @@
           (env-note (:env slot))))
     (_ (str))))
 
-(type slot-default-note
-  (fn ((ref value-slot)) string))
-
 (defn slot-default-note (slot)
   (match (:presence slot)
     ((presence/defaulted text) (default-note text))
     (_ (str))))
-
-(type choices-note
-  (fn ((ref value-slot)) string))
 
 (defn choices-note (slot)
   (if (or (empty? (:choices slot))
