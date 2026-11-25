@@ -49,7 +49,7 @@
 
 (defcli site "Builds and serves a static site."
   :version "1.4.0"
-  (:verbose count :short v :about "Logs more, once per -v")
+  (:verbose count :short v :about "Logs more with each -v")
   (commands build serve deploy page))
 
 (defn main () (prn (run-command site)))

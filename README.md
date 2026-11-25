@@ -55,7 +55,7 @@ A command takes arguments and options:
 
 (defcli site "Builds and serves a site."
   :version "1.0.0"
-  (:verbose count :short v :about "Logs more, once per -v")
+  (:verbose count :short v :about "Logs more with each -v")
   (commands build serve))
 
 (defn main ()

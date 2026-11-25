@@ -35,7 +35,7 @@
          :short o
          :about "Opens the browser once the server starts")
   (:color switch :initial on :about "Colors the log")
-  (:verbose count :short v :about "Logs more, once per -v")
+  (:verbose count :short v :about "Logs more with each -v")
   (:format log-format
            :default text
            :env ("SERVE_FORMAT" "LOG_FORMAT")
