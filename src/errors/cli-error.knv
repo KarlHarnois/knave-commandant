@@ -22,7 +22,8 @@
   (unknown-command string)
   missing-command
   (invalid-value invalid-text)
-  (conflicting-options option-conflict))
+  (conflicting-options option-conflict)
+  (unsupported-shell string))
 
 (defstruct invalid-text
   :written string
@@ -64,4 +65,7 @@
           (:written conflict)
           "` cannot be used with `"
           (:other conflict)
-          "`"))))
+          "`"))
+    ((unsupported-shell shell)
+     (str "no completion for the shell `" shell
+          "`, only for bash"))))

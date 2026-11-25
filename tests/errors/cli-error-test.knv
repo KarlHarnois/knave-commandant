@@ -48,3 +48,7 @@
                                (->option-conflict :written (str "-d")
                                                   :other (str "--file"))))
              "option `-d` cannot be used with `--file`")))
+
+(deftest names-a-shell-without-completion
+  (assert (= (error->message (cli-error/unsupported-shell (str "fish")))
+             "no completion for the shell `fish`, only for bash")))

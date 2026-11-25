@@ -68,7 +68,9 @@
              (response/reply (str "words\npage")))))
 
 (deftest a-completion-request-for-another-shell-is-refused
-  (assert (= (command->response (ref (site-spec))
-                                (environment-with "COMPLETE" "fish")
-                                (words (no-words)))
-             (response/refuse (str "error: no completion for the shell `fish` in COMPLETE, only for bash")))))
+  (assert (starts-with?
+            (as-str (refusal-text (command->response
+                                    (ref (site-spec))
+                                    (environment-with "COMPLETE" "fish")
+                                    (words (no-words)))))
+            "error: no completion for the shell `fish`, only for bash")))

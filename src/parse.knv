@@ -1,6 +1,9 @@
 (module
   "Parses a command line against a command's spec, as a pure function of the spec, the environment and the words.")
 
+(use complete/request completion-request
+                      completion-request-of)
+
 (use environment environment)
 
 (use errors/cli-error ->usage-failure cli-error
@@ -18,9 +21,19 @@
   (parsed matches)
   (help (vec string))
   (version string)
-  (usage-error usage-failure))
+  (usage-error usage-failure)
+  (completion string))
 
 (defn parse (spec environment words)
+  (match (completion-request-of spec environment words)
+    (absent (parse-words spec environment words))
+    ((answered reply) (outcome/completion reply))
+    ((unsupported shell)
+     (outcome/usage-error (->usage-failure :path (vec)
+                                           :error (cli-error/unsupported-shell
+                                                    shell))))))
+
+(defn parse-words (spec environment words)
   (match (scan-tokens spec (ref (words->tokens words)))
     ((ok end) (scan-end->outcome environment end))
     ((err failure) (outcome/usage-error failure))))
