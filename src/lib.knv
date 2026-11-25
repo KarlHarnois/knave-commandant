@@ -7,10 +7,7 @@
 (use environment ->environment ->variable environment
                  variable)
 
-(use errors/cli-error ->invalid-text ->option-conflict
-                      cli-error error->message invalid-text
-                      option-conflict)
-
+(use errors/cli-error cli-error)
 (use help/page spec->help spec->usage)
 
 (use values/matches argument-text matched-value matches
@@ -32,16 +29,15 @@
                  switch-state value-kind value-slot)
 
 (export ->argument-spec ->command-spec ->early-exit
-        ->environment ->invalid-text ->list-slot
-        ->option-conflict ->option-spec ->switch-slot
-        ->value-slot ->variable argument-spec argument-text
-        cli-error cli-value command-spec defchoice defcli
-        defcommand early-exit environment error->message
-        exit-early from-text invalid-text list-slot
-        matched-value matches option-conflict option-spec
-        option-value output-stream parse-command parse-line
-        parse-line-into presence process-environment
-        repetition run run-command run-with spec->help
-        spec->usage spec-error spec-error->message
-        switch-slot switch-state validate-spec value-kind
-        value-names value-slot variable)
+        ->environment ->list-slot ->option-spec
+        ->switch-slot ->value-slot ->variable argument-spec
+        argument-text cli-error cli-value command-spec
+        defchoice defcli defcommand early-exit environment
+        exit-early from-text list-slot matched-value matches
+        option-spec option-value output-stream parse-command
+        parse-line parse-line-into presence
+        process-environment repetition run run-command
+        run-with spec->help spec->usage spec-error
+        spec-error->message switch-slot switch-state
+        validate-spec value-kind value-names value-slot
+        variable)
