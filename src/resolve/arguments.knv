@@ -5,8 +5,8 @@
 (use values/matches ->argument-match argument-match)
 (use resolve/shares share shares-of split-of taken-total)
 
-(use spec/shapes argument-label argument-spec command-spec
-                 presence required?)
+(use spec/shapes argument-label argument-spec presence
+                 required?)
 
 (export resolve-arguments)
 
@@ -23,10 +23,6 @@
      (err (cli-error/unexpected-argument (clone extra))))
     (none (ok (do)))))
 
-(type check-no-missing
-  (fn ((ref command-spec) (ref (vec share)))
-    (result unit cli-error)))
-
 (defn check-no-missing (spec shares)
   (match (find (range 0 (len shares))
            (fn (index)
@@ -40,12 +36,6 @@
 (defn missing? (argument taken)
   (and (required? argument)
        (= (:count taken) 0)))
-
-(type argument-matches
-  (fn ((ref command-spec)
-       (ref (vec string))
-       (ref (vec share)))
-    (vec argument-match)))
 
 (defn argument-matches (spec positionals shares)
   (collect (map (range 0 (len shares))
@@ -71,10 +61,6 @@
                        (+ (:start taken) (:count taken)))
                 (fn (index)
                   (clone (at positionals index))))))
-
-(type values-or-default
-  (fn ((ref argument-spec) (vec string))
-    (vec string)))
 
 (defn values-or-default (argument given)
   (if (empty? given)

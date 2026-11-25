@@ -71,9 +71,6 @@
       (assoc next :expecting (expectation/value-of option))
       next)))
 
-(type with-given
-  (fn (position (ref option-spec)) position))
-
 (defn with-given (position option)
   (let (next position)
     (push! (:given next)

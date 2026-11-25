@@ -1,7 +1,7 @@
 (module
   "Works out which words of a command line each argument takes: one each, except a repeated argument, which takes every word the arguments after it leave.")
 
-(use spec/shapes command-spec repeated?)
+(use spec/shapes repeated?)
 
 (export share shares-of split split-of taken-total)
 
@@ -14,9 +14,6 @@
   :leading-taken int
   :repeated-taken int
   :trailing-taken int)
-
-(type split-of
-  (fn ((ref command-spec) int) split))
 
 (defn split-of (spec given)
   (let (repeated-index (find (range 0 (len (:arguments spec)))
@@ -38,10 +35,6 @@
   (match repeated-index
     ((some _) 1)
     (none 0)))
-
-(type shares-of
-  (fn ((ref command-spec) (ref split))
-    (vec share)))
 
 (defn shares-of (spec layout)
   (collect (map (range 0 (len (:arguments spec)))

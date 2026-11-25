@@ -1,9 +1,7 @@
 (module
   "Turns tokens into flags and words, splitting each short cluster with the command's spec.")
 
-(use spec/shapes command-spec long-prefix
-                 short-takes-value?)
-
+(use spec/shapes long-prefix short-takes-value?)
 (use scan/tokens short-prefix token)
 
 (export flag flag->written item token->items tokens->items)
@@ -62,9 +60,6 @@
   (let (characters (collect (chars (as-str cluster))))
     (and (not (empty? characters))
          (digit? (deref (at characters 0))))))
-
-(type digit-short?
-  (fn ((ref command-spec)) bool))
 
 (defn digit-short? (spec)
   (any? (iter (:options spec))

@@ -92,10 +92,6 @@
     ((some occurrence) (occurrence-text (:value occurrence)))
     (none (fallback-value environment slot))))
 
-(type fallback-value
-  (fn ((ref environment) (ref value-slot))
-    (option string)))
-
 (defn fallback-value (environment slot)
   (match (first-set environment (:env slot))
     ((some value) (some value))

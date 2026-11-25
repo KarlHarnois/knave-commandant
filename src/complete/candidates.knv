@@ -6,7 +6,7 @@
 (use scan/tokens short-prefix)
 (use spec/builtins help-command)
 (use spec/commands subcommands?)
-(use spec/shapes option-spec repeated? value-kind)
+(use spec/shapes repeated? value-kind)
 
 (export ->cursor complete completion cursor)
 
@@ -66,9 +66,6 @@
   (match (get arguments index)
     ((some argument) (some argument))
     (none (find (iter arguments) repeated?))))
-
-(type option-choices
-  (fn ((ref option-spec)) (vec string)))
 
 (defn option-choices (option)
   (match (:value option)

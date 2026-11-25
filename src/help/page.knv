@@ -70,9 +70,6 @@
   (for-each (iter (required-option-terms spec))
     (fn (term) (push! parts (clone term)))))
 
-(type required-option-terms
-  (fn ((ref command-spec)) (vec string)))
-
 (defn required-option-terms (spec)
   (collect (map (filter (iter (:options spec))
                   (fn (option)
