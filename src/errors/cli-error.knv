@@ -27,7 +27,8 @@
 
 (defstruct invalid-text
   :written string
-  :text string)
+  :text string
+  :why string)
 
 (defstruct option-conflict
   :written string
@@ -59,7 +60,8 @@
           (:text invalid)
           "` for `"
           (:written invalid)
-          "`"))
+          "`: "
+          (:why invalid)))
     ((conflicting-options conflict)
      (str "option `"
           (:written conflict)

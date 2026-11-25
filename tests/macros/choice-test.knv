@@ -3,12 +3,12 @@
 (defchoice log-format text json)
 
 (deftest a-case-name-reads-as-its-case
-  (assert (= (the (option log-format) (from-text "json"))
-             (some log-format/json))))
+  (assert (= (the (result log-format string) (from-text "json"))
+             (ok log-format/json))))
 
-(deftest another-name-reads-as-nothing
-  (assert (= (the (option log-format) (from-text "xml"))
-             none)))
+(deftest another-name-is-refused-with-the-names-it-expects
+  (assert (= (the (result log-format string) (from-text "xml"))
+             (err (str "expected one of text, json")))))
 
 (deftest lists-the-case-names-in-order
   (assert (= (value-names (ref (the (option log-format) none)))

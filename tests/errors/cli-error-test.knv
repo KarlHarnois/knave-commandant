@@ -29,11 +29,12 @@
   (assert (= (error->message (cli-error/missing-option (str "--manager")))
              "option `--manager` is required")))
 
-(deftest names-an-invalid-value-and-where-it-was-given
+(deftest names-an-invalid-value-where-it-was-given-and-why
   (assert (= (error->message (cli-error/invalid-value (->invalid-text
                                                         :written (str "--port")
-                                                        :text (str "abc"))))
-             "invalid value `abc` for `--port`")))
+                                                        :text (str "abc")
+                                                        :why (str "expected a whole number"))))
+             "invalid value `abc` for `--port`: expected a whole number")))
 
 (deftest names-an-unknown-command
   (assert (= (error->message (cli-error/unknown-command (str "biuld")))

@@ -4,57 +4,68 @@
 (use values/convert cli-value parsed)
 
 (impl cli-value string
-  (from-text (text) (some (str text)))
+  (from-text (text) (ok (str text)))
 
   (value-names (_) (vec)))
 
 (impl cli-value bool
-  (from-text (text) (parsed text))
+  (from-text (text) (parsed text "true or false"))
 
   (value-names (_)
     (vec (str "true") (str "false"))))
 
 (impl cli-value char
-  (from-text (text) (parsed text))
+  (from-text (text) (parsed text "one character"))
 
   (value-names (_) (vec)))
 
 (impl cli-value int
-  (from-text (text) (parsed text))
+  (from-text (text)
+    (parsed text
+            "a whole number from -9223372036854775808 to 9223372036854775807"))
 
   (value-names (_) (vec)))
 
 (impl cli-value i32
-  (from-text (text) (parsed text))
+  (from-text (text)
+    (parsed text
+            "a whole number from -2147483648 to 2147483647"))
 
   (value-names (_) (vec)))
 
 (impl cli-value u8
-  (from-text (text) (parsed text))
+  (from-text (text)
+    (parsed text "a whole number from 0 to 255"))
 
   (value-names (_) (vec)))
 
 (impl cli-value u16
-  (from-text (text) (parsed text))
+  (from-text (text)
+    (parsed text "a whole number from 0 to 65535"))
 
   (value-names (_) (vec)))
 
 (impl cli-value u32
-  (from-text (text) (parsed text))
+  (from-text (text)
+    (parsed text "a whole number from 0 to 4294967295"))
 
   (value-names (_) (vec)))
 
 (impl cli-value u64
-  (from-text (text) (parsed text))
+  (from-text (text)
+    (parsed text
+            "a whole number from 0 to 18446744073709551615"))
 
   (value-names (_) (vec)))
 
 (impl cli-value usize
-  (from-text (text) (parsed text))
+  (from-text (text)
+    (parsed text
+            "a whole number, 0 or more, within this machine's range"))
 
   (value-names (_) (vec)))
 
 (impl cli-value float
-  (from-text (text) (parsed text))
+  (from-text (text) (parsed text "a number"))
 
   (value-names (_) (vec)))

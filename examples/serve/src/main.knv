@@ -17,9 +17,9 @@
 (defn text->header (text)
   (let (parts (collect (split text header-separator)))
     (if (< (len parts) 2)
-      none
-      (some (->header :name (str (at parts 0))
-                      :value (value-after (ref parts)))))))
+      (err (str "a header is written `name:value`"))
+      (ok (->header :name (str (at parts 0))
+                    :value (value-after (ref parts)))))))
 
 (defn value-after (parts)
   (join (collect (map (range 1 (len parts))
