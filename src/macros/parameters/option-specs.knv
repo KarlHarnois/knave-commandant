@@ -12,7 +12,7 @@
 (use macros/parameters/parts about default-text defaulted?
                              detail given? list-value-name
                              parameter-details
-                             parameter-name parameter-type
+                             parameter-name
                              required-parameter? type-named?
                              value-name-form)
 
@@ -20,19 +20,18 @@
                  ->value-slot presence switch-state
                  value-kind)
 
-(use values/convert value-names)
+(use macros/parameters/readers names-form)
 
 (export option-spec)
 
 (def option-spec
   (fn (parameter)
-    (template (->option-spec
-                :long (str (unquote (parameter-name parameter)))
-                :short (unquote (short-form parameter))
-                :about (str (unquote (about parameter)))
-                :value (unquote (value-form parameter
-                                            (parameter-type parameter)))
-                :conflicts-with (unquote (conflicts-form parameter))))))
+    (template (->option-spec :long (str (unquote (parameter-name parameter)))
+                             :short (unquote (short-form parameter))
+                             :about (str (unquote (about parameter)))
+                             :value (unquote (value-form parameter))
+                             :conflicts-with (unquote (conflicts-form
+                                                        parameter))))))
 
 (def short-form
   (fn (parameter)
@@ -43,7 +42,7 @@
       (quote none))))
 
 (def value-form
-  (fn (parameter type)
+  (fn (parameter)
     (choose (option-kind parameter)
             (list kind-switch
                   (switch-form parameter)
@@ -52,7 +51,7 @@
                   kind-many
                   (list-form parameter)
                   kind-one
-                  (one-form parameter type)))))
+                  (one-form parameter)))))
 
 (def switch-form
   (fn (parameter)
@@ -67,14 +66,13 @@
                                             :delimiter (unquote (delimiter-form parameter)))))))
 
 (def one-form
-  (fn (parameter type)
+  (fn (parameter)
     (template (value-kind/one
-                (->value-slot
-                  :value-name (unquote (value-name-form parameter))
-                  :presence (unquote (option-presence-form parameter))
-                  :env (unquote (env-form parameter))
-                  :choices (value-names (ref (the (option (unquote type))
-                                                  none))))))))
+                (->value-slot :value-name (unquote (value-name-form parameter))
+                              :presence (unquote (option-presence-form
+                                                   parameter))
+                              :env (unquote (env-form parameter))
+                              :choices (unquote (names-form parameter)))))))
 
 (def delimiter-form
   (fn (parameter)

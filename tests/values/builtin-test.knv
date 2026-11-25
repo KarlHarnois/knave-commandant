@@ -1,93 +1,65 @@
-(use values/builtin)
-(use values/convert from-text value-names)
+(use values/builtin bool-names text->bool text->char
+                    text->float text->i32 text->int
+                    text->string text->u16 text->u32
+                    text->u64 text->u8 text->usize)
 
 (deftest a-number-type-reads-digits
-  (assert (= (the (result u16 (option string))
-                  (from-text "8080"))
-             (ok 8080))))
+  (assert (= (text->u16 "8080") (ok 8080))))
 
 (deftest u8-ends-at-255
-  (assert (= (the (result u8 (option string))
-                  (from-text "255"))
-             (ok 255)))
-  (assert (= (the (result u8 (option string))
-                  (from-text "256"))
+  (assert (= (text->u8 "255") (ok 255)))
+  (assert (= (text->u8 "256")
              (err (some (str "expected a whole number from 0 to 255"))))))
 
 (deftest u16-ends-at-65535
-  (assert (= (the (result u16 (option string))
-                  (from-text "65535"))
-             (ok 65535)))
-  (assert (= (the (result u16 (option string))
-                  (from-text "65536"))
+  (assert (= (text->u16 "65535") (ok 65535)))
+  (assert (= (text->u16 "65536")
              (err (some (str "expected a whole number from 0 to 65535"))))))
 
 (deftest u32-ends-at-4294967295
-  (assert (= (the (result u32 (option string))
-                  (from-text "4294967295"))
-             (ok 4294967295)))
-  (assert (= (the (result u32 (option string))
-                  (from-text "4294967296"))
+  (assert (= (text->u32 "4294967295") (ok 4294967295)))
+  (assert (= (text->u32 "4294967296")
              (err (some (str
                           "expected a whole number from 0 to 4294967295"))))))
 
 (deftest u64-ends-at-18446744073709551615
-  (assert (ok? (the (result u64 (option string))
-                    (from-text "18446744073709551615"))))
-  (assert (= (the (result u64 (option string))
-                  (from-text "18446744073709551616"))
+  (assert (ok? (text->u64 "18446744073709551615")))
+  (assert (= (text->u64 "18446744073709551616")
              (err (some (str "expected a whole number from 0 to 18446744073709551615"))))))
 
 (deftest i32-runs-from-minus-2147483648-to-2147483647
-  (assert (ok? (the (result i32 (option string))
-                    (from-text "-2147483648"))))
-  (assert (ok? (the (result i32 (option string))
-                    (from-text "2147483647"))))
-  (assert (= (the (result i32 (option string))
-                  (from-text "2147483648"))
+  (assert (ok? (text->i32 "-2147483648")))
+  (assert (ok? (text->i32 "2147483647")))
+  (assert (= (text->i32 "2147483648")
              (err (some (str "expected a whole number from -2147483648 to 2147483647")))))
-  (assert (err? (the (result i32 (option string))
-                     (from-text "-2147483649")))))
+  (assert (err? (text->i32 "-2147483649"))))
 
 (deftest int-runs-from-minus-9223372036854775808-to-9223372036854775807
-  (assert (ok? (the (result int (option string))
-                    (from-text "-9223372036854775808"))))
-  (assert (ok? (the (result int (option string))
-                    (from-text "9223372036854775807"))))
-  (assert (= (the (result int (option string))
-                  (from-text "9223372036854775808"))
+  (assert (ok? (text->int "-9223372036854775808")))
+  (assert (ok? (text->int "9223372036854775807")))
+  (assert (= (text->int "9223372036854775808")
              (err (some (str "expected a whole number from -9223372036854775808 to 9223372036854775807")))))
-  (assert (err? (the (result int (option string))
-                     (from-text "-9223372036854775809")))))
+  (assert (err? (text->int "-9223372036854775809"))))
 
 (deftest usize-takes-no-negative-number
-  (assert (= (the (result usize (option string))
-                  (from-text "-1"))
+  (assert (= (text->usize "-1")
              (err (some (str "expected a whole number, 0 or more, within this machine's range"))))))
 
 (deftest char-takes-one-character
-  (assert (= (the (result char (option string))
-                  (from-text "ab"))
+  (assert (= (text->char "ab")
              (err (some (str "expected one character"))))))
 
 (deftest text-that-is-no-number-is-refused
-  (assert (= (the (result float (option string))
-                  (from-text "fast"))
+  (assert (= (text->float "fast")
              (err (some (str "expected a number"))))))
 
 (deftest a-bool-is-refused-with-its-two-values
-  (assert (= (the (result bool (option string))
-                  (from-text "yes"))
+  (assert (= (text->bool "yes")
              (err (some (str "expected true or false"))))))
 
 (deftest any-text-is-a-string
-  (assert (= (the (result string (option string))
-                  (from-text ""))
-             (ok (str)))))
+  (assert (= (text->string "") (ok (str)))))
 
 (deftest bool-lists-its-values
-  (assert (= (value-names (ref (the (option bool) none)))
+  (assert (= (bool-names)
              (vec (str "true") (str "false")))))
-
-(deftest a-number-type-lists-no-values
-  (assert (empty? (value-names (ref (the (option u16) none))))))

@@ -92,7 +92,7 @@ which is all `run-command` adds.
 | `spec/` | what a command is, the built-in options, and the checks on a spec |
 | `scan/` | words to tokens to the options and words found, descending into subcommands |
 | `resolve/` | what was found to matches: arguments, defaults, env vars, conflicts |
-| `values/` | matches to typed values, through the `cli-value` trait |
+| `values/` | matches to typed values, with the function that reads one text of each type |
 | `errors/` | the usage errors, their report and the "similar name" tips |
 | `help/` | the usage line and the help page |
 | `complete/` | what can complete the word under the cursor, and the bash script that asks |
@@ -181,17 +181,20 @@ file, and `tests/e2e-tests.knv` goes through the public interface.
     error as one sentence. clap does the same with `Error::kind`. The
     usage error is the library's own `cli-error`, not a copy made for
     callers, so a new case there breaks an exhaustive `match` on it.
-16. **A value type can say why it refuses a text.** `from-text` returns
-    the value, or `(err none)`, or `(err (some reason))`. Without a
-    reason the error is the plain "invalid value `abc` for `--port`",
-    so a type that only knows yes or no needs nothing more. With one it
+16. **A value is read by a plain function, not a trait.** A parameter of
+    a built-in type needs nothing: `(:port u16)`. A `defchoice` writes
+    `text->name` and `name-names` beside its enum, and `defcommand`
+    finds them by name. A program's own type gives its function:
+    `(:label label :parse text->label)`. A trait made every program
+    write an `impl` for what is one function, so there is none.
+17. **A reader can say why it refuses a text.** It returns the value,
+    or `(err none)`, or `(err (some reason))`. Without a reason the
+    error is the plain "invalid value `abc` for `--port`". With one it
     reads "invalid value `abc` for `--port`: expected a whole number
-    from 0 to 65535". Each built-in type gives its own reason, a
-    `defchoice` names its cases, and a program's own type says what it
-    knows, as in "a header is written `name:value`". The reason
-    replaces the old "possible values" tip, so one sentence carries
-    the whole error, for a terminal and for a program that prints
-    JSON.
+    from 0 to 65535". Each built-in type gives its own reason and a
+    `defchoice` names its cases. The reason replaces the old "possible
+    values" tip, so one sentence carries the whole error, for a
+    terminal and for a program that prints JSON.
 
 ## 6. Limits from the compiler
 
@@ -199,8 +202,6 @@ These shape the code today. Each has an issue on knave-lang/knave.
 
 | Limit | Effect here | Issue |
 | --- | --- | --- |
-| A generic function bound by a trait with a method that takes no `self` must live in the trait's module | `cli-value` and its readers share `values/convert.knv` | #522 |
-| User code cannot implement `from-str` | the library has its own `cli-value` trait, and `value-names` is picked with a typed `none` | |
 | A module that imports `code` cannot define runtime functions of the same names | macro modules are separate from runtime modules | |
 | Field inference looks at every struct in the program | functions that read a common field name, such as `:name`, declare their types, and an application may need to as well | #778 |
 | A case pattern can resolve to the wrong enum when two share a case name | patterns on such enums are qualified | #777 |

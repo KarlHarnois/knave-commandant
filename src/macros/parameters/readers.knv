@@ -1,0 +1,88 @@
+(module
+  "Picks the function that reads one text of a `defcommand` parameter's type, and the names that type accepts: the `:parse` detail, the reader of a built-in type, or the `text->name` function that `defchoice` writes.")
+
+(use code list string symbol symbol-name value-eq)
+(use macros/parameters/kinds choose-or)
+
+(use macros/parameters/parts detail given? parameter-details
+                             value-type)
+
+(use values/builtin bool-names text->bool text->char
+                    text->float text->i32 text->int
+                    text->string text->u16 text->u32
+                    text->u64 text->u8 text->usize)
+
+(export names-form reader-form)
+
+(def reader-prefix "text->")
+
+(def names-suffix "-names")
+
+(def no-names "none")
+
+(def builtin-readers
+  (list "string"
+        (quote text->string)
+        "bool"
+        (quote text->bool)
+        "char"
+        (quote text->char)
+        "int"
+        (quote text->int)
+        "i32"
+        (quote text->i32)
+        "u8"
+        (quote text->u8)
+        "u16"
+        (quote text->u16)
+        "u32"
+        (quote text->u32)
+        "u64"
+        (quote text->u64)
+        "usize"
+        (quote text->usize)
+        "float"
+        (quote text->float)))
+
+(def builtin-names
+  (list "string" no-names "bool"
+        (quote (bool-names))
+        "char" no-names "int" no-names "i32" no-names "u8"
+        no-names "u16" no-names "u32" no-names "u64"
+        no-names "usize" no-names "float" no-names))
+
+(def reader-form
+  (fn (parameter)
+    (if (parsed-by-detail? parameter)
+      (detail (parameter-details parameter) "parse")
+      (type-reader (value-type parameter)))))
+
+(def names-form
+  (fn (parameter)
+    (if (parsed-by-detail? parameter)
+      (quote (vec))
+      (type-names (value-type parameter)))))
+
+(def parsed-by-detail?
+  (fn (parameter)
+    (given? (detail (parameter-details parameter) "parse"))))
+
+(def type-reader
+  (fn (type)
+    (choose-or (symbol-name type)
+               builtin-readers
+               (symbol type (string reader-prefix (symbol-name type))))))
+
+(def type-names
+  (fn (type)
+    (names-or-none (choose-or (symbol-name type)
+                              builtin-names
+                              (list (symbol type
+                                            (string (symbol-name type)
+                                                    names-suffix)))))))
+
+(def names-or-none
+  (fn (form)
+    (if (value-eq form no-names)
+      (quote (vec))
+      form)))

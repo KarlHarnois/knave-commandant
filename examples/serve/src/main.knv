@@ -1,5 +1,4 @@
-(use knave-commandant cli-value defchoice defcommand
-                      run-command)
+(use knave-commandant defchoice defcommand run-command)
 
 (defchoice log-format text json)
 
@@ -8,11 +7,6 @@
   :value string)
 
 (def header-separator ":")
-
-(impl cli-value header
-  (from-text (text) (text->header text))
-
-  (value-names (_) (vec)))
 
 (defn text->header (text)
   (let (parts (collect (split text header-separator)))
@@ -47,6 +41,7 @@
            :env ("SERVE_FORMAT" "LOG_FORMAT")
            :about "How to print each request")
   (:header (vec header)
+           :parse text->header
            :short H
            :value-name "name:value"
            :about "Adds a header to each response")

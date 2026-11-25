@@ -5,6 +5,9 @@
 
 (use spec/shapes switch-state)
 
+(use values/builtin text->bool text->string text->u16
+                    text->u8)
+
 (use values/convert read-argument read-arguments read-many
                     read-option read-optional
                     read-optional-argument)
@@ -34,59 +37,48 @@
                                   :value (matched-value/count 3)))))
 
 (deftest reads-an-argument-as-text
-  (assert (= (the (result string _)
-                  (read-argument (ref (found)) "root"))
+  (assert (= (read-argument (ref (found)) "root" text->string)
              (ok (str "site")))))
 
 (deftest a-missing-argument-is-an-error
-  (assert (= (the (result string _)
-                  (read-argument (ref (found)) "path"))
+  (assert (= (read-argument (ref (found)) "path" text->string)
              (err (cli-error/missing-argument (str "path"))))))
 
 (deftest reads-an-option-as-a-number
-  (assert (= (the (result u16 _)
-                  (read-option (ref (found)) "port"))
+  (assert (= (read-option (ref (found)) "port" text->u16)
              (ok 80))))
 
 (deftest a-value-of-the-wrong-type-is-an-error
-  (assert (= (the (result u16 _)
-                  (read-option (ref (found)) "tag"))
+  (assert (= (read-option (ref (found)) "tag" text->u16)
              (err (cli-error/missing-option (str "--tag"))))))
 
 (deftest text-that-does-not-parse-is-an-invalid-value
-  (assert (= (the (result bool _)
-                  (read-option (ref (found)) "port"))
+  (assert (= (read-option (ref (found)) "port" text->bool)
              (err (cli-error/invalid-value (->invalid-text :written (str
                                                                       "--port")
                                                            :text (str "80")
                                                            :why (some (str "expected true or false"))))))))
 
 (deftest an-absent-optional-value-is-none
-  (assert (= (the (result (option u16) _)
-                  (read-optional (ref (found)) "name"))
+  (assert (= (read-optional (ref (found)) "name" text->u16)
              (ok none))))
 
 (deftest a-given-optional-value-is-some
-  (assert (= (the (result (option u16) _)
-                  (read-optional (ref (found)) "port"))
+  (assert (= (read-optional (ref (found)) "port" text->u16)
              (ok (some 80)))))
 
 (deftest reads-each-value-of-a-list
-  (assert (= (the (result (vec u8) _)
-                  (read-many (ref (found)) "tag"))
+  (assert (= (read-many (ref (found)) "tag" text->u8)
              (ok (vec 1 2)))))
 
 (deftest reads-every-word-of-a-repeated-argument
-  (assert (= (the (result (vec u16) _)
-                  (read-arguments (ref (found)) "ports"))
+  (assert (= (read-arguments (ref (found)) "ports" text->u16)
              (ok (vec 80 81)))))
 
 (deftest an-absent-optional-argument-is-none
-  (assert (= (the (result (option string) _)
-                  (read-optional-argument (ref (found)) "label"))
+  (assert (= (read-optional-argument (ref (found)) "label" text->string)
              (ok none))))
 
 (deftest a-given-optional-argument-is-some
-  (assert (= (the (result (option string) _)
-                  (read-optional-argument (ref (found)) "root"))
+  (assert (= (read-optional-argument (ref (found)) "root" text->string)
              (ok (some (str "site"))))))

@@ -1,5 +1,5 @@
 (module
-  "Rejects a detail on a `defcommand` parameter that cannot take it: `:required`, `:default`, `:delimiter`, `:conflicts-with` or `:value-name`. Each rule is a row of a table: whether it is broken, the error and the help.")
+  "Rejects a detail on a `defcommand` parameter that cannot take it: `:required`, `:default`, `:delimiter`, `:conflicts-with`, `:value-name` or `:parse`. Each rule is a row of a table: whether it is broken, the error and the help.")
 
 (use code bool-not empty? fail first list nth rest value-eq)
 
@@ -67,7 +67,10 @@
                 "give the option a `vec` type, or drop `:delimiter`")
           (rule (both (has? parameter "value-name") (valueless? kind))
                 "a switch or a count takes no value, so it cannot take `:value-name`"
-                "drop `:value-name`"))))
+                "drop `:value-name`")
+          (rule (both (has? parameter "parse") (valueless? kind))
+                "a switch or a count takes no value, so it cannot take `:parse`"
+                "drop `:parse`"))))
 
 (def valueless?
   (fn (kind)
