@@ -1,6 +1,30 @@
-(use knave-commandant defchoice defcommand run-command)
+(use knave-commandant cli-value defchoice defcommand
+                      run-command)
 
 (defchoice log-format text json)
+
+(defstruct header
+  :name string
+  :value string)
+
+(def header-separator ":")
+
+(impl cli-value header
+  (from-text (text) (text->header text))
+
+  (value-names (_) (vec)))
+
+(defn text->header (text)
+  (let (parts (collect (split text header-separator)))
+    (if (< (len parts) 2)
+      none
+      (some (->header :name (str (at parts 0))
+                      :value (value-after (ref parts)))))))
+
+(defn value-after (parts)
+  (join (collect (map (range 1 (len parts))
+                   (fn (index) (str (at parts index)))))
+        header-separator))
 
 (defcommand serve "Serves a folder over HTTP."
   :version "1.0.0"
@@ -22,7 +46,7 @@
            :default text
            :env ("SERVE_FORMAT" "LOG_FORMAT")
            :about "How to print each request")
-  (:header (vec string)
+  (:header (vec header)
            :short H
            :value-name "name:value"
            :about "Adds a header to each response")
