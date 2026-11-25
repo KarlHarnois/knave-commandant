@@ -165,7 +165,6 @@ file, and `tests/e2e-tests.knv` goes through the public interface.
     usage error, and the help shows which commands exist. `--help`
     still prints on stdout with exit code 0. POSIX only asks for a
     non-zero status, and Click, clap and argparse all use 2 here.
-
 14. **A parse that does not give a value gives one `early-exit`.** Help,
     a version, a usage error, a completion reply and a broken spec all
     come back as the same struct: `:text`, `:stream` and `:code`. The
