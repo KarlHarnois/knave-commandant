@@ -1,4 +1,6 @@
 (use errors/report error-report failure-report)
+(use help/page spec->help)
+(use spec/commands spec-at)
 
 (use errors/cli-error ->invalid-text ->usage-failure
                       cli-error)
@@ -66,9 +68,19 @@
                           "  tip: a similar command exists: `build`")))
 
 (deftest a-failure-reports-the-usage-of-its-command
-  (assert (contains-text? (failure-report
-                            (ref (site-spec))
-                            (ref (->usage-failure
-                                   :path (vec (str "page"))
-                                   :error cli-error/missing-command)))
+  (assert (contains-text? (failure-report (ref (site-spec))
+                                          (ref (->usage-failure :path (vec (str "page"))
+                                                                :error (cli-error/unknown-command
+                                                                         (str "ad"))))
+                                          80)
                           "Usage: site page [OPTIONS] <COMMAND>")))
+
+(deftest a-missing-command-reports-the-help-of-its-group
+  (assert (= (failure-report (ref (site-spec))
+                             (ref (->usage-failure
+                                    :path (vec (str "page"))
+                                    :error cli-error/missing-command))
+                             80)
+             (spec->help (ref (unwrap (spec-at (ref (site-spec))
+                                               (ref (vec (str "page"))))))
+                         80))))

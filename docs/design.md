@@ -145,6 +145,11 @@ after. `tests/` mirrors `src/` file for file, and
     words and options. A value or an argument without choices completes
     as a path, through bash's own completion. Only bash is supported:
     bash shows no descriptions, so candidates carry none.
+13. **A group run without a command prints its help, on stderr, with
+    exit code 2.** The line is incomplete, so it fails like every other
+    usage error, and the help shows which commands exist. `--help`
+    still prints on stdout with exit code 0. POSIX only asks for a
+    non-zero status, and Click, clap and argparse all use 2 here.
 
 ## 6. Limits from the compiler
 

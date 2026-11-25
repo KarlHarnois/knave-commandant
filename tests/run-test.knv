@@ -74,3 +74,13 @@
                                     (environment-with "COMPLETE" "fish")
                                     (words (no-words)))))
             "error: no completion for the shell `fish`, only for bash")))
+
+(deftest a-group-without-a-command-refuses-with-its-help
+  (assert (starts-with? (as-str (refusal-text (response-to (site-spec)
+                                                           (no-words))))
+                        "Builds and serves a site.\n\nUsage: site [OPTIONS] <COMMAND>\n\nCommands:")))
+
+(deftest a-nested-group-without-a-command-refuses-with-its-own-help
+  (assert (starts-with?
+            (as-str (refusal-text (response-to (site-spec) (vec "page"))))
+            "Manages the pages.\n\nUsage: site page [OPTIONS] <COMMAND>")))

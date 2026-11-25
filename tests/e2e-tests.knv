@@ -33,14 +33,16 @@
   (match (parse-texts texts)
     ((usage-error failure)
      (failure-report (ref (serve-spec))
-                     (ref failure)))
+                     (ref failure)
+                     80))
     (_ (str))))
 
 (defn site-report (texts)
   (match (parse-with (site-spec) (no-environment) texts)
     ((usage-error failure)
      (failure-report (ref (site-spec))
-                     (ref failure)))
+                     (ref failure)
+                     80))
     (_ (str))))
 
 (deftest every-command-takes-short-and-long-help
@@ -126,11 +128,17 @@
   (assert (starts-with? (as-str (site-report (vec "pgae")))
                         "error: unknown command `pgae`\n\n  tip: a similar command exists: `page`")))
 
-(deftest a-group-without-a-command-reports-its-own-usage
+(deftest a-group-without-a-command-reports-its-own-help
   (assert (= (site-report (vec "page"))
-             (str "error: a command is required\n\n"
+             (str "Manages the pages.\n\n"
                   "Usage: site page [OPTIONS] <COMMAND>\n\n"
-                  "For more information, try `site page --help`."))))
+                  "Commands:\n"
+                  "  add               Adds a page.\n"
+                  "  list              Lists the pages.\n"
+                  "  help              Print the help of a command\n\n"
+                  "Options:\n"
+                  "  -v, --verbose...  Logs more\n"
+                  "  -h, --help        Print help"))))
 
 (deftest a-missing-required-option-reports-the-usage-that-names-it
   (assert (= (match (parse-with (spec-with-token)
@@ -138,7 +146,8 @@
                                 (no-words))
                ((usage-error failure)
                 (failure-report (ref (spec-with-token))
-                                (ref failure)))
+                                (ref failure)
+                                80))
                (_ (str)))
              (str "error: option `--token` is required\n\n"
                   "Usage: deploy [OPTIONS] --token <TOKEN>\n\n"
@@ -160,7 +169,8 @@
                       (vec "--description" "x" "--description-file" "y.md"))
                ((usage-error failure)
                 (failure-report (ref (spec-with-lists))
-                                (ref failure)))
+                                (ref failure)
+                                80))
                (_ (str)))
              (str "error: option `--description` cannot be used with `--description-file`\n\n"
                   "Usage: add [OPTIONS]\n\n"
@@ -180,7 +190,8 @@
                                 (no-words))
                ((usage-error failure)
                 (failure-report (ref (spec-with-value-name))
-                                (ref failure)))
+                                (ref failure)
+                                80))
                (_ (str)))
              (str "error: missing argument <PATH>\n\n"
                   "Usage: copy [OPTIONS] <PATH>\n\n"

@@ -1,12 +1,12 @@
 (module
-  "Writes a usage error: the problem, a tip when a known name is close, the usage line of the command it happened in, and where to find help.")
+  "Writes a usage error: the problem, a tip when a known name is close, the usage line of the command it happened in, and where to find help. A group run without a command gets its help page.")
 
 (use spec/commands spec-at subcommand-names)
 
 (use errors/cli-error cli-error error->message
                       usage-failure)
 
-(use help/page spec->usage)
+(use help/page spec->help spec->usage)
 (use scan/tokens assignment)
 (use spec/builtins builtin-options-of)
 
@@ -20,14 +20,15 @@
 (def part-break "\n\n")
 
 (type failure-report
-  (fn ((ref command-spec) (ref usage-failure))
+  (fn ((ref command-spec) (ref usage-failure) int)
     string))
 
-(defn failure-report (root failure)
+(defn failure-report (root failure width)
   (let (spec (unwrap-or (spec-at root (ref (:path failure)))
                         (clone root)))
-    (error-report (ref spec)
-                  (ref (:error failure)))))
+    (match (:error failure)
+      (cli-error/missing-command (spec->help (ref spec) width))
+      (_ (error-report (ref spec) (ref (:error failure)))))))
 
 (defn error-report (spec failure)
   (let (parts (vec (str "error: " (error->message failure))))
