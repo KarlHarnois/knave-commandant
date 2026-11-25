@@ -21,7 +21,10 @@
   "Defines a command: a struct with one typed field per parameter, `name-spec`
   and `matches->name`. `(run-command name)` parses the process's command line.
   A parameter of a built-in type or of a `defchoice` type is read as is. One of
-  any other type names the function that reads it, with `:parse`."
+  any other type names the function that reads it, with `:parse`. The error
+  \"cannot find `text->name`\" or \"cannot find `name-names`\" means the parameter
+  of type `name` needs `:parse`, or `name` is a `defchoice` of another module
+  and those two functions are not imported."
   (let-parts name
              (about-of parts)
              (settings-of parts)

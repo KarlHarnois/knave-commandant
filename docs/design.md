@@ -186,7 +186,11 @@ file, and `tests/e2e-tests.knv` goes through the public interface.
     `text->name` and `name-names` beside its enum, and `defcommand`
     finds them by name. A program's own type gives its function:
     `(:label label :parse text->label)`. A trait made every program
-    write an `impl` for what is one function, so there is none.
+    write an `impl` for what is one function, so there is none. The
+    macro cannot tell a program's own type from a choice, so a missing
+    `:parse` shows as "cannot find `text->label`". A `defchoice` used
+    from another module shows the same error until its two functions
+    are imported with it.
 17. **A reader can say why it refuses a text.** It returns the value,
     or `(err none)`, or `(err (some reason))`. Without a reason the
     error is the plain "invalid value `abc` for `--port`". With one it
