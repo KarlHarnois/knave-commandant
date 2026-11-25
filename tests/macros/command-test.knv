@@ -1,6 +1,5 @@
-(use lib ->environment ->invalid-text ->usage-failure
-         ->variable cli-error defchoice defcommand outcome
-         parse-command spec->usage)
+(use lib ->early-exit ->environment ->variable defchoice
+         defcommand output-stream parse-command spec->usage)
 
 (export matches->copy matches->greet matches->hello
         matches->say)
@@ -35,8 +34,8 @@
                  (->environment :variables (vec))
                  (texts->words texts)))
 
-(defn usage-error (failure)
-  (err (outcome/usage-error (->usage-failure :path (vec) :error failure))))
+(defn greet-stop (texts)
+  (unwrap-err (map-ok (greet-after texts) (fn (_) 0))))
 
 (deftest the-spec-carries-the-name-about-and-version
   (assert (= (:name (greet-spec)) "greet"))
@@ -57,14 +56,18 @@
              (ok (->greet :who (str "ana") :times 1 :tone tone/plain)))))
 
 (deftest a-value-out-of-range-is-an-invalid-value
-  (assert (= (greet-after (vec "ana" "-n" "300"))
-             (usage-error (cli-error/invalid-value (->invalid-text :written (str
-                                                                              "--times")
-                                                                   :text (str "300")))))))
+  (assert (starts-with? (as-str (:text (greet-stop (vec "ana" "-n" "300"))))
+                        "error: invalid value `300` for `--times`"))
+  (assert (= (:code (greet-stop (vec "ana" "-n" "300")))
+             2)))
 
-(deftest help-comes-back-for-the-caller-to-print
-  (assert (= (greet-after (vec "--help"))
-             (err (outcome/help (vec))))))
+(deftest help-comes-back-as-an-early-exit-with-code-0
+  (assert (starts-with? (as-str (:text (greet-stop (vec "--help"))))
+                        "Greets someone.\n\nUsage: greet"))
+  (assert (= (:stream (greet-stop (vec "--help")))
+             output-stream/standard-output))
+  (assert (= (:code (greet-stop (vec "--help")))
+             0)))
 
 (deftest a-vec-argument-takes-every-word-the-next-one-leaves
   (assert (= (parse-command copy
@@ -99,10 +102,13 @@
   (assert (= (:choices (at (:arguments (say-spec)) 0))
              (vec (str "plain") (str "loud")))))
 
-(deftest a-completion-request-comes-back-for-the-caller-to-print
-  (assert (= (parse-command copy
-                            (->environment :variables (vec
-                                                        (->variable :name (str "COMPLETE")
-                                                                    :value (str "bash"))))
-                            (texts->words (vec "--" "-")))
-             (err (outcome/completion (str "words\n--help"))))))
+(deftest a-completion-request-comes-back-as-an-early-exit
+  (assert (= (map-ok (parse-command copy
+                                    (->environment
+                                      :variables (vec (->variable :name (str "COMPLETE")
+                                                                  :value (str "bash"))))
+                                    (texts->words (vec "--" "-")))
+                     (fn (_) 0))
+             (err (->early-exit :text (str "words\n--help")
+                                :stream output-stream/standard-output
+                                :code 0)))))

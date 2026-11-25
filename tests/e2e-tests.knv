@@ -1,61 +1,73 @@
-(use lib ->argument-spec argument-text cli-error
-         failure-report matched-value option-value outcome
+(use lib ->argument-spec ->early-exit argument-text
+         matched-value option-value output-stream parse-line
          presence repetition spec->help switch-state)
 
 (use support/fixture environment-with no-environment
-                     no-words parse-texts parse-with
-                     serve-spec site-spec
+                     no-words serve-spec site-spec
                      spec-with-arguments spec-with-lists
-                     spec-with-token usage-error)
+                     spec-with-token words)
+
+(defn line (spec environment texts)
+  (parse-line (ref spec)
+              (ref environment)
+              (ref (words texts))))
+
+(defn serve-line (texts)
+  (line (serve-spec) (no-environment) texts))
+
+(defn option-in (parsed long)
+  (match parsed
+    ((ok found)
+     (map-some (option-value (ref found) long) clone))
+    ((err _) none)))
 
 (defn option-after (texts long)
-  (match (parse-texts texts)
-    ((parsed found)
-     (map-some (option-value (ref found) long) clone))
-    (_ none)))
+  (option-in (serve-line texts) long))
 
 (defn port-with (environment texts)
-  (match (parse-with (serve-spec) environment texts)
-    ((parsed found)
-     (map-some (option-value (ref found) "port") clone))
-    (_ none)))
+  (option-in (line (serve-spec) environment texts) "port"))
 
 (defn root-after (texts)
-  (match (parse-texts texts)
-    ((parsed found)
+  (match (serve-line texts)
+    ((ok found)
      (map-some (argument-text (ref found) "root") clone))
-    (_ none)))
+    ((err _) none)))
 
 (defn port-text (text)
   (some (matched-value/one (some (str text)))))
 
+(defn answer (text)
+  (->early-exit :text text
+                :stream output-stream/standard-output
+                :code 0))
+
+(defn refusal (text)
+  (->early-exit :text text
+                :stream output-stream/standard-error
+                :code 2))
+
+(defn report-of (spec texts)
+  (match (line spec (no-environment) texts)
+    ((ok _) (str))
+    ((err stop) (clone (:text stop)))))
+
 (defn report-after (texts)
-  (match (parse-texts texts)
-    ((usage-error failure)
-     (failure-report (ref (serve-spec))
-                     (ref failure)
-                     80))
-    (_ (str))))
+  (report-of (serve-spec) texts))
 
 (defn site-report (texts)
-  (match (parse-with (site-spec) (no-environment) texts)
-    ((usage-error failure)
-     (failure-report (ref (site-spec))
-                     (ref failure)
-                     80))
-    (_ (str))))
+  (report-of (site-spec) texts))
 
 (deftest every-command-takes-short-and-long-help
-  (assert (= (parse-texts (vec "serve-me" "-h"))
-             (outcome/help (vec))))
-  (assert (= (parse-texts (vec "--help"))
-             (outcome/help (vec)))))
+  (assert (= (serve-line (vec "serve-me" "-h"))
+             (err (answer (spec->help (ref (serve-spec)) 80)))))
+  (assert (= (serve-line (vec "--help"))
+             (err (answer (spec->help (ref (serve-spec)) 80))))))
 
 (deftest a-versioned-command-takes-short-and-long-version
-  (assert (= (parse-texts (vec "-V"))
-             (outcome/version (str "1.0.0"))))
-  (assert (= (parse-texts (vec "--version"))
-             (outcome/version (str "1.0.0")))))
+  (assert (= (serve-line (vec "-V"))
+             (err (answer (str "serve 1.0.0")))))
+  (assert (= (serve-line (vec "--version"))
+             (err (answer (str "serve 1.0.0"))))))
 
 (deftest a-value-is-written-four-ways
   (assert (= (option-after (vec "--port" "80") "port")
@@ -84,8 +96,8 @@
              (some (str "--open")))))
 
 (deftest a-double-dash-cannot-be-an-option-value
-  (assert (= (parse-texts (vec "--port" "--" "80"))
-             (usage-error (cli-error/missing-value (str "--port"))))))
+  (assert (starts-with? (as-str (report-after (vec "--port" "--" "80")))
+                        "error: option `--port` needs a value")))
 
 (deftest a-negative-number-is-an-argument
   (assert (= (root-after (vec "-5"))
@@ -104,8 +116,12 @@
              (port-text "8000"))))
 
 (deftest a-mistyped-option-is-a-usage-error
-  (assert (= (parse-texts (vec "--prot" "80"))
-             (usage-error (cli-error/unknown-option (str "--prot"))))))
+  (assert (= (serve-line (vec "--prot" "80"))
+             (err (refusal (str
+                             "error: unknown option `--prot`\n\n"
+                             "  tip: a similar option exists: `--port`\n\n"
+                             "Usage: serve [OPTIONS] [ROOT]\n\n"
+                             "For more information, try `serve --help`."))))))
 
 (deftest a-mistyped-option-reports-the-closest-option
   (assert (starts-with? (as-str (report-after (vec "--prot" "80")))
@@ -116,12 +132,10 @@
              16)))
 
 (deftest a-global-option-works-after-the-command
-  (assert (= (match (parse-with (site-spec)
-                                (no-environment)
-                                (vec "build" "-v" "site"))
-               ((parsed found)
-                (map-some (option-value (ref found) "verbose") clone))
-               (_ none))
+  (assert (= (option-in (line (site-spec)
+                              (no-environment)
+                              (vec "build" "-v" "site"))
+                        "verbose")
              (some (matched-value/count 1)))))
 
 (deftest a-mistyped-command-reports-the-closest-command
@@ -141,37 +155,21 @@
                   "  -h, --help        Print help"))))
 
 (deftest a-missing-required-option-reports-the-usage-that-names-it
-  (assert (= (match (parse-with (spec-with-token)
-                                (no-environment)
-                                (no-words))
-               ((usage-error failure)
-                (failure-report (ref (spec-with-token))
-                                (ref failure)
-                                80))
-               (_ (str)))
+  (assert (= (report-of (spec-with-token) (no-words))
              (str "error: option `--token` is required\n\n"
                   "Usage: deploy [OPTIONS] --token <TOKEN>\n\n"
                   "For more information, try `deploy --help`."))))
 
 (deftest a-delimited-list-option-reads-every-part
-  (assert (= (match (parse-with (spec-with-lists)
-                                (no-environment)
-                                (vec "--after" "1,2" "--after" "3"))
-               ((parsed found)
-                (map-some (option-value (ref found) "after") clone))
-               (_ none))
+  (assert (= (option-in (line (spec-with-lists)
+                              (no-environment)
+                              (vec "--after" "1,2" "--after" "3"))
+                        "after")
              (some (matched-value/many (vec (str "1") (str "2") (str "3")))))))
 
 (deftest conflicting-options-report-both-names
-  (assert (= (match (parse-with
-                      (spec-with-lists)
-                      (no-environment)
-                      (vec "--description" "x" "--description-file" "y.md"))
-               ((usage-error failure)
-                (failure-report (ref (spec-with-lists))
-                                (ref failure)
-                                80))
-               (_ (str)))
+  (assert (= (report-of (spec-with-lists)
+                        (vec "--description" "x" "--description-file" "y.md"))
              (str "error: option `--description` cannot be used with `--description-file`\n\n"
                   "Usage: add [OPTIONS]\n\n"
                   "For more information, try `add --help`."))))
@@ -185,14 +183,7 @@
                                              :repeats repetition/once))))
 
 (deftest a-missing-argument-is-reported-under-its-value-name
-  (assert (= (match (parse-with (spec-with-value-name)
-                                (no-environment)
-                                (no-words))
-               ((usage-error failure)
-                (failure-report (ref (spec-with-value-name))
-                                (ref failure)
-                                80))
-               (_ (str)))
+  (assert (= (report-of (spec-with-value-name) (no-words))
              (str "error: missing argument <PATH>\n\n"
                   "Usage: copy [OPTIONS] <PATH>\n\n"
                   "For more information, try `copy --help`."))))

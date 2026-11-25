@@ -1,5 +1,4 @@
-(use lib ->environment ->option-conflict ->usage-failure
-         cli-error defcommand outcome parse-command)
+(use lib ->environment defcommand parse-command)
 
 (export matches->add-item matches->deploy)
 
@@ -38,11 +37,9 @@
              (ok (vec 1 2 3)))))
 
 (deftest conflicting-options-are-a-usage-error
-  (assert (= (map-ok (add-after
-                       (vec "--description" "x" "--description-file" "y"))
-                     (fn (_) 0))
-             (err (outcome/usage-error
-                    (->usage-failure :path (vec)
-                                     :error (cli-error/conflicting-options
-                                              (->option-conflict :written (str "--description")
-                                                                 :other (str "--description-file")))))))))
+  (assert (starts-with? (as-str (:text (unwrap-err (map-ok (add-after (vec "--description"
+                                                                           "x"
+                                                                           "--description-file"
+                                                                           "y"))
+                                                           (fn (_) 0)))))
+                        "error: option `--description` cannot be used with `--description-file`")))

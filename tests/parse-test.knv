@@ -1,10 +1,10 @@
 (use errors/cli-error ->usage-failure cli-error)
-(use values/matches argument-text matches)
-(use parse outcome parse-into)
+(use values/matches argument-text)
+(use parse outcome)
 
 (use support/fixture environment-with no-environment
                      parse-texts parse-with site-spec
-                     spec-with-token usage-error words)
+                     spec-with-token usage-error)
 
 (defn root-after (texts)
   (match (parse-texts texts)
@@ -59,42 +59,6 @@
                          (no-environment)
                          (vec "--help"))
              (outcome/help (vec)))))
-
-(type path-length
-  (fn ((ref matches))
-    (result int cli-error)))
-
-(defn path-length (found)
-  (ok (len (:path found))))
-
-(type refused
-  (fn ((ref matches))
-    (result int cli-error)))
-
-(defn refused (_found) (err cli-error/missing-command))
-
-(deftest parse-into-converts-the-matches
-  (assert (= (parse-into (ref (site-spec))
-                         (ref (no-environment))
-                         (ref (words (vec "page" "list")))
-                         path-length)
-             (ok 2))))
-
-(deftest parse-into-returns-help-for-the-caller
-  (assert (= (parse-into (ref (site-spec))
-                         (ref (no-environment))
-                         (ref (words (vec "--help")))
-                         path-length)
-             (err (outcome/help (vec))))))
-
-(deftest parse-into-reports-a-conversion-error-at-the-command-path
-  (assert (= (parse-into (ref (site-spec))
-                         (ref (no-environment))
-                         (ref (words (vec "build")))
-                         refused)
-             (err (outcome/usage-error (->usage-failure
-                                         :path (vec (str "build"))
-                                         :error cli-error/missing-command))))))
 
 (deftest a-completion-request-becomes-the-completion-outcome
   (assert (= (parse-with (site-spec)

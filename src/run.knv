@@ -1,24 +1,14 @@
 (module
-  "Runs a command against the process: reads its words and environment, answers help and version, and stops on a usage error or a broken spec.")
+  "Runs a command against the process: reads its words and environment, and on an early exit prints its text and stops. It is the only module that touches the process.")
 
+(use command-line early-exit output-stream parse-line-into)
 (use environment ->environment ->variable)
-(use spec/commands spec-at)
-(use errors/report failure-report)
-(use help/page spec->help)
-(use values/matches matches)
-(use parse matches->typed outcome parse)
+(use errors/cli-error cli-error)
 (use spec/shapes command-spec)
-(use help/terminal terminal-width)
-(use spec/spec-error spec-error->message)
-(use spec/validate validate-spec)
-(use errors/cli-error ->usage-failure cli-error)
+(use values/matches matches)
 
-(export command->response process-environment response run
-        run-with)
-
-(def usage-exit-code 2)
-
-(def broken-spec-exit-code 70)
+(export exit-early pairs->environment process-environment
+        run run-with)
 
 (def exit-with
   (rust "std::process::exit({0} as i32)"
@@ -28,11 +18,9 @@
   (rust "std::env::vars().collect::<Vec<(String, String)>>()"
     (fn () (vec (pair string string)))))
 
-(defenum response
-  (proceed matches)
-  (reply string)
-  (refuse string)
-  (broken string))
+(defn run (spec)
+  (run-with spec
+    (fn (found) (ok (clone found)))))
 
 (type run-with
   (where (t)
@@ -42,59 +30,31 @@
       t)))
 
 (defn run-with (spec convert)
-  (let (found (run spec))
-    (match (matches->typed (ref found) convert)
-      ((ok value) value)
-      ((err failure) (refuse-typed spec failure)))))
+  (match (parse-line-into spec
+                          (ref (process-environment))
+                          (ref (command-line-args))
+                          convert)
+    ((ok value) value)
+    ((err stop) (exit-early stop))))
 
-(defn run (spec)
-  (respond (command->response spec
-                              (process-environment)
-                              (command-line-args))))
+(type exit-early
+  (where (t) (fn (early-exit) t)))
 
-(defn command->response (spec environment words)
-  (match (validate-spec spec)
-    ((ok _)
-     (outcome->response spec
-                        (parse spec (ref environment) (ref words))
-                        (terminal-width (ref environment))))
-    ((err failure)
-     (response/broken (str "invalid command spec: "
-                           (spec-error->message failure))))))
+(defn exit-early (stop)
+  (print-on (:stream stop)
+            (as-str (:text stop)))
+  (exit-with (:code stop)))
 
-(defn refuse-typed (spec failure)
-  (eprintln (failure-report spec
-                            (ref failure)
-                            (terminal-width (ref (process-environment)))))
-  (exit-with usage-exit-code))
-
-(defn outcome->response (spec outcome width)
-  (match outcome
-    ((parsed found) (response/proceed found))
-    ((help path)
-     (response/reply (help-at spec (ref path) width)))
-    ((version text)
-     (response/reply (str (:name spec) " " text)))
-    ((usage-error failure)
-     (response/refuse (failure-report spec (ref failure) width)))
-    ((completion reply) (response/reply reply))))
-
-(defn help-at (spec path width)
-  (spec->help (ref (unwrap-or (spec-at spec path) (clone spec)))
-              width))
-
-(defn respond (response)
-  (match response
-    ((proceed found) found)
-    ((reply text) (println text) (exit-with 0))
-    ((refuse text) (eprintln text) (exit-with usage-exit-code))
-    ((broken text)
-     (eprintln text)
-     (exit-with broken-spec-exit-code))))
+(defn print-on (stream text)
+  (match stream
+    (standard-output (println text))
+    (standard-error (eprintln text))))
 
 (defn process-environment ()
-  (->environment :variables (collect (map (iter (process-variables))
-                                          pair->variable))))
+  (pairs->environment (ref (process-variables))))
+
+(defn pairs->environment (pairs)
+  (->environment :variables (collect (map (iter pairs) pair->variable))))
 
 (defn pair->variable (entry)
   (let-match ((pair name value) entry)

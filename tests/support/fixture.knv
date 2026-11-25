@@ -7,8 +7,10 @@
 
 (use lib ->argument-spec ->command-spec ->environment
          ->list-slot ->option-spec ->switch-slot
-         ->value-slot ->variable outcome parse presence
-         repetition switch-state value-kind)
+         ->value-slot ->variable presence repetition
+         switch-state value-kind)
+
+(use parse outcome parse)
 
 (export argument-named command-spec-named environment-with
         no-environment no-words parse-texts parse-with
