@@ -132,9 +132,9 @@ file, and `tests/e2e-tests.knv` goes through the public interface.
 6. **One `presence`** (`required`, `optional`, `defaulted`) serves
    arguments and options. Whether an argument repeats is a separate
    `repetition`.
-7. **Spec mistakes are found before parsing.** `run-command` validates
-   the spec first and exits with code 70 on a mistake, so a broken spec
-   never looks like a user error.
+7. **Spec mistakes are found before parsing.** Every entry point
+   validates the spec first, and a mistake is an `early-exit` with
+   code 70, so a broken spec never looks like a user error.
 8. **Help takes the width as a parameter.** `command-line.knv` reads
    `COLUMNS` from the environment value and falls back to 80, so help
    text stays pure.
