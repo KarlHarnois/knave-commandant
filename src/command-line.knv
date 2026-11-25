@@ -1,20 +1,23 @@
 (module
-  "Parses a command line into a value, or into an early exit: the text to print, the stream to print it on and the exit code.")
+  "Parses a command line into a value, or into an early exit: the text to print, the stream to print it on, the exit code and the reason for it.")
 
 (use environment environment)
-(use errors/cli-error ->usage-failure cli-error)
+
+(use errors/cli-error ->usage-failure cli-error
+                      usage-failure)
+
 (use errors/report failure-report)
 (use help/page spec->help)
 (use help/terminal terminal-width)
 (use parse outcome parse)
 (use spec/commands spec-at)
 (use spec/shapes command-spec)
-(use spec/spec-error spec-error->message)
+(use spec/spec-error spec-error spec-error->message)
 (use spec/validate validate-spec)
 (use values/matches matches)
 
 (export ->early-exit early-exit output-stream parse-line
-        parse-line-into)
+        parse-line-into stop-reason)
 
 (def success-code 0)
 
@@ -25,7 +28,15 @@
 (defstruct early-exit
   :text string
   :stream output-stream
-  :code int)
+  :code int
+  :reason stop-reason)
+
+(defenum stop-reason
+  (help (vec string))
+  (version string)
+  completion
+  (usage usage-failure)
+  (broken-spec spec-error))
 
 (defenum output-stream
   standard-output
@@ -47,11 +58,7 @@
 (defn parse-line-into (spec environment words convert)
   (match (validate-spec spec)
     ((ok _) (parse-valid spec environment words convert))
-    ((err failure)
-     (err (->early-exit :text (str "invalid command spec: "
-                                   (spec-error->message failure))
-                        :stream output-stream/standard-error
-                        :code broken-spec-code)))))
+    ((err failure) (err (broken failure)))))
 
 (type parse-valid
   (where (t)
@@ -64,14 +71,18 @@
 
 (defn parse-valid (spec environment words convert)
   (match (parse spec environment words)
-    ((parsed found)
+    ((outcome/parsed found)
      (typed spec environment (ref found) convert))
-    ((help path)
-     (err (answer (help-at spec (ref path) environment))))
-    ((version text) (err (answer (str (:name spec) " " text))))
-    ((usage-error failure)
-     (err (refusal spec environment (ref failure))))
-    ((completion reply) (err (answer reply)))))
+    ((outcome/help path)
+     (err (answer (help-at spec (ref path) environment)
+                  (stop-reason/help path))))
+    ((outcome/version text)
+     (err (answer (str (:name spec) " " text)
+                  (stop-reason/version text))))
+    ((outcome/usage-error failure)
+     (err (refusal spec environment failure)))
+    ((outcome/completion reply)
+     (err (answer reply stop-reason/completion)))))
 
 (type typed
   (where (t)
@@ -86,18 +97,28 @@
   (map-err (convert found)
     (fn (failure)
       (refusal spec environment
-               (ref (->usage-failure :path (clone (:path found))
-                                     :error failure))))))
+               (->usage-failure :path (clone (:path found)) :error failure)))))
 
-(defn answer (text)
+(defn answer (text reason)
   (->early-exit :text text
                 :stream output-stream/standard-output
-                :code success-code))
+                :code success-code
+                :reason reason))
 
 (defn refusal (spec environment failure)
-  (->early-exit :text (failure-report spec failure (terminal-width environment))
+  (->early-exit :text (failure-report spec
+                                      (ref failure)
+                                      (terminal-width environment))
                 :stream output-stream/standard-error
-                :code usage-code))
+                :code usage-code
+                :reason (stop-reason/usage failure)))
+
+(defn broken (failure)
+  (->early-exit :text (str "invalid command spec: "
+                           (spec-error->message (ref failure)))
+                :stream output-stream/standard-error
+                :code broken-spec-code
+                :reason (stop-reason/broken-spec failure)))
 
 (defn help-at (spec path environment)
   (spec->help (ref (unwrap-or (spec-at spec path) (clone spec)))

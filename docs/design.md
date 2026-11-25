@@ -169,13 +169,18 @@ file, and `tests/e2e-tests.knv` goes through the public interface.
 14. **A parse that does not give a value gives one `early-exit`.** Help,
     a version, a usage error, a completion reply and a broken spec all
     come back as the same struct: `:text`, `:stream` and `:code`. The
-    caller never works out which case it is, what to print or how to
-    exit, so a new case inside the library breaks no program. clap's
-    `Error`, argh's `EarlyExit` and bpaf's `ParseFailure` have the same
-    shape. `examples/greet` uses this entry point, so CI runs it. The
-    cost: the text is written for a terminal, and the caller cannot
-    read which error it was. A program that needs the error as data,
-    such as one that prints JSON, needs a new field on `early-exit`.
+    caller never has to work out which case it is, what to print or how
+    to exit. clap's `Error`, argh's `EarlyExit` and bpaf's
+    `ParseFailure` have the same shape. `examples/greet` uses this
+    entry point, so CI runs it.
+15. **An `early-exit` also says why, as data.** Its `:reason` is a
+    `stop-reason`: help with the command path, a version, a completion
+    reply, a usage error with its path and its `cli-error`, or a spec
+    mistake. A program that prints its own way, such as JSON, reads the
+    reason and never parses `:text`, and `error->message` gives the
+    error as one sentence. clap does the same with `Error::kind`. The
+    usage error is the library's own `cli-error`, not a copy made for
+    callers, so a new case there breaks an exhaustive `match` on it.
 
 ## 6. Limits from the compiler
 

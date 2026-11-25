@@ -2,14 +2,15 @@
   "Builds command line programs that follow the common conventions by default.")
 
 (use command-line ->early-exit early-exit output-stream
-                  parse-line parse-line-into)
+                  parse-line parse-line-into stop-reason)
 
 (use environment ->environment ->variable environment
                  variable)
 
 (use errors/cli-error ->invalid-text ->option-conflict
-                      cli-error error->message invalid-text
-                      option-conflict)
+                      ->usage-failure cli-error
+                      error->message invalid-text
+                      option-conflict usage-failure)
 
 (use help/page spec->help spec->usage)
 
@@ -34,14 +35,16 @@
 (export ->argument-spec ->command-spec ->early-exit
         ->environment ->invalid-text ->list-slot
         ->option-conflict ->option-spec ->switch-slot
-        ->value-slot ->variable argument-spec argument-text
-        cli-error cli-value command-spec defchoice defcli
-        defcommand early-exit environment error->message
-        exit-early from-text invalid-text list-slot
-        matched-value matches option-conflict option-spec
-        option-value output-stream parse-command parse-line
+        ->usage-failure ->value-slot ->variable
+        argument-spec argument-text cli-error cli-value
+        command-spec defchoice defcli defcommand early-exit
+        environment error->message exit-early from-text
+        invalid-text list-slot matched-value matches
+        option-conflict option-spec option-value
+        output-stream parse-command parse-line
         parse-line-into presence process-environment
         repetition run run-command run-with spec->help
         spec->usage spec-error spec-error->message
-        switch-slot switch-state validate-spec value-kind
-        value-names value-slot variable)
+        stop-reason switch-slot switch-state usage-failure
+        validate-spec value-kind value-names value-slot
+        variable)

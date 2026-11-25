@@ -1,5 +1,6 @@
 (use lib ->early-exit ->environment ->variable defchoice
-         defcommand output-stream parse-command spec->usage)
+         defcommand output-stream parse-command spec->usage
+         stop-reason)
 
 (export matches->copy matches->greet matches->hello
         matches->say)
@@ -111,4 +112,5 @@
                      (fn (_) 0))
              (err (->early-exit :text (str "words\n--help")
                                 :stream output-stream/standard-output
-                                :code 0)))))
+                                :code 0
+                                :reason stop-reason/completion)))))
