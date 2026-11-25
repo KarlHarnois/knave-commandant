@@ -78,8 +78,9 @@ so anything they express can also be built by hand.
 Two entry points sit on top. `run-command` reads the process, prints
 help, versions and usage errors, and exits with 0 or 2. `parse-command`
 does none of that and returns the typed value or the `early-exit`, for
-a program that prints its own way, such as JSON. `(exit-early stop)`
-prints an `early-exit` and exits, which is all `run-command` adds.
+a program that decides itself when to print and exit, or that tests its
+command line. `(exit-early stop)` prints an `early-exit` and exits,
+which is all `run-command` adds.
 
 ## 4. Layout
 
@@ -171,7 +172,10 @@ file, and `tests/e2e-tests.knv` goes through the public interface.
     caller never works out which case it is, what to print or how to
     exit, so a new case inside the library breaks no program. clap's
     `Error`, argh's `EarlyExit` and bpaf's `ParseFailure` have the same
-    shape. `examples/greet` uses this entry point, so CI runs it.
+    shape. `examples/greet` uses this entry point, so CI runs it. The
+    cost: the text is written for a terminal, and the caller cannot
+    read which error it was. A program that needs the error as data,
+    such as one that prints JSON, needs a new field on `early-exit`.
 
 ## 6. Limits from the compiler
 
