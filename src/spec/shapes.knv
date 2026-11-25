@@ -3,12 +3,12 @@
 
 (export ->argument-spec ->command-spec ->list-slot
         ->option-spec ->switch-slot ->value-slot
-        argument-spec command-spec find-long find-short
-        list-slot long-flag long-prefix name->placeholder
-        option-required? option-spec presence repeated?
-        repetition required? short-takes-value? switch-slot
-        switch-state switch? takes-value? value-kind
-        value-slot)
+        argument-label argument-spec command-spec find-long
+        find-short list-slot long-flag long-prefix
+        name->placeholder option-required? option-spec
+        presence repeated? repetition required?
+        short-takes-value? switch-slot switch-state switch?
+        takes-value? value-kind value-slot)
 
 (defstruct command-spec
   :name string
@@ -20,7 +20,8 @@
 
 (defstruct argument-spec
   :name string
-  :placeholder string
+  :value-name (option string)
+  :choices (vec string)
   :about string
   :presence presence
   :repeats repetition)
@@ -60,7 +61,7 @@
   on)
 
 (defstruct value-slot
-  :placeholder string
+  :value-name (option string)
   :presence presence
   :env (vec string)
   :choices (vec string))
@@ -71,6 +72,13 @@
 (def long-prefix "--")
 
 (defn long-flag (long) (str long-prefix long))
+
+(type argument-label
+  (fn ((ref argument-spec)) string))
+
+(defn argument-label (argument)
+  (unwrap-or (clone (:value-name argument))
+             (clone (:name argument))))
 
 (type find-long
   (fn ((ref command-spec) (ref str))

@@ -4,6 +4,7 @@
 (use spec/shapes command-spec presence value-kind
                  value-slot)
 
+(use help/placeholders choices-listed?)
 (use help/terms argument-term option-term)
 
 (use spec/builtins builtin-options-of help-command
@@ -71,7 +72,7 @@
     ((switch slot) (env-note (:env slot)))
     ((one slot)
      (str (slot-default-note slot)
-          (choices-note (:choices slot))
+          (choices-note slot)
           (env-note (:env slot))))
     (_ (str))))
 
@@ -83,10 +84,15 @@
     ((presence/defaulted text) (default-note text))
     (_ (str))))
 
-(defn choices-note (names)
-  (if (empty? names)
+(type choices-note
+  (fn ((ref value-slot)) string))
+
+(defn choices-note (slot)
+  (if (or (empty? (:choices slot))
+          (choices-listed? (ref (:value-name slot))
+                           (ref (:choices slot))))
     (str)
-    (str " [possible values: " (join names ", ") "]")))
+    (str " [possible values: " (join (:choices slot) ", ") "]")))
 
 (defn default-note (text) (str " [default: " text "]"))
 

@@ -1,9 +1,11 @@
 (module
   "Writes how the help page and the usage line show an argument or an option, with its value in capitals.")
 
+(use help/placeholders shown-placeholder)
+
 (use spec/shapes argument-spec long-prefix name->placeholder
                  option-spec repetition required?
-                 switch-state value-kind)
+                 switch-state value-kind value-slot)
 
 (export argument-term option-term required-option-term)
 
@@ -13,7 +15,9 @@
   (fn ((ref argument-spec)) string))
 
 (defn argument-term (argument)
-  (let (shown (name->placeholder (as-str (:placeholder argument))))
+  (let (shown (shown-placeholder (as-str (:name argument))
+                                 (ref (:value-name argument))
+                                 (ref (:choices argument))))
     (str (bracketed argument shown)
          (repeat-mark (:repeats argument)))))
 
@@ -35,7 +39,8 @@
        long-prefix
        (negation-mark (:value option))
        (:long option)
-       (value-part (:value option))))
+       (value-part (as-str (:long option))
+                   (:value option))))
 
 (type required-option-term
   (fn ((ref option-spec)) string))
@@ -43,7 +48,8 @@
 (defn required-option-term (option)
   (str long-prefix
        (:long option)
-       (value-part (:value option))))
+       (value-part (as-str (:long option))
+                   (:value option))))
 
 (defn short-part (short)
   (match short
@@ -60,11 +66,11 @@
     (on (str "[no-]"))
     (off (str))))
 
-(defn value-part (value)
+(defn value-part (long value)
   (match value
     ((switch _) (str))
     (count (str "..."))
-    ((one slot) (value-term (:placeholder slot)))
+    ((one slot) (bracketed-value (slot-placeholder long slot)))
     ((many slot) (list-term slot))))
 
 (defn list-term (slot)
@@ -73,5 +79,15 @@
      (str (value-term (:placeholder slot)) separator "..."))
     (none (str (value-term (:placeholder slot)) "..."))))
 
+(type slot-placeholder
+  (fn ((ref str) (ref value-slot)) string))
+
+(defn slot-placeholder (long slot)
+  (shown-placeholder long
+                     (ref (:value-name slot))
+                     (ref (:choices slot))))
+
 (defn value-term (name)
-  (str " <" (name->placeholder (as-str name)) ">"))
+  (bracketed-value (name->placeholder (as-str name))))
+
+(defn bracketed-value (shown) (str " <" shown ">"))

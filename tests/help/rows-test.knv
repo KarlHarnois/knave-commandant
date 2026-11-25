@@ -1,8 +1,8 @@
 (use help/rows ->help-row argument-rows command-rows
                option-rows)
 
-(use support/fixture serve-spec site-spec spec-requiring
-                     spec-with-choices)
+(use support/fixture serve-spec site-spec spec-choosing
+                     spec-requiring)
 
 (defn option-row-at (index)
   (clone (at (option-rows (ref (serve-spec)))
@@ -44,10 +44,16 @@
   (assert (= (:description (option-row-at 1))
              "Opens the browser [env: SERVE_OPEN]")))
 
-(deftest a-choice-option-lists-its-possible-values
-  (assert (= (:description (at (option-rows (ref (spec-with-choices)))
-                               0))
-             "How to print [possible values: text, json]")))
+(defn choice-description (choices)
+  (clone (:description (at (option-rows (ref (spec-choosing choices)))
+                           0))))
+
+(deftest a-few-choices-show-in-the-term-and-not-in-the-description
+  (assert (= (choice-description (vec "text" "json")) "How to print")))
+
+(deftest many-choices-are-listed-in-the-description
+  (assert (= (choice-description (vec "a" "b" "c" "d" "e"))
+             "How to print [possible values: a, b, c, d, e]")))
 
 (deftest a-group-lists-each-command-and-help
   (assert (= (command-rows (ref (site-spec)))

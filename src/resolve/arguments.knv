@@ -5,8 +5,8 @@
 (use values/matches ->argument-match argument-match)
 (use resolve/shares share shares-of split-of taken-total)
 
-(use spec/shapes argument-spec command-spec presence
-                 required?)
+(use spec/shapes argument-label argument-spec command-spec
+                 presence required?)
 
 (export resolve-arguments)
 
@@ -33,8 +33,8 @@
              (missing? (at (:arguments spec) index)
                        (at shares index))))
     ((some index)
-     (err (cli-error/missing-argument (clone (:placeholder (at (:arguments spec)
-                                                               index))))))
+     (err (cli-error/missing-argument (argument-label (at (:arguments spec)
+                                                          index)))))
     (none (ok (do)))))
 
 (defn missing? (argument taken)
@@ -62,7 +62,7 @@
 
 (defn argument-match-at (argument positionals taken)
   (->argument-match :name (clone (:name argument))
-                    :placeholder (clone (:placeholder argument))
+                    :placeholder (argument-label argument)
                     :values (values-or-default argument
                                                (slice-of positionals taken))))
 

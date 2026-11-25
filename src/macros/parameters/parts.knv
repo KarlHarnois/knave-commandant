@@ -6,9 +6,10 @@
           symbol? value-eq)
 
 (export about always-set? argument? default-text defaulted?
-        detail given? many-type? option-type?
-        parameter-details parameter-name parameter-type
-        required-parameter? type-named? value-name)
+        detail given? list-value-name many-type?
+        option-type? parameter-details parameter-name
+        parameter-type required-parameter? type-named?
+        value-name-form value-type)
 
 (def parameter-name
   (fn (parameter)
@@ -95,8 +96,22 @@
       (detail (parameter-details parameter) "about")
       "")))
 
-(def value-name
+(def value-name-form
+  (fn (parameter)
+    (if (given? (detail (parameter-details parameter) "value-name"))
+      (template (some (str (unquote (literal-text (detail (parameter-details
+                                                            parameter)
+                                                          "value-name"))))))
+      (quote none))))
+
+(def list-value-name
   (fn (parameter)
     (if (given? (detail (parameter-details parameter) "value-name"))
       (literal-text (detail (parameter-details parameter) "value-name"))
       (parameter-name parameter))))
+
+(def value-type
+  (fn (parameter)
+    (if (list? (parameter-type parameter))
+      (nth (parameter-type parameter) 1)
+      (parameter-type parameter))))

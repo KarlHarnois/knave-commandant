@@ -21,6 +21,7 @@
   (assert (= (:presence (argument-at 2))
              (presence/defaulted (str "moved")))))
 
-(deftest an-argument-shows-its-name-unless-it-names-its-value
-  (assert (= (:placeholder (argument-at 1)) "target"))
-  (assert (= (:placeholder (argument-at 2)) "tag")))
+(deftest an-argument-records-its-value-name-only-when-given
+  (assert (= (:value-name (argument-at 1)) none))
+  (assert (= (:value-name (argument-at 2))
+             (some (str "tag")))))

@@ -10,10 +10,11 @@
 (use macros/parameters/names conflicts-form env-form)
 
 (use macros/parameters/parts about default-text defaulted?
-                             detail given? parameter-details
+                             detail given? list-value-name
+                             parameter-details
                              parameter-name parameter-type
                              required-parameter? type-named?
-                             value-name)
+                             value-name-form)
 
 (use spec/shapes ->list-slot ->option-spec ->switch-slot
                  ->value-slot presence switch-state
@@ -61,7 +62,7 @@
 
 (def list-form
   (fn (parameter)
-    (template (value-kind/many (->list-slot :placeholder (str (unquote (value-name
+    (template (value-kind/many (->list-slot :placeholder (str (unquote (list-value-name
                                                                          parameter)))
                                             :delimiter (unquote (delimiter-form parameter)))))))
 
@@ -69,7 +70,7 @@
   (fn (parameter type)
     (template (value-kind/one
                 (->value-slot
-                  :placeholder (str (unquote (value-name parameter)))
+                  :value-name (unquote (value-name-form parameter))
                   :presence (unquote (option-presence-form parameter))
                   :env (unquote (env-form parameter))
                   :choices (value-names (ref (the (option (unquote type))

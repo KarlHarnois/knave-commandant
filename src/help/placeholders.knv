@@ -1,0 +1,35 @@
+(module
+  "Picks the word that stands for a parameter's value in help: its value name, or its choices when they are few, or its own name.")
+
+(use spec/shapes name->placeholder)
+
+(export choices-listed? shown-placeholder)
+
+(def most-listed-choices 4)
+
+(def choice-separator "|")
+
+(defn shown-placeholder (name value-name choices)
+  (match value-name
+    ((some named) (name->placeholder (as-str named)))
+    (none (derived-placeholder name choices))))
+
+(defn derived-placeholder (name choices)
+  (if (few? choices)
+    (join choices choice-separator)
+    (name->placeholder name)))
+
+(type choices-listed?
+  (fn ((ref (option string))
+       (ref (vec string)))
+    bool))
+
+(defn choices-listed? (value-name choices)
+  (and (none? value-name) (few? choices)))
+
+(type few?
+  (fn ((ref (vec string))) bool))
+
+(defn few? (choices)
+  (and (not (empty? choices))
+       (<= (len choices) most-listed-choices)))

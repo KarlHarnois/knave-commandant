@@ -2,7 +2,8 @@
          cli-error defchoice defcommand outcome
          parse-command spec->usage)
 
-(export matches->copy matches->greet matches->hello)
+(export matches->copy matches->greet matches->hello
+        matches->say)
 
 (defchoice tone plain loud)
 
@@ -20,6 +21,10 @@
 
 (defcommand hello "Greets someone, or everyone."
   (name (option string) :value-name who :about "Who to greet"))
+
+(defcommand say "Says something."
+  (how tone :about "How to say it")
+  (:as tone :about "The tone to copy"))
 
 (defn texts->words (texts)
   (collect (map (iter texts)
@@ -87,3 +92,9 @@
 (deftest a-value-name-shows-in-the-usage
   (assert (= (spec->usage (ref (hello-spec)))
              "hello [OPTIONS] [WHO]")))
+
+(deftest a-choice-argument-and-option-show-their-choices
+  (assert (= (spec->usage (ref (say-spec)))
+             "say [OPTIONS] <plain|loud>"))
+  (assert (= (:choices (at (:arguments (say-spec)) 0))
+             (vec (str "plain") (str "loud")))))
