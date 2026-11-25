@@ -16,7 +16,7 @@
 
 (export names-form reader-form)
 
-(def no-names "none")
+(def not-built-in "not built in")
 
 (def builtin-readers
   (list "string"
@@ -43,11 +43,7 @@
         (quote text->float)))
 
 (def builtin-names
-  (list "string" no-names "bool"
-        (quote (bool-names))
-        "char" no-names "int" no-names "i32" no-names "u8"
-        no-names "u16" no-names "u32" no-names "u64"
-        no-names "usize" no-names "float" no-names))
+  (list "bool" (quote (bool-names))))
 
 (def reader-form
   (fn (parameter)
@@ -73,12 +69,14 @@
 
 (def type-names
   (fn (type)
-    (names-or-none (choose-or (symbol-name type)
-                              builtin-names
-                              (list (names-name type))))))
+    (if (built-in? type)
+      (choose-or (symbol-name type)
+                 builtin-names
+                 (quote (vec)))
+      (list (names-name type)))))
 
-(def names-or-none
-  (fn (form)
-    (if (value-eq form no-names)
-      (quote (vec))
-      form)))
+(def built-in?
+  (fn (type)
+    (if (value-eq (choose-or (symbol-name type) builtin-readers not-built-in)
+                  not-built-in)
+      false true)))
