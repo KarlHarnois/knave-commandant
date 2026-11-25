@@ -11,11 +11,10 @@
 
 (use values/matches matches)
 (use resolve/matches-of resolve)
-(use spec/shapes command-spec)
 (use scan/walk finished-scan scan-end scan-tokens)
 (use scan/tokens words->tokens)
 
-(export matches->typed outcome parse parse-into)
+(export outcome parse)
 
 (defenum outcome
   (parsed matches)
@@ -37,34 +36,6 @@
   (match (scan-tokens spec (ref (words->tokens words)))
     ((ok end) (scan-end->outcome environment end))
     ((err failure) (outcome/usage-error failure))))
-
-(type parse-into
-  (where (t)
-    (fn ((ref command-spec)
-         (ref environment)
-         (ref (vec string))
-         (fn ((ref matches))
-           (result t cli-error)))
-      (result t outcome))))
-
-(defn parse-into (spec environment words convert)
-  (match (parse spec environment words)
-    ((parsed found)
-     (map-err (matches->typed (ref found) convert)
-       (fn (failure) (outcome/usage-error failure))))
-    (other (err other))))
-
-(type matches->typed
-  (where (t)
-    (fn ((ref matches)
-         (fn ((ref matches))
-           (result t cli-error)))
-      (result t usage-failure))))
-
-(defn matches->typed (found convert)
-  (map-err (convert found)
-    (fn (failure)
-      (->usage-failure :path (clone (:path found)) :error failure))))
 
 (defn scan-end->outcome (environment end)
   (match end

@@ -63,10 +63,11 @@ where it binds names. That gives two layers.
 
 **Layer 1: the spec is a value, and parsing is a pure function.** A
 `command-spec` describes a command: its arguments, its options and its
-subcommands. `(parse spec environment words)` returns an `outcome`:
-matches, help, a version or a usage error. Nothing in this layer reads
-the process, so every case is a plain test. Programs that build their
-command line at run time use this layer directly.
+subcommands. `(parse-line spec environment words)` returns the matches
+or an `early-exit`: the text to print, the stream to print it on and
+the exit code. Nothing in this layer reads the process, so every case
+is a plain test. Programs that build their command line at run time use
+this layer directly.
 
 **Layer 2: `defcommand` and `defcli` bind typed names.** One declaration
 gives a struct with a typed field per parameter, the spec and the
@@ -76,8 +77,9 @@ so anything they express can also be built by hand.
 
 Two entry points sit on top. `run-command` reads the process, prints
 help, versions and usage errors, and exits with 0 or 2. `parse-command`
-does none of that and returns the typed value or the outcome, for a
-program that prints its own way, such as JSON.
+does none of that and returns the typed value or the `early-exit`, for
+a program that prints its own way, such as JSON. `(exit-early stop)`
+prints an `early-exit` and exits, which is all `run-command` adds.
 
 ## 4. Layout
 
@@ -102,8 +104,10 @@ them. Two modules reach forward: `spec/checks.knv` takes the conflict
 rule from `resolve/`, and `errors/report.knv` takes the usage line from
 `help/`.
 
-Four modules sit outside the folders. `parse.knv` joins the stages, and
-`run.knv` is the only module that touches the process.
+Five modules sit outside the folders. `parse.knv` joins the stages.
+`command-line.knv` turns each outcome of a parse into a value or an
+`early-exit`, and `run.knv` is the only module that touches the
+process.
 `environment.knv` holds the variables a parse reads, and `sequence.knv`
 a vector helper two stages share. `tests/` mirrors `src/` file for
 file, and `tests/e2e-tests.knv` goes through the public interface.
@@ -130,8 +134,9 @@ file, and `tests/e2e-tests.knv` goes through the public interface.
 7. **Spec mistakes are found before parsing.** `run-command` validates
    the spec first and exits with code 70 on a mistake, so a broken spec
    never looks like a user error.
-8. **Help takes the width as a parameter.** `run.knv` reads `COLUMNS` and
-   falls back to 80, so help text stays pure.
+8. **Help takes the width as a parameter.** `command-line.knv` reads
+   `COLUMNS` from the environment value and falls back to 80, so help
+   text stays pure.
 9. **`defcommand` keeps its own grammar.** It reads like `deftask`'s (a
    symbol is an argument, a keyword is an option) without accepting a
    `deftask` parameter list. A second grammar for the same parameter
@@ -147,9 +152,9 @@ file, and `tests/e2e-tests.knv` goes through the public interface.
     written once, in Knave, as a pure function of the spec. An
     environment variable is the trigger because a `completions` command
     would be read as the first argument of a program without
-    subcommands. The request is an `outcome` of the pure parse, so a
-    program that calls `parse-command` prints the `completion` text and
-    completes like one that calls `run-command`.
+    subcommands. The request is answered by the pure parse, so a
+    program that calls `parse-command` completes like one that calls
+    `run-command`.
 12. **Completion never fails on a half-written line.** It skips unknown
     words and options. A value or an argument without choices completes
     as a path, through bash's own completion. Only bash is supported:
@@ -159,6 +164,14 @@ file, and `tests/e2e-tests.knv` goes through the public interface.
     usage error, and the help shows which commands exist. `--help`
     still prints on stdout with exit code 0. POSIX only asks for a
     non-zero status, and Click, clap and argparse all use 2 here.
+
+14. **A parse that does not give a value gives one `early-exit`.** Help,
+    a version, a usage error, a completion reply and a broken spec all
+    come back as the same struct: `:text`, `:stream` and `:code`. The
+    caller never works out which case it is, what to print or how to
+    exit, so a new case inside the library breaks no program. clap's
+    `Error`, argh's `EarlyExit` and bpaf's `ParseFailure` have the same
+    shape. `examples/greet` uses this entry point, so CI runs it.
 
 ## 6. Limits from the compiler
 

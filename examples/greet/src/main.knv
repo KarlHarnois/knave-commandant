@@ -1,0 +1,19 @@
+(use knave-commandant defcommand exit-early parse-command
+                      process-environment switch-state)
+
+(defcommand greet "Greets someone."
+  :version "1.0.0"
+  (who string :about "Who to greet")
+  (:loud switch :short l :about "Greets in capitals"))
+
+(defn main ()
+  (match (parse-command greet
+                        (process-environment)
+                        (command-line-args))
+    ((ok options) (println (greeting options)))
+    ((err stop) (exit-early stop))))
+
+(defn greeting (options)
+  (match (:loud options)
+    (on (upper-case (as-str (str "Hello, " (:who options) "!"))))
+    (off (str "Hello, " (:who options) "!"))))

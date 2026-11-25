@@ -1,0 +1,138 @@
+(use command-line ->early-exit output-stream parse-line
+                  parse-line-into)
+
+(use errors/cli-error cli-error)
+(use help/page spec->help)
+(use spec/shapes ->option-spec value-kind)
+(use values/matches argument-text matches)
+
+(use support/fixture environment-with no-environment
+                     no-words serve-spec site-spec words)
+
+(defn line (spec environment texts)
+  (parse-line (ref spec)
+              (ref environment)
+              (ref (words texts))))
+
+(defn stop (spec environment texts)
+  (unwrap-err (line spec environment texts)))
+
+(defn serve-stop (texts)
+  (stop (serve-spec) (no-environment) texts))
+
+(defn site-stop (texts)
+  (stop (site-spec) (no-environment) texts))
+
+(defn answer (text)
+  (->early-exit :text text
+                :stream output-stream/standard-output
+                :code 0))
+
+(defn spec-with-help-option ()
+  (let (spec (serve-spec))
+    (push! (:options spec)
+           (->option-spec :conflicts-with (vec)
+                          :long (str "help")
+                          :short none
+                          :about (str "Shadows the built-in help")
+                          :value value-kind/count))
+    spec))
+
+(type path-length
+  (fn ((ref matches))
+    (result int cli-error)))
+
+(defn path-length (found)
+  (ok (len (:path found))))
+
+(type refused
+  (fn ((ref matches))
+    (result int cli-error)))
+
+(defn refused (_found)
+  (err (cli-error/missing-argument (str "root"))))
+
+(defn site-into (texts convert)
+  (parse-line-into (ref (site-spec))
+                   (ref (no-environment))
+                   (ref (words texts))
+                   convert))
+
+(deftest a-valid-line-parses-into-matches
+  (assert (= (map-ok (line (serve-spec)
+                           (no-environment)
+                           (vec "site"))
+                     (fn (found)
+                       (map-some (argument-text (ref found) "root") clone)))
+             (ok (some (str "site"))))))
+
+(deftest help-is-an-answer-on-standard-output
+  (assert (= (serve-stop (vec "--help"))
+             (answer (spec->help (ref (serve-spec)) 80)))))
+
+(deftest help-wraps-to-the-width-in-the-environment
+  (assert (= (stop (serve-spec)
+                   (environment-with "COLUMNS" "40")
+                   (vec "-h"))
+             (answer (spec->help (ref (serve-spec)) 40)))))
+
+(deftest help-for-a-command-shows-that-command
+  (assert (starts-with? (as-str (:text (site-stop (vec "help" "build"))))
+                        "Builds the site.\n\nUsage: site build")))
+
+(deftest version-answers-with-the-name-and-version
+  (assert (= (serve-stop (vec "-V"))
+             (answer (str "serve 1.0.0")))))
+
+(deftest a-usage-error-is-a-report-on-standard-error-with-code-2
+  (let (refusal (serve-stop (vec "--prot")))
+    (assert (starts-with? (as-str (:text refusal))
+                          "error: unknown option `--prot`"))
+    (assert (= (:stream refusal) output-stream/standard-error))
+    (assert (= (:code refusal) 2))))
+
+(deftest a-group-without-a-command-refuses-with-its-help
+  (let (refusal (site-stop (no-words)))
+    (assert (starts-with? (as-str (:text refusal))
+                          "Builds and serves a site.\n\nUsage: site [OPTIONS] <COMMAND>\n\nCommands:"))
+    (assert (= (:stream refusal) output-stream/standard-error))
+    (assert (= (:code refusal) 2))))
+
+(deftest a-nested-group-without-a-command-refuses-with-its-own-help
+  (assert (starts-with?
+            (as-str (:text (site-stop (vec "page"))))
+            "Manages the pages.\n\nUsage: site page [OPTIONS] <COMMAND>")))
+
+(deftest a-completion-request-answers-with-the-candidates
+  (assert (= (stop (site-spec)
+                   (environment-with "COMPLETE" "bash")
+                   (vec "--" "pa"))
+             (answer (str "words\npage")))))
+
+(deftest a-completion-request-for-another-shell-is-refused
+  (let (refusal (stop (site-spec)
+                      (environment-with "COMPLETE" "fish")
+                      (no-words)))
+    (assert (starts-with?
+              (as-str (:text refusal))
+              "error: no completion for the shell `fish`, only for bash"))
+    (assert (= (:code refusal) 2))))
+
+(deftest a-broken-spec-stops-before-parsing-with-code-70
+  (assert (= (stop (spec-with-help-option)
+                   (no-environment)
+                   (vec "site"))
+             (->early-exit :text (str "invalid command spec: option `--help` is built in, so a spec cannot define it")
+                           :stream output-stream/standard-error
+                           :code 70))))
+
+(deftest a-conversion-turns-the-matches-into-a-value
+  (assert (= (site-into (vec "page" "list") path-length)
+             (ok 2))))
+
+(deftest a-conversion-error-is-refused-at-the-command-path
+  (let (refusal (unwrap-err (site-into (vec "build") refused)))
+    (assert (= (:code refusal) 2))
+    (assert (starts-with?
+              (as-str (:text refusal))
+              "error: missing argument <ROOT>\n\nUsage: site build"))))

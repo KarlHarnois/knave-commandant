@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        example: [serve, site]
+        example: [greet, serve, site]
     steps:
       - uses: actions/checkout@v4
       - name: Read the Knave version from project.knv
