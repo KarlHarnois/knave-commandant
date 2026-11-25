@@ -15,7 +15,7 @@ everything in the "default" column without the author writing anything.
 | Area | Convention | Library behaviour |
 | --- | --- | --- |
 | Help | `-h` and `--help` on every command and subcommand, plus `prog help <sub>` | default, cannot be turned off |
-| Help output | goes to stdout, exits 0, shows description, usage, arguments, options, subcommands, examples, and each default and env var | default |
+| Help output | goes to stdout, exits 0, shows description, usage, arguments, options, subcommands, and each default and env var | default |
 | Version | `-V` and `--version` at the root only | default when the app declares a version |
 | Long options | kebab-case, `--name value` and `--name=value` | default |
 | Short options | one character, `-p 80`, `-p80`, bundled switches `-abc` | opt in per option, `-h` and `-V` reserved |
@@ -29,11 +29,11 @@ everything in the "default" column without the author writing anything.
 | Env vars | flag beats env var beats default, both shown in help | `:env` per option |
 | Required | positionals are required, options are optional | `:required true` on an option, an `option` type on an argument |
 | Usage errors | message on stderr, one usage line, "try --help", exit 2 | default |
-| Typos | "unknown option `--prot`, did you mean `--port`?" | default, for options and subcommands |
-| Exit codes | 0 ok, 1 failure, 2 usage, 130 on Ctrl-C | usage code built in, app maps its own errors |
+| Typos | an unknown name gets a tip, as in "a similar option exists: `--port`" | default, for options and subcommands |
+| Exit codes | 0 ok, 1 failure, 2 usage, 130 on Ctrl-C | 0 and 2 built in, and 70 for a broken spec. The app maps its own errors and signals |
 | Streams | data on stdout, messages on stderr | help to stdout, errors to stderr |
 | Abbreviations | no guessing of subcommand prefixes | never, so new commands never break old scripts |
-| Secrets | not passed as flag values | doc guidance, maybe a `:secret` lint |
+| Secrets | not passed as flag values | `:env` lets a secret come from the environment. Nothing warns about an option that holds one |
 | Completion | Tab completes commands, options and fixed values | default for bash: `source <(COMPLETE=bash prog)` |
 | Extras | man page or markdown help generated from the same spec | not built yet, the spec value allows it |
 
@@ -94,10 +94,19 @@ program that prints its own way, such as JSON.
 | `complete/` | what can complete the word under the cursor, and the bash script that asks |
 | `macros/` | `defcommand`, `defcli`, `defchoice` |
 
-`parse.knv` joins the stages and `run.knv` is the only module that
-touches the process. A stage uses the stages before it, never the ones
-after. `tests/` mirrors `src/` file for file, and
-`tests/e2e-tests.knv` goes through the public interface.
+`spec/`, `scan/`, `resolve/` and `values/` are the pipeline, in that
+order. `errors/` names the errors each of them returns, and
+`values/matches.knv` holds the matches `resolve/` builds. `help/`,
+`complete/` and `macros/` read the pipeline and nothing in it reads
+them. Two modules reach forward: `spec/checks.knv` takes the conflict
+rule from `resolve/`, and `errors/report.knv` takes the usage line from
+`help/`.
+
+Four modules sit outside the folders. `parse.knv` joins the stages, and
+`run.knv` is the only module that touches the process.
+`environment.knv` holds the variables a parse reads, and `sequence.knv`
+a vector helper two stages share. `tests/` mirrors `src/` file for
+file, and `tests/e2e-tests.knv` goes through the public interface.
 
 ## 5. Decisions
 
