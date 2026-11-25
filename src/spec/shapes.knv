@@ -4,9 +4,9 @@
 (export ->argument-spec ->command-spec ->list-slot
         ->option-spec ->switch-slot ->value-slot
         argument-label argument-spec command-spec find-long
-        find-short list-slot long-flag long-prefix
-        name->placeholder option-required? option-spec
-        presence repeated? repetition required?
+        find-short list-slot long-flag long-names
+        long-prefix name->placeholder option-required?
+        option-spec presence repeated? repetition required?
         short-takes-value? switch-slot switch-state switch?
         takes-value? value-kind value-slot)
 
@@ -79,6 +79,13 @@
 (defn argument-label (argument)
   (unwrap-or (clone (:value-name argument))
              (clone (:name argument))))
+
+(type long-names
+  (fn ((ref command-spec)) (vec string)))
+
+(defn long-names (spec)
+  (collect (map (iter (:options spec))
+             (fn (option) (clone (:long option))))))
 
 (type find-long
   (fn ((ref command-spec) (ref str))

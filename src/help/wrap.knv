@@ -1,6 +1,8 @@
 (module
   "Breaks a text into lines of at most a given width, between words, keeping the text's own line breaks.")
 
+(use sequence appended)
+
 (export wrap)
 
 (def word-separator " ")
@@ -45,6 +47,3 @@
          (len word-separator)
          (len word))
       width))
-
-(defn appended (lines line)
-  (let (all lines) (push! all line) all))

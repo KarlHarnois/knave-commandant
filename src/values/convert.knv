@@ -2,6 +2,7 @@
   "Turns the text of a matched argument or option into a typed value, through the `cli-value` trait.")
 
 (use errors/cli-error ->invalid-text cli-error)
+(use sequence appended)
 (use spec/shapes long-flag name->placeholder)
 
 (use values/matches argument-placeholder argument-text
@@ -107,9 +108,6 @@
   (ok-or (from-text (as-str text))
          (cli-error/invalid-value (->invalid-text :written written
                                                   :text (clone text)))))
-
-(defn appended (items item)
-  (let (all items) (push! all item) all))
 
 (type parsed
   (where ((t from-str))

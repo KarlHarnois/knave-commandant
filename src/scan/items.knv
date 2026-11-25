@@ -4,11 +4,9 @@
 (use spec/shapes command-spec long-prefix
                  short-takes-value?)
 
-(use scan/tokens token)
+(use scan/tokens short-prefix token)
 
 (export flag flag->written item token->items tokens->items)
-
-(def short-prefix "-")
 
 (defenum item
   (flag flag)

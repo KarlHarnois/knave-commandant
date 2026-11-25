@@ -1,14 +1,13 @@
 (module
   "Lists the long options a command line can still take: each option not yet given, a switch's negation, and the built-in options.")
 
+(use scan/hits negation-prefix)
 (use spec/builtins builtin-options-of)
 
 (use spec/shapes find-long long-flag option-spec
                  switch-state value-kind)
 
 (export flags-offered)
-
-(def negation-prefix "no-")
 
 (defn flags-offered (position)
   (let (flags (vec))

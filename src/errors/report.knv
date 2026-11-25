@@ -7,16 +7,15 @@
                       usage-failure)
 
 (use help/page spec->usage)
+(use scan/tokens assignment)
 (use spec/builtins builtin-options-of)
 
-(use spec/shapes command-spec find-long long-prefix
-                 value-kind)
+(use spec/shapes command-spec find-long long-names
+                 long-prefix value-kind)
 
 (use errors/suggest closest-name)
 
 (export error-report failure-report)
-
-(def assignment "=")
 
 (def part-break "\n\n")
 
@@ -85,19 +84,15 @@
 (defn closest-long (spec written)
   (if (starts-with? written long-prefix)
     (closest-name (as-str (long-name-in written))
-                  (ref (long-names spec)))
+                  (ref (known-longs spec)))
     none))
 
 (defn long-name-in (written)
   (let (after-prefix (subs written (len long-prefix) (len written)))
     (str (at (collect (split after-prefix assignment)) 0))))
 
-(type long-names
-  (fn ((ref command-spec)) (vec string)))
-
-(defn long-names (spec)
-  (let (names (collect (map (iter (:options spec))
-                         (fn (option) (clone (:long option))))))
+(defn known-longs (spec)
+  (let (names (long-names spec))
     (for-each (builtin-options-of spec)
       (fn (builtin)
         (push! names (clone (:name builtin)))))

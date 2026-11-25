@@ -2,11 +2,10 @@
   "Speaks to bash: the script that registers a program's completion, the cursor in the words bash hands over, and the reply it reads back.")
 
 (use complete/candidates ->cursor completion)
+(use scan/tokens assignment)
 (use spec/shapes long-prefix)
 
 (export bash-reply bash-script bash-words->cursor)
-
-(def assignment "=")
 
 (def words-directive "words")
 
