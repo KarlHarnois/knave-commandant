@@ -3,7 +3,7 @@
          stop-reason)
 
 (export matches->copy matches->greet matches->hello
-        matches->say)
+        matches->say matches->unlock)
 
 (defchoice tone plain loud)
 
@@ -119,3 +119,47 @@
   (assert (starts-with? (as-str (:text (greet-stop
                                          (vec "ana" "--tone" "soft"))))
                         "error: invalid value `soft` for `--tone`: expected one of plain, loud\n\nUsage: greet")))
+
+(defstruct pin
+  :digits string)
+
+(defn text->pin (text)
+  (if (= (len text) 4)
+    (ok (->pin :digits (str text)))
+    (err none)))
+
+(defstruct label
+  :text string)
+
+(defn text->label (text)
+  (if (starts-with? text "#")
+    (ok (->label :text (str text)))
+    (err (some (str "a label starts with `#`")))))
+
+(defcommand unlock "Unlocks a door."
+  (code pin :parse text->pin :about "The door's code")
+  (:label label
+          :parse text->label
+          :about "A label for the log"))
+
+(defn unlock-report (texts)
+  (clone (:text (unwrap-err (map-ok (parse-command unlock
+                                                   (->environment :variables (vec))
+                                                   (texts->words texts))
+                                    (fn (_) 0))))))
+
+(deftest a-custom-type-reads-its-value
+  (assert (= (parse-command unlock
+                            (->environment :variables (vec))
+                            (texts->words (vec "1234" "--label" "#front")))
+             (ok (->unlock :code (->pin :digits (str "1234"))
+                           :label (some (->label :text (str "#front"))))))))
+
+(deftest a-custom-type-without-a-reason-gets-the-plain-error
+  (assert (starts-with?
+            (as-str (unlock-report (vec "12")))
+            "error: invalid value `12` for `<CODE>`\n\nUsage: unlock")))
+
+(deftest a-custom-type-with-a-reason-ends-the-error-with-it
+  (assert (starts-with? (as-str (unlock-report (vec "1234" "--label" "front")))
+                        "error: invalid value `front` for `--label`: a label starts with `#`\n\nUsage: unlock")))

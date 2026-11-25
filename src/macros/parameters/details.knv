@@ -1,7 +1,8 @@
 (module
-  "Rejects a detail on a `defcommand` parameter that cannot take it: `:required`, `:default`, `:delimiter`, `:conflicts-with` or `:value-name`. Each rule is a row of a table: whether it is broken, the error and the help.")
+  "Rejects a detail on a `defcommand` parameter that cannot take it: `:required`, `:default`, `:delimiter`, `:conflicts-with`, `:value-name` or `:parse`. Each rule is a row of a table: whether it is broken, the error and the help.")
 
-(use code bool-not empty? fail first list nth rest value-eq)
+(use code bool-not empty? fail first list nth rest symbol?
+          value-eq)
 
 (use macros/parameters/kinds argument-kind kind-count
                              kind-many kind-one kind-switch
@@ -9,7 +10,7 @@
 
 (use macros/parameters/parts argument? defaulted? detail
                              given? parameter-details
-                             required-parameter?)
+                             required-parameter? value-type)
 
 (export check-details)
 
@@ -49,7 +50,8 @@
                 "give the option a `vec` type, or drop `:delimiter`")
           (rule (has? parameter "conflicts-with")
                 "an argument cannot take `:conflicts-with`"
-                "put `:conflicts-with` on an option"))))
+                "put `:conflicts-with` on an option")
+          (unread-type-rule parameter))))
 
 (def option-rules
   (fn (parameter kind)
@@ -67,7 +69,18 @@
                 "give the option a `vec` type, or drop `:delimiter`")
           (rule (both (has? parameter "value-name") (valueless? kind))
                 "a switch or a count takes no value, so it cannot take `:value-name`"
-                "drop `:value-name`"))))
+                "drop `:value-name`")
+          (rule (both (has? parameter "parse") (valueless? kind))
+                "a switch or a count takes no value, so it cannot take `:parse`"
+                "drop `:parse`")
+          (unread-type-rule parameter))))
+
+(def unread-type-rule
+  (fn (parameter)
+    (rule (both (bool-not (has? parameter "parse"))
+                (bool-not (symbol? (value-type parameter))))
+          "a type nested inside `vec` or `option` has no reader"
+          "give `:parse` the function that reads one value of that type")))
 
 (def valueless?
   (fn (kind)

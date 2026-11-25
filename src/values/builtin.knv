@@ -1,71 +1,97 @@
 (module
-  "Reads each built-in type a parameter can take, such as `string`, `bool` and the number types, from its text.")
+  "Reads each built-in type a parameter can take, such as `string`, `bool` and the number types, from its text, and says what it expected when it cannot.")
 
-(use values/convert cli-value parsed)
+(export bool-names text->bool text->char text->float
+        text->i32 text->int text->string text->u16 text->u32
+        text->u64 text->u8 text->usize)
 
-(impl cli-value string
-  (from-text (text) (ok (str text)))
+(type text->string
+  (fn ((ref str))
+    (result string (option string))))
 
-  (value-names (_) (vec)))
+(defn text->string (text)
+  (ok (str text)))
 
-(impl cli-value bool
-  (from-text (text) (parsed text "true or false"))
+(defn bool-names ()
+  (vec (str "true") (str "false")))
 
-  (value-names (_)
-    (vec (str "true") (str "false"))))
+(type text->bool
+  (fn ((ref str))
+    (result bool (option string))))
 
-(impl cli-value char
-  (from-text (text) (parsed text "one character"))
+(defn text->bool (text) (parsed text "true or false"))
 
-  (value-names (_) (vec)))
+(type text->char
+  (fn ((ref str))
+    (result char (option string))))
 
-(impl cli-value int
-  (from-text (text)
-    (parsed text
-            "a whole number from -9223372036854775808 to 9223372036854775807"))
+(defn text->char (text) (parsed text "one character"))
 
-  (value-names (_) (vec)))
+(type text->int
+  (fn ((ref str))
+    (result int (option string))))
 
-(impl cli-value i32
-  (from-text (text)
-    (parsed text
-            "a whole number from -2147483648 to 2147483647"))
+(defn text->int (text)
+  (parsed text
+          "a whole number from -9223372036854775808 to 9223372036854775807"))
 
-  (value-names (_) (vec)))
+(type text->i32
+  (fn ((ref str))
+    (result i32 (option string))))
 
-(impl cli-value u8
-  (from-text (text)
-    (parsed text "a whole number from 0 to 255"))
+(defn text->i32 (text)
+  (parsed text
+          "a whole number from -2147483648 to 2147483647"))
 
-  (value-names (_) (vec)))
+(type text->u8
+  (fn ((ref str))
+    (result u8 (option string))))
 
-(impl cli-value u16
-  (from-text (text)
-    (parsed text "a whole number from 0 to 65535"))
+(defn text->u8 (text)
+  (parsed text "a whole number from 0 to 255"))
 
-  (value-names (_) (vec)))
+(type text->u16
+  (fn ((ref str))
+    (result u16 (option string))))
 
-(impl cli-value u32
-  (from-text (text)
-    (parsed text "a whole number from 0 to 4294967295"))
+(defn text->u16 (text)
+  (parsed text "a whole number from 0 to 65535"))
 
-  (value-names (_) (vec)))
+(type text->u32
+  (fn ((ref str))
+    (result u32 (option string))))
 
-(impl cli-value u64
-  (from-text (text)
-    (parsed text
-            "a whole number from 0 to 18446744073709551615"))
+(defn text->u32 (text)
+  (parsed text "a whole number from 0 to 4294967295"))
 
-  (value-names (_) (vec)))
+(type text->u64
+  (fn ((ref str))
+    (result u64 (option string))))
 
-(impl cli-value usize
-  (from-text (text)
-    (parsed text
-            "a whole number, 0 or more, within this machine's range"))
+(defn text->u64 (text)
+  (parsed text
+          "a whole number from 0 to 18446744073709551615"))
 
-  (value-names (_) (vec)))
+(type text->usize
+  (fn ((ref str))
+    (result usize (option string))))
 
-(impl cli-value float
-  (from-text (text) (parsed text "a number"))
+(defn text->usize (text)
+  (parsed text
+          "a whole number, 0 or more, within this machine's range"))
 
-  (value-names (_) (vec)))
+(type text->float
+  (fn ((ref str))
+    (result float (option string))))
+
+(defn text->float (text) (parsed text "a number"))
+
+(type parsed
+  (where ((t from-str))
+    (fn ((ref str) (ref str))
+      (result t (option string)))))
+
+(defn parsed (text expected)
+  (match (parse text)
+    ((ok value) (ok value))
+    ((err _) (err (some (str "expected " expected))))))

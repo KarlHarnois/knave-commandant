@@ -9,10 +9,10 @@
 (use macros/parameters/parts about default-text defaulted?
                              parameter-name
                              required-parameter?
-                             value-name-form value-type)
+                             value-name-form)
 
 (use spec/shapes ->argument-spec presence repetition)
-(use values/convert value-names)
+(use macros/parameters/readers names-form)
 
 (export argument-spec)
 
@@ -20,10 +20,7 @@
   (fn (parameter)
     (template (->argument-spec :name (str (unquote (parameter-name parameter)))
                                :value-name (unquote (value-name-form parameter))
-                               :choices (value-names (ref (the (option (unquote
-                                                                         (value-type
-                                                                           parameter)))
-                                                               none)))
+                               :choices (unquote (names-form parameter))
                                :about (str (unquote (about parameter)))
                                :presence (unquote (presence parameter))
                                :repeats (unquote (repeats parameter))))))

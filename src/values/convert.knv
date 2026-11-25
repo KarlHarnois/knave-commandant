@@ -1,5 +1,5 @@
 (module
-  "Turns the text of a matched argument or option into a typed value, through the `cli-value` trait.")
+  "Turns the text of a matched argument or option into a typed value, with the function that reads one text of that type.")
 
 (use errors/cli-error ->invalid-text cli-error)
 (use sequence appended)
@@ -9,47 +9,55 @@
                     argument-texts many-texts matches
                     one-text)
 
-(export cli-value from-text parsed read-argument
-        read-arguments read-many read-option read-optional
-        read-optional-argument value-names)
-
-(deftrait cli-value
-  (from-text
-    (fn ((ref str)) (result self string)))
-
-  (value-names
-    (fn ((ref (option self))) (vec string))))
+(export read-argument read-arguments read-many read-option
+        read-optional read-optional-argument)
 
 (type read-argument
-  (where ((t cli-value))
-    (fn ((ref matches) (ref str))
+  (where (t)
+    (fn ((ref matches)
+         (ref str)
+         (fn ((ref str))
+           (result t (option string))))
       (result t cli-error))))
 
-(defn read-argument (found name)
+(defn read-argument (found name read)
   (match (argument-text found name)
-    ((some text) (converted text (argument-written found name)))
+    ((some text)
+     (valued (read (as-str text))
+             text
+             (argument-written found name)))
     (none (err (cli-error/missing-argument (argument-placeholder found
                                                                  name))))))
 
 (type read-optional-argument
-  (where ((t cli-value))
-    (fn ((ref matches) (ref str))
+  (where (t)
+    (fn ((ref matches)
+         (ref str)
+         (fn ((ref str))
+           (result t (option string))))
       (result (option t) cli-error))))
 
-(defn read-optional-argument (found name)
+(defn read-optional-argument (found name read)
   (match (argument-text found name)
     ((some text)
-     (map-ok (converted text (argument-written found name)) some))
+     (map-ok (valued (read (as-str text))
+                     text
+                     (argument-written found name))
+             some))
     (none (ok none))))
 
 (type read-arguments
-  (where ((t cli-value))
-    (fn ((ref matches) (ref str))
+  (where (t)
+    (fn ((ref matches)
+         (ref str)
+         (fn ((ref str))
+           (result t (option string))))
       (result (vec t) cli-error))))
 
-(defn read-arguments (found name)
+(defn read-arguments (found name read)
   (converted-all (argument-texts found name)
-                 (argument-written found name)))
+                 (argument-written found name)
+                 read))
 
 (defn argument-written (found name)
   (str "<"
@@ -57,66 +65,79 @@
        ">"))
 
 (type read-option
-  (where ((t cli-value))
-    (fn ((ref matches) (ref str))
+  (where (t)
+    (fn ((ref matches)
+         (ref str)
+         (fn ((ref str))
+           (result t (option string))))
       (result t cli-error))))
 
-(defn read-option (found long)
+(defn read-option (found long read)
   (match (one-text found long)
-    ((some text) (converted (ref text) (long-flag long)))
+    ((some text)
+     (valued (read (as-str text))
+             (ref text)
+             (long-flag long)))
     (none (err (cli-error/missing-option (long-flag long))))))
 
 (type read-optional
-  (where ((t cli-value))
-    (fn ((ref matches) (ref str))
+  (where (t)
+    (fn ((ref matches)
+         (ref str)
+         (fn ((ref str))
+           (result t (option string))))
       (result (option t) cli-error))))
 
-(defn read-optional (found long)
+(defn read-optional (found long read)
   (match (one-text found long)
     ((some text)
-     (map-ok (converted (ref text) (long-flag long))
+     (map-ok (valued (read (as-str text))
+                     (ref text)
+                     (long-flag long))
              some))
     (none (ok none))))
 
 (type read-many
-  (where ((t cli-value))
-    (fn ((ref matches) (ref str))
+  (where (t)
+    (fn ((ref matches)
+         (ref str)
+         (fn ((ref str))
+           (result t (option string))))
       (result (vec t) cli-error))))
 
-(defn read-many (found long)
-  (converted-all (many-texts found long) (long-flag long)))
+(defn read-many (found long read)
+  (converted-all (many-texts found long)
+                 (long-flag long)
+                 read))
 
 (type converted-all
-  (where ((t cli-value))
-    (fn ((vec string) string)
+  (where (t)
+    (fn ((vec string)
+         string
+         (fn ((ref str))
+           (result t (option string))))
       (result (vec t) cli-error))))
 
-(defn converted-all (texts written)
+(defn converted-all (texts written read)
   (loop (index 0
          values (vec))
     (if (>= index (len texts))
       (ok values)
-      (let-try (value (converted (at texts index) (clone written)))
+      (let-try (value (valued (read (as-str (at texts index)))
+                              (at texts index)
+                              (clone written)))
         (recur (inc index) (appended values value))))))
 
-(type converted
-  (where ((t cli-value))
-    (fn ((ref string) string)
+(type valued
+  (where (t)
+    (fn ((result t (option string))
+         (ref string)
+         string)
       (result t cli-error))))
 
-(defn converted (text written)
-  (map-err (from-text (as-str text))
+(defn valued (read-text text written)
+  (map-err read-text
     (fn (reason)
       (cli-error/invalid-value (->invalid-text :written written
                                                :text (clone text)
                                                :why reason)))))
-
-(type parsed
-  (where ((t from-str))
-    (fn ((ref str) (ref str))
-      (result t string))))
-
-(defn parsed (text expected)
-  (match (parse text)
-    ((ok value) (ok value))
-    ((err _) (err (str "expected " expected)))))

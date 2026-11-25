@@ -4,24 +4,27 @@
 (use code empty? first list prepend rest string symbol
           symbol-name)
 
-(use values/convert cli-value)
+(use macros/reader-names names-name reader-name)
 
 (export defchoice)
 
 (defmacro defchoice (name cases ...)
-  "Defines an enum of unit cases that an option or argument can take by name."
+  "Defines an enum of unit cases that an option or argument can take by name,
+  with `text->name`, which reads a case from its name, and `name-names`, which
+  lists the names."
   (template (do
               (defenum (unquote name) (splice cases))
-              (impl cli-value (unquote name)
-                (from-text (text)
-                  (match text
-                    (splice (case-clauses name cases))
-                    (_ (err (str "expected one of "
-                                 (join (vec (splice (case-texts cases)))
-                                       ", "))))))
+              (defn (unquote (reader-name name)) (text)
+                (match text
+                  (splice (case-clauses name cases))
+                  (_ (err (some (str "expected one of "
+                                     (join (unquote (names-call name))
+                                           ", ")))))))
+              (defn (unquote (names-name name)) ()
+                (vec (splice (case-texts cases)))))))
 
-                (value-names (_)
-                  (vec (splice (case-texts cases))))))))
+(def names-call
+  (fn (name) (list (names-name name))))
 
 (def case-clauses
   (fn (name cases)

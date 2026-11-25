@@ -21,8 +21,6 @@
 (use macros/cli defcli)
 (use macros/command defcommand parse-command run-command)
 (use run exit-early process-environment run run-with)
-(use values/builtin)
-(use values/convert cli-value from-text value-names)
 (use spec/spec-error spec-error spec-error->message)
 (use spec/validate validate-spec)
 
@@ -36,15 +34,13 @@
         ->environment ->invalid-text ->list-slot
         ->option-conflict ->option-spec ->switch-slot
         ->usage-failure ->value-slot ->variable
-        argument-spec argument-text cli-error cli-value
-        command-spec defchoice defcli defcommand early-exit
-        environment error->message exit-early from-text
-        invalid-text list-slot matched-value matches
-        option-conflict option-spec option-value
-        output-stream parse-command parse-line
+        argument-spec argument-text cli-error command-spec
+        defchoice defcli defcommand early-exit environment
+        error->message exit-early invalid-text list-slot
+        matched-value matches option-conflict option-spec
+        option-value output-stream parse-command parse-line
         parse-line-into presence process-environment
         repetition run run-command run-with spec->help
         spec->usage spec-error spec-error->message
         stop-reason switch-slot switch-state usage-failure
-        validate-spec value-kind value-names value-slot
-        variable)
+        validate-spec value-kind value-slot variable)

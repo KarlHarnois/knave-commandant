@@ -11,6 +11,7 @@
 (use macros/parameters/parts always-set? argument?
                              parameter-name parameter-type)
 
+(use macros/parameters/readers reader-form)
 (use values/matches read-count read-switch)
 (use spec/shapes switch-state)
 
@@ -45,12 +46,19 @@
   (fn (parameter found name)
     (choose (argument-kind parameter)
             (list kind-many
-                  (template (read-arguments (unquote found) (unquote name)))
+                  (template (read-arguments (unquote found)
+                                            (unquote name)
+                                            (unquote (reader-form parameter))))
                   kind-optional
                   (template (read-optional-argument (unquote found)
-                                                    (unquote name)))
+                                                    (unquote name)
+                                                    (unquote (reader-form
+                                                               parameter))))
                   kind-one
-                  (template (read-argument (unquote found) (unquote name)))))))
+                  (template (read-argument (unquote found)
+                                           (unquote name)
+                                           (unquote (reader-form
+                                                      parameter))))))))
 
 (def matches-name
   (fn (anchor) (symbol anchor "command-line-matches")))
@@ -85,12 +93,18 @@
                   kind-count
                   (template (ok (read-count (unquote found) (unquote name))))
                   kind-many
-                  (template (read-many (unquote found) (unquote name)))
+                  (template (read-many (unquote found)
+                                       (unquote name)
+                                       (unquote (reader-form parameter))))
                   kind-one
                   (one-reader parameter found name)))))
 
 (def one-reader
   (fn (parameter found name)
     (if (always-set? parameter)
-      (template (read-option (unquote found) (unquote name)))
-      (template (read-optional (unquote found) (unquote name))))))
+      (template (read-option (unquote found)
+                             (unquote name)
+                             (unquote (reader-form parameter))))
+      (template (read-optional (unquote found)
+                               (unquote name)
+                               (unquote (reader-form parameter)))))))

@@ -1,0 +1,82 @@
+(module
+  "Picks the function that reads one text of a `defcommand` parameter's type, and the names that type accepts: the `:parse` detail, the reader of a built-in type, or the two functions that `defchoice` writes.")
+
+(use code list symbol-name value-eq)
+(use macros/parameters/kinds choose-or)
+
+(use macros/parameters/parts detail given? parameter-details
+                             value-type)
+
+(use macros/reader-names names-name reader-name)
+
+(use values/builtin bool-names text->bool text->char
+                    text->float text->i32 text->int
+                    text->string text->u16 text->u32
+                    text->u64 text->u8 text->usize)
+
+(export names-form reader-form)
+
+(def not-built-in "not built in")
+
+(def builtin-readers
+  (list "string"
+        (quote text->string)
+        "bool"
+        (quote text->bool)
+        "char"
+        (quote text->char)
+        "int"
+        (quote text->int)
+        "i32"
+        (quote text->i32)
+        "u8"
+        (quote text->u8)
+        "u16"
+        (quote text->u16)
+        "u32"
+        (quote text->u32)
+        "u64"
+        (quote text->u64)
+        "usize"
+        (quote text->usize)
+        "float"
+        (quote text->float)))
+
+(def builtin-names
+  (list "bool" (quote (bool-names))))
+
+(def reader-form
+  (fn (parameter)
+    (if (parsed-by-detail? parameter)
+      (detail (parameter-details parameter) "parse")
+      (type-reader (value-type parameter)))))
+
+(def names-form
+  (fn (parameter)
+    (if (parsed-by-detail? parameter)
+      (quote (vec))
+      (type-names (value-type parameter)))))
+
+(def parsed-by-detail?
+  (fn (parameter)
+    (given? (detail (parameter-details parameter) "parse"))))
+
+(def type-reader
+  (fn (type)
+    (choose-or (symbol-name type)
+               builtin-readers
+               (reader-name type))))
+
+(def type-names
+  (fn (type)
+    (if (built-in? type)
+      (choose-or (symbol-name type)
+                 builtin-names
+                 (quote (vec)))
+      (list (names-name type)))))
+
+(def built-in?
+  (fn (type)
+    (if (value-eq (choose-or (symbol-name type) builtin-readers not-built-in)
+                  not-built-in)
+      false true)))

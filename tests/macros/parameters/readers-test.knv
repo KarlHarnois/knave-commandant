@@ -1,0 +1,59 @@
+(use lib ->environment defchoice defcommand parse-command
+         value-kind)
+
+(export matches->send)
+
+(defchoice channel mail chat)
+
+(defstruct recipient
+  :name string)
+
+(defn text->recipient (text)
+  (if (empty? text)
+    (err none)
+    (ok (->recipient :name (str text)))))
+
+(defcommand send "Sends a message."
+  (to recipient :parse text->recipient :about "Who gets it")
+  (:via channel :default mail :about "How to send it")
+  (:urgent bool :default false :about "Whether it is urgent")
+  (:copies u8 :default 1 :about "How many copies"))
+
+(defn choices-of (long)
+  (match (find (iter (:options (send-spec)))
+           (fn (option)
+             (= (as-str (:long option)) long)))
+    ((some option) (slot-choices (:value option)))
+    (none (vec))))
+
+(defn slot-choices (value)
+  (match value
+    ((value-kind/one slot) (clone (:choices slot)))
+    (_ (vec))))
+
+(defn sent (texts)
+  (parse-command send
+                 (->environment :variables (vec))
+                 (collect (map (iter texts)
+                            (fn (text) (str (deref text)))))))
+
+(deftest a-choice-type-lists-its-names
+  (assert (= (choices-of "via")
+             (vec (str "mail") (str "chat")))))
+
+(deftest a-bool-lists-true-and-false
+  (assert (= (choices-of "urgent")
+             (vec (str "true") (str "false")))))
+
+(deftest a-number-type-lists-no-names
+  (assert (empty? (choices-of "copies"))))
+
+(deftest a-type-read-by-parse-lists-no-names
+  (assert (empty? (:choices (at (:arguments (send-spec)) 0)))))
+
+(deftest each-parameter-is-read-by-the-function-of-its-type
+  (assert (= (sent (vec "ana" "--via" "chat" "--urgent" "true" "--copies" "3"))
+             (ok (->send :to (->recipient :name (str "ana"))
+                         :via channel/chat
+                         :urgent true
+                         :copies 3)))))

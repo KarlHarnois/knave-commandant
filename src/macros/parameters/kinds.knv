@@ -6,8 +6,8 @@
 
 (use macros/parameters/parts parameter-type)
 
-(export argument-kind choose kind-count kind-many kind-one
-        kind-optional kind-switch option-kind)
+(export argument-kind choose choose-or kind-count kind-many
+        kind-one kind-optional kind-switch option-kind)
 
 (def kind-switch "switch")
 
