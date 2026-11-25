@@ -2,8 +2,24 @@
 (use values/convert from-text value-names)
 
 (deftest a-number-type-reads-digits
-  (assert (= (the (option u16) (from-text "8080"))
-             (some 8080))))
+  (assert (= (the (result u16 string) (from-text "8080"))
+             (ok 8080))))
+
+(deftest a-number-out-of-range-is-refused-with-its-range
+  (assert (= (the (result u8 string) (from-text "300"))
+             (err (str "expected a whole number from 0 to 255")))))
+
+(deftest text-that-is-no-number-is-refused
+  (assert (= (the (result float string) (from-text "fast"))
+             (err (str "expected a number")))))
+
+(deftest a-bool-is-refused-with-its-two-values
+  (assert (= (the (result bool string) (from-text "yes"))
+             (err (str "expected true or false")))))
+
+(deftest any-text-is-a-string
+  (assert (= (the (result string string) (from-text ""))
+             (ok (str)))))
 
 (deftest bool-lists-its-values
   (assert (= (value-names (ref (the (option bool) none)))

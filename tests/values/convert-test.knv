@@ -56,9 +56,10 @@
 (deftest text-that-does-not-parse-is-an-invalid-value
   (assert (= (the (result bool _)
                   (read-option (ref (found)) "port"))
-             (err (cli-error/invalid-value (->invalid-text
-                                             :written (str "--port")
-                                             :text (str "80")))))))
+             (err (cli-error/invalid-value (->invalid-text :written (str
+                                                                      "--port")
+                                                           :text (str "80")
+                                                           :why (str "expected true or false")))))))
 
 (deftest an-absent-optional-value-is-none
   (assert (= (the (result (option u16) _)

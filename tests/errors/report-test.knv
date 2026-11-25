@@ -5,8 +5,7 @@
 (use errors/cli-error ->invalid-text ->usage-failure
                       cli-error)
 
-(use support/fixture serve-spec site-spec spec-requiring
-                     spec-with-choices)
+(use support/fixture serve-spec site-spec spec-requiring)
 
 (defn report-for (failure)
   (error-report (ref (serve-spec))
@@ -48,19 +47,14 @@
                                                                        "-x")))
                                "tip"))))
 
-(deftest an-invalid-choice-lists-the-possible-values
-  (assert (contains-text? (error-report (ref (spec-with-choices))
-                                        (ref (cli-error/invalid-value
-                                               (->invalid-text :written (str "--format")
-                                                               :text (str "xml")))))
-                          "  tip: possible values: text, json")))
-
-(deftest an-invalid-number-gets-no-tip
-  (assert (not (contains-text? (report-for (cli-error/invalid-value
-                                             (->invalid-text :written (str "--port")
-                                                             :text (str
-                                                                     "abc"))))
-                               "tip"))))
+(deftest an-invalid-value-reports-why-and-gets-no-tip
+  (assert (= (report-for (cli-error/invalid-value (->invalid-text :written (str "--port")
+                                                                  :text (str
+                                                                          "abc")
+                                                                  :why (str "expected a whole number from 0 to 65535"))))
+             (str "error: invalid value `abc` for `--port`: expected a whole number from 0 to 65535\n\n"
+                  "Usage: serve [OPTIONS] [ROOT]\n\n"
+                  "For more information, try `serve --help`."))))
 
 (deftest a-mistyped-command-gets-a-tip
   (assert (contains-text? (error-report (ref (site-spec))

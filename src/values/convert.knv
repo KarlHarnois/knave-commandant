@@ -15,7 +15,7 @@
 
 (deftrait cli-value
   (from-text
-    (fn ((ref str)) (option self)))
+    (fn ((ref str)) (result self string)))
 
   (value-names
     (fn ((ref (option self))) (vec string))))
@@ -105,15 +105,18 @@
       (result t cli-error))))
 
 (defn converted (text written)
-  (ok-or (from-text (as-str text))
-         (cli-error/invalid-value (->invalid-text :written written
-                                                  :text (clone text)))))
+  (map-err (from-text (as-str text))
+    (fn (reason)
+      (cli-error/invalid-value (->invalid-text :written written
+                                               :text (clone text)
+                                               :why reason)))))
 
 (type parsed
   (where ((t from-str))
-    (fn ((ref str)) (option t))))
+    (fn ((ref str) (ref str))
+      (result t string))))
 
-(defn parsed (text)
+(defn parsed (text expected)
   (match (parse text)
-    ((ok value) (some value))
-    ((err _) none)))
+    ((ok value) (ok value))
+    ((err _) (err (str "expected " expected)))))

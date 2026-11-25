@@ -16,7 +16,9 @@
                 (from-text (text)
                   (match text
                     (splice (case-clauses name cases))
-                    (_ none)))
+                    (_ (err (str "expected one of "
+                                 (join (vec (splice (case-texts cases)))
+                                       ", "))))))
 
                 (value-names (_)
                   (vec (splice (case-texts cases))))))))
@@ -26,7 +28,7 @@
     (if (empty? cases)
       (list)
       (prepend (template ((unquote (symbol-name (first cases)))
-                          (some (unquote (case-symbol name (first cases))))))
+                          (ok (unquote (case-symbol name (first cases))))))
                (case-clauses name (rest cases))))))
 
 (def case-symbol
