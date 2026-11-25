@@ -76,7 +76,8 @@ global options and nested groups. The macros only write layer 1 values,
 so anything they express can also be built by hand.
 
 Two entry points sit on top. `run-command` reads the process, prints
-help, versions and usage errors, and exits with 0 or 2. `parse-command`
+help, versions and usage errors, and exits with 0, with 2 for a usage
+error or with 70 for a mistake in the spec. `parse-command`
 does none of that and returns the typed value or the `early-exit`, for
 a program that decides itself when to print and exit, or that tests its
 command line. `(exit-early stop)` prints an `early-exit` and exits,
