@@ -1,0 +1,82 @@
+(module
+  "Answers what can complete the word under the cursor: option names, subcommand names, a value's choices, or paths.")
+
+(use complete/flags flags-offered)
+(use complete/position expectation position-after)
+(use spec/builtins help-command)
+(use spec/commands subcommands?)
+(use spec/shapes option-spec repeated? value-kind)
+
+(export ->cursor complete completion cursor)
+
+(def option-start "-")
+
+(defstruct cursor
+  :preceding (vec string)
+  :current string)
+
+(defenum completion
+  (words (vec string))
+  paths)
+
+(defn complete (spec cursor)
+  (let (position (position-after spec (ref (:preceding cursor))))
+    (narrowed (offered (ref position)
+                       (as-str (:current cursor)))
+              (as-str (:current cursor)))))
+
+(defn narrowed (completion prefix)
+  (match completion
+    ((words texts)
+     (completion/words (collect (map (filter (iter texts)
+                                       (fn (text)
+                                         (starts-with? (as-str text) prefix)))
+                                     clone))))
+    (paths completion/paths)))
+
+(defn offered (position current)
+  (match (:expecting position)
+    ((value-of option)
+     (choices->completion (option-choices option)))
+    (arguments-only (argument-completion position))
+    (anything (open-completion position current))))
+
+(defn open-completion (position current)
+  (cond
+    ((starts-with? current option-start)
+     (completion/words (flags-offered position)))
+    ((subcommands? (:scope position))
+     (completion/words (command-names (:scope position))))
+    (else (argument-completion position))))
+
+(defn command-names (spec)
+  (let (names (vec (str help-command)))
+    (for-each (iter (:subcommands spec))
+      (fn (subcommand)
+        (push! names (clone (:name subcommand)))))
+    names))
+
+(defn argument-completion (position)
+  (match (argument-at (:arguments (:scope position))
+                      (:arguments-filled position))
+    ((some argument)
+     (choices->completion (clone (:choices argument))))
+    (none (completion/words (vec)))))
+
+(defn argument-at (arguments index)
+  (match (get arguments index)
+    ((some argument) (some argument))
+    (none (find (iter arguments) repeated?))))
+
+(type option-choices
+  (fn ((ref option-spec)) (vec string)))
+
+(defn option-choices (option)
+  (match (:value option)
+    ((one slot) (clone (:choices slot)))
+    (_ (vec))))
+
+(defn choices->completion (choices)
+  (if (empty? choices)
+    completion/paths
+    (completion/words choices)))

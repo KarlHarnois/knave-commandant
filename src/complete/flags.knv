@@ -1,0 +1,78 @@
+(module
+  "Lists the long options a command line can still take: each option not yet given, a switch's negation, and the built-in options.")
+
+(use spec/builtins builtin-options-of)
+
+(use spec/shapes find-long long-flag option-spec
+                 switch-state value-kind)
+
+(export flags-offered)
+
+(def negation-prefix "no-")
+
+(defn flags-offered (position)
+  (let (flags (vec))
+    (for-each (iter (:options (:scope position)))
+      (fn (option)
+        (when (offered? position option)
+          (push-option-flags! (mut flags) option))))
+    (for-each (iter (builtin-options-of (ref (:scope position))))
+      (fn (builtin)
+        (push! flags
+               (long-flag (as-str (:name builtin))))))
+    flags))
+
+(type push-option-flags!
+  (fn ((mut (vec string)) (ref option-spec))
+    unit))
+
+(defn push-option-flags! (flags option)
+  (push! flags
+         (long-flag (as-str (:long option))))
+  (when (negatable? option)
+    (push! flags
+           (long-flag (as-str (str negation-prefix (:long option)))))))
+
+(defn offered? (position option)
+  (and (or (repeatable? option)
+           (not (given? position (as-str (:long option)))))
+       (not (conflicted? position option))))
+
+(defn given? (position long)
+  (any? (iter (:given position))
+    (fn (name) (= (as-str name) long))))
+
+(type repeatable?
+  (fn ((ref option-spec)) bool))
+
+(defn repeatable? (option)
+  (match (:value option)
+    (count true)
+    ((many _) true)
+    (_ false)))
+
+(type negatable?
+  (fn ((ref option-spec)) bool))
+
+(defn negatable? (option)
+  (match (:value option)
+    ((switch slot) (= (:initial slot) switch-state/on))
+    (_ false)))
+
+(defn conflicted? (position option)
+  (any? (iter (:given position))
+    (fn (name)
+      (conflict? (:scope position) option (as-str name)))))
+
+(defn conflict? (spec option given)
+  (or (names? option given)
+      (given-names? spec given (as-str (:long option)))))
+
+(defn names? (option long)
+  (any? (iter (:conflicts-with option))
+    (fn (other) (= (as-str other) long))))
+
+(defn given-names? (spec given long)
+  (match (find-long spec given)
+    ((some other) (names? other long))
+    (none false)))

@@ -1,8 +1,8 @@
 (use run command->response response)
 (use spec/shapes ->option-spec value-kind)
 
-(use support/fixture no-environment serve-spec site-spec
-                     words)
+(use support/fixture environment-with no-environment
+                     no-words serve-spec site-spec words)
 
 (defn serve-response (texts)
   (response-to (serve-spec) texts))
@@ -60,3 +60,15 @@
   (assert (starts-with? (as-str (reply-text (response-to (site-spec)
                                                          (vec "help" "build"))))
                         "Builds the site.\n\nUsage: site build")))
+
+(deftest a-completion-request-replies-with-the-candidates
+  (assert (= (command->response (ref (site-spec))
+                                (environment-with "COMPLETE" "bash")
+                                (words (vec "--" "pa")))
+             (response/reply (str "words\npage")))))
+
+(deftest a-completion-request-for-another-shell-is-refused
+  (assert (= (command->response (ref (site-spec))
+                                (environment-with "COMPLETE" "fish")
+                                (words (no-words)))
+             (response/refuse (str "error: no completion for the shell `fish` in COMPLETE, only for bash")))))

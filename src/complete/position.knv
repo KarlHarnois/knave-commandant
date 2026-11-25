@@ -1,0 +1,96 @@
+(module
+  "Reads the words before the cursor without failing on any of them, to learn which command is in effect and what the next word can be.")
+
+(use scan/hits find-hit hit)
+(use scan/items item token->items)
+(use scan/tokens words->tokens)
+(use spec/commands find-subcommand subcommands?)
+(use spec/shapes command-spec option-spec takes-value?)
+
+(export expectation position position-after)
+
+(defstruct position
+  :scope command-spec
+  :expecting expectation
+  :arguments-filled int
+  :given (vec string))
+
+(defenum expectation
+  anything
+  (value-of option-spec)
+  arguments-only)
+
+(defn position-after (spec preceding)
+  (reduce (iter preceding) (start spec) after-word))
+
+(defn start (spec)
+  (->position :scope (clone spec)
+              :expecting expectation/anything
+              :arguments-filled 0
+              :given (vec)))
+
+(defn after-word (position word)
+  (match (:expecting position)
+    (anything (after-open-word position word))
+    ((value-of _)
+     (assoc position :expecting expectation/anything))
+    (arguments-only (argument-filled position))))
+
+(defn after-open-word (position word)
+  (let (items (word->items (ref (:scope position)) word))
+    (reduce (iter items) position after-item)))
+
+(defn word->items (spec word)
+  (token->items spec
+                (at (words->tokens (ref (vec (clone word))))
+                    0)))
+
+(defn after-item (position item)
+  (match item
+    ((flag flag) (after-flag position flag))
+    ((flag-with-value flag _) (after-assignment position flag))
+    (options-end (assoc position :expecting expectation/arguments-only))
+    ((word text) (after-plain-word position text))))
+
+(defn after-flag (position flag)
+  (match (find-hit (ref (:scope position)) flag)
+    ((some (hit/direct option)) (after-option position option))
+    ((some (hit/negation option))
+     (with-given position (ref option)))
+    (none position)))
+
+(defn after-assignment (position flag)
+  (match (find-hit (ref (:scope position)) flag)
+    ((some (hit/direct option))
+     (with-given position (ref option)))
+    (_ position)))
+
+(defn after-option (position option)
+  (let (next (with-given position (ref option)))
+    (if (takes-value? (ref option))
+      (assoc next :expecting (expectation/value-of option))
+      next)))
+
+(type with-given
+  (fn (position (ref option-spec)) position))
+
+(defn with-given (position option)
+  (let (next position)
+    (push! (:given next)
+           (clone (:long option)))
+    next))
+
+(defn after-plain-word (position text)
+  (if (subcommands? (ref (:scope position)))
+    (entered position text)
+    (argument-filled position)))
+
+(defn entered (position text)
+  (match (find-subcommand (ref (:scope position))
+                          (as-str text))
+    ((some subcommand) (assoc position :scope subcommand))
+    (none position)))
+
+(defn argument-filled (position)
+  (let (filled (inc (:arguments-filled position)))
+    (assoc position :arguments-filled filled)))

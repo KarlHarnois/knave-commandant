@@ -48,3 +48,6 @@ jobs:
       - name: Print the help
         working-directory: examples/${{ matrix.example }}
         run: knave run -- --help
+      - name: Print the completion script
+        working-directory: examples/${{ matrix.example }}
+        run: COMPLETE=bash knave run

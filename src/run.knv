@@ -2,6 +2,11 @@
   "Runs a command against the process: reads its words and environment, answers help and version, and stops on a usage error or a broken spec.")
 
 (use environment ->environment ->variable)
+
+(use complete/request completion-request
+                      completion-request-of
+                      completion-variable)
+
 (use spec/commands spec-at)
 (use errors/report failure-report)
 (use help/page spec->help)
@@ -54,13 +59,21 @@
 
 (defn command->response (spec environment words)
   (match (validate-spec spec)
-    ((ok _)
-     (outcome->response spec
-                        (parse spec (ref environment) (ref words))
-                        (terminal-width (ref environment))))
+    ((ok _) (valid-spec->response spec environment words))
     ((err failure)
      (response/broken (str "invalid command spec: "
                            (spec-error->message failure))))))
+
+(defn valid-spec->response (spec environment words)
+  (match (completion-request-of spec (ref environment) (ref words))
+    (absent (outcome->response spec
+                               (parse spec (ref environment) (ref words))
+                               (terminal-width (ref environment))))
+    ((answered text) (response/reply text))
+    ((unsupported shell)
+     (response/refuse (str "error: no completion for the shell `"
+                           shell "` in " completion-variable
+                           ", only for bash")))))
 
 (defn refuse-typed (spec failure)
   (eprintln (failure-report spec (ref failure)))

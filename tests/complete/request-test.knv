@@ -1,0 +1,40 @@
+(use complete/bash bash-script)
+
+(use complete/request completion-request
+                      completion-request-of)
+
+(use support/fixture environment-with no-environment
+                     no-words spec-with-choices words)
+
+(defn request-under (environment texts)
+  (completion-request-of (ref (spec-with-choices))
+                         (ref environment)
+                         (ref (words texts))))
+
+(defn bash-request (texts)
+  (request-under (environment-with "COMPLETE" "bash") texts))
+
+(deftest a-line-without-the-variable-asks-for-nothing
+  (assert (= (request-under (no-environment) (no-words))
+             completion-request/absent)))
+
+(deftest the-variable-alone-asks-for-the-script
+  (assert (= (bash-request (no-words))
+             (completion-request/answered (bash-script "log")))))
+
+(deftest words-after-the-marker-ask-for-candidates
+  (assert (= (bash-request (vec "--" "--format" "j"))
+             (completion-request/answered (str "words\njson")))))
+
+(deftest the-marker-alone-completes-an-empty-word
+  (assert (= (bash-request (vec "--"))
+             (completion-request/answered (str "words")))))
+
+(deftest ordinary-words-run-the-program-despite-the-variable
+  (assert (= (bash-request (vec "--format" "json"))
+             completion-request/absent)))
+
+(deftest another-shell-is-unsupported
+  (assert (= (request-under (environment-with "COMPLETE" "zsh")
+                            (no-words))
+             (completion-request/unsupported (str "zsh")))))
