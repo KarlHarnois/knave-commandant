@@ -15,11 +15,11 @@
 (use run run-with)
 (use spec/shapes ->command-spec)
 
-(export defcommand parse-command run-command)
+(export defcommand parse-args parse-args-from)
 
 (defmacro defcommand (name parts ...)
   "Defines a command: a struct with one typed field per parameter, `name-spec`
-  and `matches->name`. `(run-command name)` parses the process's command line.
+  and `matches->name`. `(parse-args name)` parses the process's command line.
   A parameter of a built-in type or of a `defchoice` type is read as is. One of
   any other type names the function that reads it, with `:parse`. The error
   \"cannot find `text->name`\" or \"cannot find `name-names`\" means the parameter
@@ -30,20 +30,20 @@
              (settings-of parts)
              (parameters-of parts)))
 
-(defmacro run-command (name)
+(defmacro parse-args (name)
   "Parses the process's command line with the command `name`, defined by
   `defcommand` or `defcli`, and returns its typed struct. It answers help and
   version, and exits with code 2 on a usage error."
   (template (run-with (ref ((unquote (named name "" "-spec"))))
                       (unquote (named name "matches->" "")))))
 
-(defmacro parse-command (name environment words)
+(defmacro parse-args-from (name environment words)
   "Parses `words` with the command `name`, defined by `defcommand` or
   `defcli`, and returns `(ok value)` with its typed struct. Anything else
   comes back as `(err early-exit)`, which holds the text, the stream and the
   exit code: help, a version, a completion reply, a usage error (code 2) or a
   mistake in the spec (code 70). Its `:reason` says which one, as data.
-  `(exit-early early-exit)` prints it and exits. `parse-command` itself reads
+  `(exit-early early-exit)` prints it and exits. `parse-args-from` itself reads
   nothing from the process and never exits."
   (template (parse-line-into (ref ((unquote (named name "" "-spec"))))
                              (ref (unquote environment))
