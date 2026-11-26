@@ -75,13 +75,13 @@ conversion from matches. `defcli` groups commands into an enum, with
 global options and nested groups. The macros only write layer 1 values,
 so anything they express can also be built by hand.
 
-Two entry points sit on top. `run-command` reads the process, prints
+Two entry points sit on top. `parse-args` reads the process, prints
 help, versions and usage errors, and exits with 0, with 2 for a usage
-error or with 70 for a mistake in the spec. `parse-command`
+error or with 70 for a mistake in the spec. `parse-args-from`
 does none of that and returns the typed value or the `early-exit`, for
 a program that decides itself when to print and exit, or that tests its
 command line. `(exit-early stop)` prints an `early-exit` and exits,
-which is all `run-command` adds.
+which is all `parse-args` adds.
 
 ## 4. Layout
 
@@ -144,7 +144,7 @@ file, and `tests/e2e-tests.knv` goes through the public interface.
    `deftask` parameter list. A second grammar for the same parameter
    would cost more than rewriting a task once. `deftask` itself is
    untouched: the prelude cannot depend on a git library.
-10. **`run-command` is a macro, not a generated function.** A generated
+10. **`parse-args` is a macro, not a generated function.** A generated
     `run-<name>` per command was unused in every `defcli` program and
     tripped the unreachable-definition lint.
 11. **The program completes its own command line.** With `COMPLETE=bash`
@@ -155,8 +155,8 @@ file, and `tests/e2e-tests.knv` goes through the public interface.
     environment variable is the trigger because a `completions` command
     would be read as the first argument of a program without
     subcommands. The request is answered by the pure parse, so a
-    program that calls `parse-command` completes like one that calls
-    `run-command`.
+    program that calls `parse-args-from` completes like one that calls
+    `parse-args`.
 12. **Completion never fails on a half-written line.** It skips unknown
     words and options. A value or an argument without choices completes
     as a path, through bash's own completion. Only bash is supported:
@@ -199,6 +199,13 @@ file, and `tests/e2e-tests.knv` goes through the public interface.
     `defchoice` names its cases. The reason replaces the old "possible
     values" tip, so one sentence carries the whole error, for a
     terminal and for a program that prints JSON.
+18. **The two entry points are `parse-args` and `parse-args-from`.**
+    `(parse-args name)` reads the process and exits on help or an
+    error, and nearly every program calls it, so it has the plain name,
+    as `parse` does in clap and `parse_args` in argparse.
+    `(parse-args-from name environment words)` is the pure one, for
+    tests and for a program that prints its own way. "Run" was wrong
+    for the first: the library parses, and the program runs.
 
 ## 6. Limits from the compiler
 

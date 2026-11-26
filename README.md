@@ -20,7 +20,7 @@ Replace `<commit>` with the commit to pin.
 A command takes arguments and options:
 
 ```clj
-(use knave-commandant defcommand run-command)
+(use knave-commandant defcommand parse-args)
 
 (defcommand greet "Greets someone."
   :version "1.0.0"
@@ -28,7 +28,7 @@ A command takes arguments and options:
   (:loud switch :short l :about "Greets in capitals"))
 
 (defn main ()
-  (let (options (run-command greet))
+  (let (options (parse-args greet))
     (println "Hello, " (:who options))))
 ```
 
@@ -36,7 +36,7 @@ A command takes arguments and options:
 
 ```clj
 (use knave-commandant defchoice defcli defcommand
-                      run-command)
+                      parse-args)
 
 (defchoice log-format text json)
 
@@ -59,7 +59,7 @@ A command takes arguments and options:
   (commands build serve))
 
 (defn main ()
-  (match (:command (run-command site))
+  (match (:command (parse-args site))
     ((site-command/build options)
      (println "Building " (:dir options)))
     ((site-command/serve options)

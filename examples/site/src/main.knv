@@ -1,4 +1,4 @@
-(use knave-commandant defcli defcommand run-command)
+(use knave-commandant defcli defcommand parse-args)
 
 (defcommand build "Builds the site into a folder."
   (root string
@@ -52,4 +52,4 @@
   (:verbose count :short v :about "Logs more with each -v")
   (commands build serve deploy page))
 
-(defn main () (prn (run-command site)))
+(defn main () (prn (parse-args site)))

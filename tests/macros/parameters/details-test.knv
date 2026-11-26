@@ -1,4 +1,4 @@
-(use lib ->environment defcommand parse-command)
+(use lib ->environment defcommand parse-args-from)
 
 (export matches->add-item matches->deploy)
 
@@ -10,9 +10,9 @@
              (fn (text) (str (deref text))))))
 
 (defn deploy-after (texts)
-  (parse-command deploy
-                 (->environment :variables (vec))
-                 (words texts)))
+  (parse-args-from deploy
+                   (->environment :variables (vec))
+                   (words texts)))
 
 (deftest a-required-option-becomes-a-plain-field
   (assert (= (map-ok (deploy-after (vec "--token" "secret"))
@@ -27,9 +27,9 @@
   (:description-file string))
 
 (defn add-after (texts)
-  (parse-command add-item
-                 (->environment :variables (vec))
-                 (words texts)))
+  (parse-args-from add-item
+                   (->environment :variables (vec))
+                   (words texts)))
 
 (deftest a-delimited-vec-option-reads-each-part
   (assert (= (map-ok (add-after (vec "--after" "1,2" "--after" "3"))

@@ -1,6 +1,6 @@
 (use lib ->early-exit ->environment ->variable defchoice
-         defcommand output-stream parse-command spec->usage
-         stop-reason)
+         defcommand output-stream parse-args-from
+         spec->usage stop-reason)
 
 (export matches->copy matches->greet matches->hello
         matches->say matches->unlock)
@@ -31,9 +31,9 @@
              (fn (text) (str (deref text))))))
 
 (defn greet-after (texts)
-  (parse-command greet
-                 (->environment :variables (vec))
-                 (texts->words texts)))
+  (parse-args-from greet
+                   (->environment :variables (vec))
+                   (texts->words texts)))
 
 (defn greet-stop (texts)
   (unwrap-err (map-ok (greet-after texts) (fn (_) 0))))
@@ -71,9 +71,9 @@
              0)))
 
 (deftest a-vec-argument-takes-every-word-the-next-one-leaves
-  (assert (= (parse-command copy
-                            (->environment :variables (vec))
-                            (texts->words (vec "a" "b" "c")))
+  (assert (= (parse-args-from copy
+                              (->environment :variables (vec))
+                              (texts->words (vec "a" "b" "c")))
              (ok (->copy :sources (vec (str "a") (str "b"))
                          :target (str "c"))))))
 
@@ -82,15 +82,15 @@
              "copy [OPTIONS] <SOURCES>... <TARGET>")))
 
 (deftest an-option-argument-can-be-left-out
-  (assert (= (parse-command hello
-                            (->environment :variables (vec))
-                            (texts->words (the (vec (ref str)) (vec))))
+  (assert (= (parse-args-from hello
+                              (->environment :variables (vec))
+                              (texts->words (the (vec (ref str)) (vec))))
              (ok (->hello :name none)))))
 
 (deftest an-option-argument-takes-a-given-word
-  (assert (= (parse-command hello
-                            (->environment :variables (vec))
-                            (texts->words (vec "ana")))
+  (assert (= (parse-args-from hello
+                              (->environment :variables (vec))
+                              (texts->words (vec "ana")))
              (ok (->hello :name (some (str "ana")))))))
 
 (deftest a-value-name-shows-in-the-usage
@@ -104,11 +104,11 @@
              (vec (str "plain") (str "loud")))))
 
 (deftest a-completion-request-comes-back-as-an-early-exit
-  (assert (= (map-ok (parse-command copy
-                                    (->environment
-                                      :variables (vec (->variable :name (str "COMPLETE")
-                                                                  :value (str "bash"))))
-                                    (texts->words (vec "--" "-")))
+  (assert (= (map-ok (parse-args-from copy
+                                      (->environment
+                                        :variables (vec (->variable :name (str "COMPLETE")
+                                                                    :value (str "bash"))))
+                                      (texts->words (vec "--" "-")))
                      (fn (_) 0))
              (err (->early-exit :text (str "words\n--help")
                                 :stream output-stream/standard-output
@@ -143,15 +143,15 @@
           :about "A label for the log"))
 
 (defn unlock-report (texts)
-  (clone (:text (unwrap-err (map-ok (parse-command unlock
-                                                   (->environment :variables (vec))
-                                                   (texts->words texts))
+  (clone (:text (unwrap-err (map-ok (parse-args-from unlock
+                                                     (->environment :variables (vec))
+                                                     (texts->words texts))
                                     (fn (_) 0))))))
 
 (deftest a-custom-type-reads-its-value
-  (assert (= (parse-command unlock
-                            (->environment :variables (vec))
-                            (texts->words (vec "1234" "--label" "#front")))
+  (assert (= (parse-args-from unlock
+                              (->environment :variables (vec))
+                              (texts->words (vec "1234" "--label" "#front")))
              (ok (->unlock :code (->pin :digits (str "1234"))
                            :label (some (->label :text (str "#front"))))))))
 

@@ -1,4 +1,4 @@
-(use lib ->environment defcli defcommand parse-command
+(use lib ->environment defcli defcommand parse-args-from
          spec->usage switch-state)
 
 (defcommand fetch "Fetches the changes."
@@ -19,10 +19,10 @@
         matches->tool)
 
 (defn tool-after (texts)
-  (parse-command tool
-                 (->environment :variables (vec))
-                 (collect (map (iter texts)
-                            (fn (text) (str (deref text)))))))
+  (parse-args-from tool
+                   (->environment :variables (vec))
+                   (collect (map (iter texts)
+                              (fn (text) (str (deref text)))))))
 
 (deftest the-spec-lists-each-command-under-its-word
   (assert (= (collect (map (iter (:subcommands (tool-spec)))

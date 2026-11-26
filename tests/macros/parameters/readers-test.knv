@@ -1,4 +1,4 @@
-(use lib ->environment defchoice defcommand parse-command
+(use lib ->environment defchoice defcommand parse-args-from
          value-kind)
 
 (export matches->send)
@@ -32,10 +32,10 @@
     (_ (vec))))
 
 (defn sent (texts)
-  (parse-command send
-                 (->environment :variables (vec))
-                 (collect (map (iter texts)
-                            (fn (text) (str (deref text)))))))
+  (parse-args-from send
+                   (->environment :variables (vec))
+                   (collect (map (iter texts)
+                              (fn (text) (str (deref text)))))))
 
 (deftest a-choice-type-lists-its-names
   (assert (= (choices-of "via")

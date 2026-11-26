@@ -1,4 +1,4 @@
-(use knave-commandant defchoice defcommand run-command)
+(use knave-commandant defchoice defcommand parse-args)
 
 (defchoice log-format text json)
 
@@ -48,5 +48,5 @@
   (:name string :about "Names the server in its log"))
 
 (defn main ()
-  (let (options (run-command serve))
+  (let (options (parse-args serve))
     (prn options)))

@@ -19,7 +19,7 @@
 
 (use macros/choice defchoice)
 (use macros/cli defcli)
-(use macros/command defcommand parse-command run-command)
+(use macros/command defcommand parse-args parse-args-from)
 (use run exit-early process-environment run run-with)
 (use spec/spec-error spec-error spec-error->message)
 (use spec/validate validate-spec)
@@ -38,9 +38,10 @@
         defchoice defcli defcommand early-exit environment
         error->message exit-early invalid-text list-slot
         matched-value matches option-conflict option-spec
-        option-value output-stream parse-command parse-line
-        parse-line-into presence process-environment
-        repetition run run-command run-with spec->help
-        spec->usage spec-error spec-error->message
-        stop-reason switch-slot switch-state usage-failure
-        validate-spec value-kind value-slot variable)
+        option-value output-stream parse-args
+        parse-args-from parse-line parse-line-into presence
+        process-environment repetition run run-with
+        spec->help spec->usage spec-error
+        spec-error->message stop-reason switch-slot
+        switch-state usage-failure validate-spec value-kind
+        value-slot variable)
