@@ -1,5 +1,5 @@
-(use lib ->environment defcli defcommand parse-args-from
-         spec->usage switch-state)
+(use lib ->env defcli defcommand parse-args-from spec->usage
+         switch-state)
 
 (defcommand fetch "Fetches the changes."
   (:all switch :short a :about "Fetches every remote"))
@@ -20,7 +20,7 @@
 
 (defn tool-after (texts)
   (parse-args-from tool
-                   (->environment :variables (vec))
+                   (->env :variables (vec))
                    (collect (map (iter texts)
                               (fn (text) (str (deref text)))))))
 

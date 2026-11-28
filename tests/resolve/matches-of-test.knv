@@ -2,14 +2,13 @@
 (use values/matches arg-text one-text option-value)
 (use resolve/matches-of resolve)
 
-(use support/fixture environment-with no-environment
-                     no-words scanned-texts serve-spec
-                     spec-with-token)
+(use support/fixture env-with no-env no-words scanned-texts
+                     serve-spec spec-with-token)
 
 (defn resolved (texts)
   (let (spec (serve-spec))
     (resolve (ref spec)
-             (ref (no-environment))
+             (ref (no-env))
              (ref (scanned-texts spec texts)))))
 
 (deftest fills-the-args
@@ -25,20 +24,19 @@
   (assert (= (resolved (vec "--port" "1" "-p" "2"))
              (err (cli-error/repeated-option (str "-p"))))))
 
-(defn resolved-token (environment texts)
+(defn resolved-token (env texts)
   (let (spec (spec-with-token))
     (resolve (ref spec)
-             (ref environment)
+             (ref env)
              (ref (scanned-texts spec texts)))))
 
 (deftest a-required-option-must-be-given
-  (assert (= (resolved-token (no-environment) (no-words))
+  (assert (= (resolved-token (no-env) (no-words))
              (err (cli-error/missing-option (str "--token"))))))
 
-(deftest a-required-option-can-come-from-its-environment-variable
-  (assert (= (one-text (ref (unwrap-ok (resolved-token (environment-with
-                                                         "DEPLOY_TOKEN"
-                                                         "secret")
+(deftest a-required-option-can-come-from-its-env-variable
+  (assert (= (one-text (ref (unwrap-ok (resolved-token (env-with "DEPLOY_TOKEN"
+                                                                 "secret")
                                                        (no-words))))
                        "token")
              (some (str "secret")))))

@@ -63,7 +63,7 @@ where it binds names. That gives two layers.
 
 **Layer 1: the spec is a value, and parsing is a pure function.** A
 `command-spec` describes a command: its arguments, its options and its
-subcommands. `(parse-line spec environment words)` returns the matches
+subcommands. `(parse-line spec env words)` returns the matches
 or an `early-exit`: the text to print, the stream to print it on and
 the exit code. Nothing in this layer reads the process, so every case
 is a plain test. Programs that build their command line at run time use
@@ -110,7 +110,7 @@ Five modules sit outside the folders. `parse.knv` joins the stages.
 `command-line.knv` turns each outcome of a parse into a value or an
 `early-exit`, and `run.knv` is the only module that touches the
 process.
-`environment.knv` holds the variables a parse reads, and `sequence.knv`
+`env.knv` holds the variables a parse reads, and `sequence.knv`
 a vector helper two stages share. `tests/` mirrors `src/` file for
 file, and `tests/e2e-tests.knv` goes through the public interface.
 
@@ -203,7 +203,7 @@ file, and `tests/e2e-tests.knv` goes through the public interface.
     `(parse-args name)` reads the process and exits on help or an
     error, and nearly every program calls it, so it has the plain name,
     as `parse` does in clap and `parse_args` in argparse.
-    `(parse-args-from name environment words)` is the pure one, for
+    `(parse-args-from name env words)` is the pure one, for
     tests and for a program that prints its own way. "Run" was wrong
     for the first: the library parses, and the program runs.
 

@@ -2,7 +2,7 @@
   "Settles each option's value from its flags, then its environment variables, then its default.")
 
 (use resolve/delimited list-texts)
-(use environment environment first-set)
+(use env env first-set)
 
 (use values/matches ->option-match matched-value
                     option-match)
@@ -20,57 +20,57 @@
 
 (type option-matches
   (fn ((ref command-spec)
-       (ref environment)
+       (ref env)
        (ref (vec occurrence)))
     (vec option-match)))
 
-(defn option-matches (spec environment occurrences)
+(defn option-matches (spec env occurrences)
   (collect (map (iter (:options spec))
              (fn (option)
                (->option-match :long (clone (:long option))
-                               :value (settled-value environment
+                               :value (settled-value env
                                                      (occurrences-named
                                                        occurrences
                                                        (as-str (:long option)))
                                                      option))))))
 
 (type settled-value
-  (fn ((ref environment)
+  (fn ((ref env)
        (vec (ref occurrence))
        (ref option-spec))
     matched-value))
 
-(defn settled-value (environment found option)
+(defn settled-value (env found option)
   (match (:value option)
     ((switch slot)
-     (matched-value/switch (switch-from environment slot (ref found))))
+     (matched-value/switch (switch-from env slot (ref found))))
     (count (matched-value/count (len found)))
     ((one slot)
-     (matched-value/one (one-value environment (ref found) slot)))
+     (matched-value/one (one-value env (ref found) slot)))
     ((many slot)
      (matched-value/many (list-texts (texts (ref found))
                                      (:delimiter slot))))))
 
 (type switch-from
-  (fn ((ref environment)
+  (fn ((ref env)
        (ref switch-slot)
        (ref (vec (ref occurrence))))
     switch-state))
 
-(defn switch-from (environment slot found)
+(defn switch-from (env slot found)
   (match (last found)
     ((some occurrence) (occurrence->switch (:value occurrence)))
-    (none (switch-fallback environment slot))))
+    (none (switch-fallback env slot))))
 
 (defn occurrence->switch (value)
   (match value (negated switch-state/off) (_ switch-state/on)))
 
 (type switch-fallback
-  (fn ((ref environment) (ref switch-slot))
+  (fn ((ref env) (ref switch-slot))
     switch-state))
 
-(defn switch-fallback (environment slot)
-  (match (first-set environment (:env slot))
+(defn switch-fallback (env slot)
+  (match (first-set env (:env slot))
     ((some text) (text->switch text))
     (none (:initial slot))))
 
@@ -82,18 +82,18 @@
     switch-state/off switch-state/on))
 
 (type one-value
-  (fn ((ref environment)
+  (fn ((ref env)
        (ref (vec (ref occurrence)))
        (ref value-slot))
     (option string)))
 
-(defn one-value (environment found slot)
+(defn one-value (env found slot)
   (match (first found)
     ((some occurrence) (occurrence-text (:value occurrence)))
-    (none (fallback-value environment slot))))
+    (none (fallback-value env slot))))
 
-(defn fallback-value (environment slot)
-  (match (first-set environment (:env slot))
+(defn fallback-value (env slot)
+  (match (first-set env (:env slot))
     ((some value) (some value))
     (none (presence-default (:presence slot)))))
 

@@ -2,13 +2,12 @@
   "Runs a command against the process: reads its words and environment, and on an early exit prints its text and stops. It is the only module that touches the process.")
 
 (use command-line early-exit output-stream parse-line-into)
-(use environment ->environment ->variable)
+(use env ->env ->variable)
 (use errors/cli-error cli-error)
 (use spec/shapes command-spec)
 (use values/matches matches)
 
-(export exit-early pairs->environment process-environment
-        run run-with)
+(export exit-early pairs->env process-env run run-with)
 
 (def exit-with
   (rust "std::process::exit({0} as i32)"
@@ -31,7 +30,7 @@
 
 (defn run-with (spec convert)
   (match (parse-line-into spec
-                          (ref (process-environment))
+                          (ref (process-env))
                           (ref (command-line-args))
                           convert)
     ((ok value) value)
@@ -50,11 +49,11 @@
     (standard-output (println text))
     (standard-error (eprintln text))))
 
-(defn process-environment ()
-  (pairs->environment (ref (process-variables))))
+(defn process-env ()
+  (pairs->env (ref (process-variables))))
 
-(defn pairs->environment (pairs)
-  (->environment :variables (collect (map (iter pairs) pair->variable))))
+(defn pairs->env (pairs)
+  (->env :variables (collect (map (iter pairs) pair->variable))))
 
 (defn pair->variable (entry)
   (let-match ((pair name value) entry)

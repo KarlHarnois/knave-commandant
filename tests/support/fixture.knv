@@ -5,25 +5,24 @@
 (use scan/walk scan-end scan-tokens)
 (use scan/tokens words->tokens)
 
-(use lib ->arg-spec ->command-spec ->environment ->list-slot
+(use lib ->arg-spec ->command-spec ->env ->list-slot
          ->option-spec ->switch-slot ->value-slot ->variable
          presence repetition switch-state value-kind)
 
 (use parse outcome parse)
 
-(export arg-named command-spec-named environment-with
-        no-environment no-words parse-texts parse-with
-        repeated-arg scanned-texts serve-spec site-spec
-        spec-choosing spec-requiring spec-with-args
-        spec-with-choices spec-with-lists spec-with-token
-        usage-error words)
+(export arg-named command-spec-named env-with no-env
+        no-words parse-texts parse-with repeated-arg
+        scanned-texts serve-spec site-spec spec-choosing
+        spec-requiring spec-with-args spec-with-choices
+        spec-with-lists spec-with-token usage-error words)
 
 (defn parse-texts (texts)
-  (parse-with (serve-spec) (no-environment) texts))
+  (parse-with (serve-spec) (no-env) texts))
 
-(defn parse-with (spec environment texts)
+(defn parse-with (spec env texts)
   (parse (ref spec)
-         (ref environment)
+         (ref env)
          (ref (words texts))))
 
 (defn words (texts)
@@ -94,12 +93,11 @@
                   :options (vec)
                   :subcommands (vec)))
 
-(defn no-environment ()
-  (->environment :variables (vec)))
+(defn no-env ()
+  (->env :variables (vec)))
 
-(defn environment-with (name value)
-  (->environment :variables (vec (->variable :name (str name)
-                                             :value (str value)))))
+(defn env-with (name value)
+  (->env :variables (vec (->variable :name (str name) :value (str value)))))
 
 (defn no-words ()
   (the (vec (ref str)) (vec)))

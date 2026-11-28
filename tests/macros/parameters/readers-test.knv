@@ -1,4 +1,4 @@
-(use lib ->environment defchoice defcommand parse-args-from
+(use lib ->env defchoice defcommand parse-args-from
          value-kind)
 
 (export matches->send)
@@ -33,7 +33,7 @@
 
 (defn sent (texts)
   (parse-args-from send
-                   (->environment :variables (vec))
+                   (->env :variables (vec))
                    (collect (map (iter texts)
                               (fn (text) (str (deref text)))))))
 

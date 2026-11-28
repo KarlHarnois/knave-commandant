@@ -2,9 +2,8 @@
 (use values/matches arg-text)
 (use parse outcome)
 
-(use support/fixture environment-with no-environment
-                     parse-texts parse-with site-spec
-                     spec-with-token usage-error)
+(use support/fixture env-with no-env parse-texts parse-with
+                     site-spec spec-with-token usage-error)
 
 (defn root-after (texts)
   (match (parse-texts texts)
@@ -34,7 +33,7 @@
 
 (deftest a-group-parse-records-the-command-path
   (assert (= (match (parse-with (site-spec)
-                                (no-environment)
+                                (no-env)
                                 (vec "page" "list"))
                ((parsed found) (some (clone (:path found))))
                (_ none))
@@ -42,13 +41,13 @@
 
 (deftest help-for-a-command-carries-its-path
   (assert (= (parse-with (site-spec)
-                         (no-environment)
+                         (no-env)
                          (vec "build" "--help"))
              (outcome/help (vec (str "build"))))))
 
 (deftest a-resolve-error-carries-the-command-path
   (assert (= (parse-with (site-spec)
-                         (no-environment)
+                         (no-env)
                          (vec "build" "a" "b"))
              (outcome/usage-error (->usage-failure :path (vec (str "build"))
                                                    :error (cli-error/unexpected-arg
@@ -56,24 +55,24 @@
 
 (deftest help-needs-no-required-option
   (assert (= (parse-with (spec-with-token)
-                         (no-environment)
+                         (no-env)
                          (vec "--help"))
              (outcome/help (vec)))))
 
 (deftest a-completion-request-becomes-the-completion-outcome
   (assert (= (parse-with (site-spec)
-                         (environment-with "COMPLETE" "bash")
+                         (env-with "COMPLETE" "bash")
                          (vec "--" "pa"))
              (outcome/completion (str "words\npage")))))
 
 (deftest a-completion-request-for-another-shell-is-a-usage-error
   (assert (= (parse-with (site-spec)
-                         (environment-with "COMPLETE" "fish")
+                         (env-with "COMPLETE" "fish")
                          (vec "--" "pa"))
              (usage-error (cli-error/unsupported-shell (str "fish"))))))
 
 (deftest ordinary-words-parse-despite-the-completion-variable
   (assert (= (parse-with (site-spec)
-                         (environment-with "COMPLETE" "bash")
+                         (env-with "COMPLETE" "bash")
                          (vec "--help"))
              (outcome/help (vec)))))

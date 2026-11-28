@@ -1,7 +1,7 @@
 (module
   "Parses a command line into a value, or into an early exit: the text to print, the stream to print it on, the exit code and the reason for it.")
 
-(use environment environment)
+(use env env)
 
 (use errors/cli-error ->usage-failure cli-error
                       usage-failure)
@@ -42,61 +42,61 @@
   standard-output
   standard-error)
 
-(defn parse-line (spec environment words)
-  (parse-line-into spec environment words
+(defn parse-line (spec env words)
+  (parse-line-into spec env words
     (fn (found) (ok (clone found)))))
 
 (type parse-line-into
   (where (t)
     (fn ((ref command-spec)
-         (ref environment)
+         (ref env)
          (ref (vec string))
          (fn ((ref matches))
            (result t cli-error)))
       (result t early-exit))))
 
-(defn parse-line-into (spec environment words convert)
+(defn parse-line-into (spec env words convert)
   (match (validate-spec spec)
-    ((ok _) (parse-valid spec environment words convert))
+    ((ok _) (parse-valid spec env words convert))
     ((err failure) (err (broken failure)))))
 
 (type parse-valid
   (where (t)
     (fn ((ref command-spec)
-         (ref environment)
+         (ref env)
          (ref (vec string))
          (fn ((ref matches))
            (result t cli-error)))
       (result t early-exit))))
 
-(defn parse-valid (spec environment words convert)
-  (match (parse spec environment words)
+(defn parse-valid (spec env words convert)
+  (match (parse spec env words)
     ((outcome/parsed found)
-     (typed spec environment (ref found) convert))
+     (typed spec env (ref found) convert))
     ((outcome/help path)
-     (err (answer (help-at spec (ref path) environment)
+     (err (answer (help-at spec (ref path) env)
                   (stop-reason/help path))))
     ((outcome/version text)
      (err (answer (str (:name spec) " " text)
                   (stop-reason/version text))))
     ((outcome/usage-error failure)
-     (err (refusal spec environment failure)))
+     (err (refusal spec env failure)))
     ((outcome/completion reply)
      (err (answer reply stop-reason/completion)))))
 
 (type typed
   (where (t)
     (fn ((ref command-spec)
-         (ref environment)
+         (ref env)
          (ref matches)
          (fn ((ref matches))
            (result t cli-error)))
       (result t early-exit))))
 
-(defn typed (spec environment found convert)
+(defn typed (spec env found convert)
   (map-err (convert found)
     (fn (failure)
-      (refusal spec environment
+      (refusal spec env
                (->usage-failure :path (clone (:path found)) :error failure)))))
 
 (defn answer (text reason)
@@ -105,10 +105,8 @@
                 :code success-code
                 :reason reason))
 
-(defn refusal (spec environment failure)
-  (->early-exit :text (failure-report spec
-                                      (ref failure)
-                                      (terminal-width environment))
+(defn refusal (spec env failure)
+  (->early-exit :text (failure-report spec (ref failure) (terminal-width env))
                 :stream output-stream/standard-error
                 :code usage-code
                 :reason (stop-reason/usage failure)))
@@ -120,6 +118,6 @@
                 :code broken-spec-code
                 :reason (stop-reason/broken-spec failure)))
 
-(defn help-at (spec path environment)
+(defn help-at (spec path env)
   (spec->help (ref (unwrap-or (spec-at spec path) (clone spec)))
-              (terminal-width environment)))
+              (terminal-width env)))

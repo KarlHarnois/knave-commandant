@@ -11,14 +11,13 @@
 
 (export resolve)
 
-(defn resolve (spec environment scan)
+(defn resolve (spec env scan)
   (let-try (args (resolve-args spec (ref (:positionals scan))))
     (try (check-no-repeated spec (ref (:occurrences scan))))
     (try (check-conflicts spec (ref (:occurrences scan))))
     (let (found (->matches :path (clone (:path scan))
                            :args args
-                           :options (option-matches spec
-                                                    environment
+                           :options (option-matches spec env
                                                     (ref (:occurrences scan)))))
       (try (check-required spec (ref found)))
       (ok found))))

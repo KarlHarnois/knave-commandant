@@ -5,7 +5,7 @@
                    bash-words->cursor)
 
 (use complete/candidates complete)
-(use environment first-set)
+(use env first-set)
 (use spec/shapes command-spec)
 
 (export completion-request completion-request-of
@@ -22,8 +22,8 @@
   (answered string)
   (unsupported string))
 
-(defn completion-request-of (spec environment words)
-  (match (first-set environment
+(defn completion-request-of (spec env words)
+  (match (first-set env
                     (ref (vec (str completion-variable))))
     ((some shell) (shell-request spec (as-str shell) words))
     (none completion-request/absent)))

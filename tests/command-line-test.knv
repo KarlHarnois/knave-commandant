@@ -7,22 +7,22 @@
 (use spec/shapes ->option-spec value-kind)
 (use values/matches arg-text matches)
 
-(use support/fixture environment-with no-environment
-                     no-words serve-spec site-spec words)
+(use support/fixture env-with no-env no-words serve-spec
+                     site-spec words)
 
-(defn line (spec environment texts)
+(defn line (spec env texts)
   (parse-line (ref spec)
-              (ref environment)
+              (ref env)
               (ref (words texts))))
 
-(defn stop (spec environment texts)
-  (unwrap-err (line spec environment texts)))
+(defn stop (spec env texts)
+  (unwrap-err (line spec env texts)))
 
 (defn serve-stop (texts)
-  (stop (serve-spec) (no-environment) texts))
+  (stop (serve-spec) (no-env) texts))
 
 (defn site-stop (texts)
-  (stop (site-spec) (no-environment) texts))
+  (stop (site-spec) (no-env) texts))
 
 (defn answer (text reason)
   (->early-exit :text text
@@ -55,13 +55,13 @@
 
 (defn site-into (texts convert)
   (parse-line-into (ref (site-spec))
-                   (ref (no-environment))
+                   (ref (no-env))
                    (ref (words texts))
                    convert))
 
 (deftest a-valid-line-parses-into-matches
   (assert (= (map-ok (line (serve-spec)
-                           (no-environment)
+                           (no-env)
                            (vec "site"))
                      (fn (found)
                        (map-some (arg-text (ref found) "root") clone)))
@@ -72,9 +72,9 @@
              (answer (spec->help (ref (serve-spec)) 80)
                      (stop-reason/help (vec))))))
 
-(deftest help-wraps-to-the-width-in-the-environment
+(deftest help-wraps-to-the-width-in-the-env
   (assert (= (stop (serve-spec)
-                   (environment-with "COLUMNS" "40")
+                   (env-with "COLUMNS" "40")
                    (vec "-h"))
              (answer (spec->help (ref (serve-spec)) 40)
                      (stop-reason/help (vec))))))
@@ -109,13 +109,13 @@
 
 (deftest a-completion-request-answers-with-the-candidates
   (assert (= (stop (site-spec)
-                   (environment-with "COMPLETE" "bash")
+                   (env-with "COMPLETE" "bash")
                    (vec "--" "pa"))
              (answer (str "words\npage") stop-reason/completion))))
 
 (deftest a-completion-request-for-another-shell-is-refused
   (let (refusal (stop (site-spec)
-                      (environment-with "COMPLETE" "fish")
+                      (env-with "COMPLETE" "fish")
                       (no-words)))
     (assert (starts-with?
               (as-str (:text refusal))
@@ -124,7 +124,7 @@
 
 (deftest a-broken-spec-stops-before-parsing-with-code-70
   (assert (= (stop (spec-with-help-option)
-                   (no-environment)
+                   (no-env)
                    (vec "site"))
              (->early-exit :text (str "invalid command spec: option `--help` is built in, so a spec cannot define it")
                            :stream output-stream/standard-error

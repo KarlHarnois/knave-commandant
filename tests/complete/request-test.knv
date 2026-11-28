@@ -3,19 +3,19 @@
 (use complete/request completion-request
                       completion-request-of)
 
-(use support/fixture environment-with no-environment
-                     no-words spec-with-choices words)
+(use support/fixture env-with no-env no-words
+                     spec-with-choices words)
 
-(defn request-under (environment texts)
+(defn request-under (env texts)
   (completion-request-of (ref (spec-with-choices))
-                         (ref environment)
+                         (ref env)
                          (ref (words texts))))
 
 (defn bash-request (texts)
-  (request-under (environment-with "COMPLETE" "bash") texts))
+  (request-under (env-with "COMPLETE" "bash") texts))
 
 (deftest a-line-without-the-variable-asks-for-nothing
-  (assert (= (request-under (no-environment) (no-words))
+  (assert (= (request-under (no-env) (no-words))
              completion-request/absent)))
 
 (deftest the-variable-alone-asks-for-the-script
@@ -35,6 +35,5 @@
              completion-request/absent)))
 
 (deftest another-shell-is-unsupported
-  (assert (= (request-under (environment-with "COMPLETE" "zsh")
-                            (no-words))
+  (assert (= (request-under (env-with "COMPLETE" "zsh") (no-words))
              (completion-request/unsupported (str "zsh")))))
