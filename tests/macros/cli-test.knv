@@ -20,7 +20,7 @@
 
 (defn tool-after (texts)
   (parse-args-from tool
-                   (->env :variables (vec))
+                   (->env :vars (vec))
                    (collect (map (iter texts)
                               (fn (text) (str (deref text)))))))
 

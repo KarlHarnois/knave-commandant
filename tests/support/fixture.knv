@@ -5,9 +5,10 @@
 (use scan/walk scan-end scan-tokens)
 (use scan/tokens words->tokens)
 
-(use lib ->arg-spec ->command-spec ->env ->list-slot
-         ->option-spec ->switch-slot ->value-slot ->variable
-         presence repetition switch-state value-kind)
+(use lib ->arg-spec ->command-spec ->env ->env-var
+         ->list-slot ->option-spec ->switch-slot
+         ->value-slot presence repetition switch-state
+         value-kind)
 
 (use parse outcome parse)
 
@@ -93,11 +94,10 @@
                   :options (vec)
                   :subcommands (vec)))
 
-(defn no-env ()
-  (->env :variables (vec)))
+(defn no-env () (->env :vars (vec)))
 
 (defn env-with (name value)
-  (->env :variables (vec (->variable :name (str name) :value (str value)))))
+  (->env :vars (vec (->env-var :name (str name) :value (str value)))))
 
 (defn no-words ()
   (the (vec (ref str)) (vec)))

@@ -4,7 +4,7 @@
 (use command-line ->early-exit early-exit output-stream
                   parse-line parse-line-into stop-reason)
 
-(use env ->env ->variable env variable)
+(use env ->env ->env-var env env-var)
 
 (use errors/cli-error ->invalid-text ->option-conflict
                       ->usage-failure cli-error
@@ -30,15 +30,16 @@
                  switch-state value-kind value-slot)
 
 (export ->arg-spec ->command-spec ->early-exit ->env
-        ->invalid-text ->list-slot ->option-conflict
-        ->option-spec ->switch-slot ->usage-failure
-        ->value-slot ->variable arg-spec arg-text cli-error
-        command-spec defchoice defcli defcommand early-exit
-        env error->message exit-early invalid-text list-slot
-        matched-value matches option-conflict option-spec
-        option-value output-stream parse-args
-        parse-args-from parse-line parse-line-into presence
-        process-env repetition run run-with spec->help
-        spec->usage spec-error spec-error->message
-        stop-reason switch-slot switch-state usage-failure
-        validate-spec value-kind value-slot variable)
+        ->env-var ->invalid-text ->list-slot
+        ->option-conflict ->option-spec ->switch-slot
+        ->usage-failure ->value-slot arg-spec arg-text
+        cli-error command-spec defchoice defcli defcommand
+        early-exit env env-var error->message exit-early
+        invalid-text list-slot matched-value matches
+        option-conflict option-spec option-value
+        output-stream parse-args parse-args-from parse-line
+        parse-line-into presence process-env repetition run
+        run-with spec->help spec->usage spec-error
+        spec-error->message stop-reason switch-slot
+        switch-state usage-failure validate-spec value-kind
+        value-slot)

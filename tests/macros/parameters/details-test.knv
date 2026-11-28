@@ -11,7 +11,7 @@
 
 (defn deploy-after (texts)
   (parse-args-from deploy
-                   (->env :variables (vec))
+                   (->env :vars (vec))
                    (words texts)))
 
 (deftest a-required-option-becomes-a-plain-field
@@ -28,7 +28,7 @@
 
 (defn add-after (texts)
   (parse-args-from add-item
-                   (->env :variables (vec))
+                   (->env :vars (vec))
                    (words texts)))
 
 (deftest a-delimited-vec-option-reads-each-part

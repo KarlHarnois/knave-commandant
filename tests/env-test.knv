@@ -1,7 +1,7 @@
-(use env ->env ->variable first-set)
+(use env ->env ->env-var first-set)
 
 (defn env-of (name value)
-  (->env :variables (vec (->variable :name (str name) :value (str value)))))
+  (->env :vars (vec (->env-var :name (str name) :value (str value)))))
 
 (defn port-names ()
   (vec (str "SERVE_PORT") (str "PORT")))

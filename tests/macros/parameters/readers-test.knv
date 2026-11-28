@@ -33,7 +33,7 @@
 
 (defn sent (texts)
   (parse-args-from send
-                   (->env :variables (vec))
+                   (->env :vars (vec))
                    (collect (map (iter texts)
                               (fn (text) (str (deref text)))))))
 
