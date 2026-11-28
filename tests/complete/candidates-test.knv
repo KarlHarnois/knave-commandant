@@ -1,10 +1,9 @@
 (use complete/candidates ->cursor complete completion)
 (use lib presence)
 
-(use support/fixture argument-named no-words
-                     repeated-argument serve-spec site-spec
-                     spec-with-arguments spec-with-choices
-                     words)
+(use support/fixture arg-named no-words repeated-arg
+                     serve-spec site-spec spec-with-args
+                     spec-with-choices words)
 
 (defn completing (spec preceding current)
   (complete (ref spec)
@@ -14,12 +13,12 @@
 (defn offering (texts)
   (completion/words (words texts)))
 
-(defn spec-with-level-argument ()
-  (spec-with-arguments (vec (assoc (argument-named "level" presence/required)
-                                   :choices (words (vec "low" "high"))))))
+(defn spec-with-level-arg ()
+  (spec-with-args (vec (assoc (arg-named "level" presence/required)
+                              :choices (words (vec "low" "high"))))))
 
-(defn spec-with-repeated-argument ()
-  (spec-with-arguments (vec (repeated-argument "source" presence/required))))
+(defn spec-with-repeated-arg ()
+  (spec-with-args (vec (repeated-arg "source" presence/required))))
 
 (deftest a-group-offers-its-commands
   (assert (= (completing (site-spec) (no-words) "")
@@ -49,22 +48,22 @@
   (assert (= (completing (serve-spec) (vec "--port") "")
              completion/paths)))
 
-(deftest an-argument-without-choices-offers-paths
+(deftest an-arg-without-choices-offers-paths
   (assert (= (completing (serve-spec) (no-words) "")
              completion/paths)))
 
-(deftest an-argument-offers-its-choices
-  (assert (= (completing (spec-with-level-argument) (no-words) "h")
+(deftest an-arg-offers-its-choices
+  (assert (= (completing (spec-with-level-arg) (no-words) "h")
              (offering (vec "high")))))
 
-(deftest a-line-with-every-argument-offers-nothing
+(deftest a-line-with-every-arg-offers-nothing
   (assert (= (completing (serve-spec) (vec "site") "")
              (offering (no-words)))))
 
-(deftest a-repeated-argument-keeps-offering
-  (assert (= (completing (spec-with-repeated-argument) (vec "a" "b") "")
+(deftest a-repeated-arg-keeps-offering
+  (assert (= (completing (spec-with-repeated-arg) (vec "a" "b") "")
              completion/paths)))
 
-(deftest a-dash-after-the-end-of-options-is-an-argument
+(deftest a-dash-after-the-end-of-options-is-an-arg
   (assert (= (completing (serve-spec) (vec "--") "-")
              completion/paths)))

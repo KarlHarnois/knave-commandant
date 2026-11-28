@@ -28,11 +28,11 @@
                           :value value-kind/count))
     spec))
 
-(deftest the-usage-lists-options-then-arguments
+(deftest the-usage-lists-options-then-args
   (assert (= (spec->usage (ref (serve-spec)))
              "serve [OPTIONS] [ROOT]")))
 
-(deftest the-usage-marks-a-required-argument
+(deftest the-usage-marks-a-required-arg
   (assert (= (spec->usage (ref (spec-requiring "file")))
              "copy [OPTIONS] <FILE>")))
 

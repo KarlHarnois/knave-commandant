@@ -49,7 +49,7 @@
   (assert (empty? (choices-of "copies"))))
 
 (deftest a-type-read-by-parse-lists-no-names
-  (assert (empty? (:choices (at (:arguments (send-spec)) 0)))))
+  (assert (empty? (:choices (at (:args (send-spec)) 0)))))
 
 (deftest each-parameter-is-read-by-the-function-of-its-type
   (assert (= (sent (vec "ana" "--via" "chat" "--urgent" "true" "--copies" "3"))

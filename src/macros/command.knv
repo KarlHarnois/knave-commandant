@@ -62,7 +62,7 @@
                     :name (str (unquote (symbol-name name)))
                     :about (str (unquote about))
                     :version (unquote (version-form settings))
-                    :arguments (vec (splice (specs (only parameters true))))
+                    :args (vec (splice (specs (only parameters true))))
                     :options (vec (splice (specs (only parameters false))))
                     :subcommands (vec)))
                 (type (unquote (named name "matches->" ""))

@@ -7,7 +7,7 @@
   (quoted string :default "two words"))
 
 (defn default-at (index)
-  (clone (:presence (at (:arguments (parts-spec)) index))))
+  (clone (:presence (at (:args (parts-spec)) index))))
 
 (deftest a-number-default-becomes-its-digits
   (assert (= (default-at 0)
@@ -22,5 +22,5 @@
              (presence/defaulted (str "two words")))))
 
 (deftest a-parameter-without-about-has-an-empty-about
-  (assert (= (:about (at (:arguments (parts-spec)) 0))
+  (assert (= (:about (at (:args (parts-spec)) 0))
              "")))

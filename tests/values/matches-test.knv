@@ -1,31 +1,29 @@
 (use spec/shapes switch-state)
 
-(use values/matches ->argument-match ->matches
-                    ->option-match argument-text
-                    argument-texts command-at matched-value
-                    option-value read-count read-switch
-                    shifted)
+(use values/matches ->arg-match ->matches ->option-match
+                    arg-text arg-texts command-at
+                    matched-value option-value read-count
+                    read-switch shifted)
 
 (defn found ()
   (->matches :path (vec)
-             :arguments (vec (->argument-match :name (str "root")
-                                               :placeholder (str "root")
-                                               :values (vec (str "site"))))
+             :args (vec (->arg-match :name (str "root")
+                                     :placeholder (str "root")
+                                     :values (vec (str "site"))))
              :options (vec (->option-match :long (str "verbose")
                                            :value (matched-value/count 2)))))
 
 (defn chosen ()
   (->matches :path (vec (str "page") (str "add"))
-             :arguments (vec)
+             :args (vec)
              :options (vec)))
 
-(deftest reads-an-argument-by-name
-  (assert (= (argument-text (ref (found)) "root")
+(deftest reads-an-arg-by-name
+  (assert (= (arg-text (ref (found)) "root")
              (some (ref (str "site"))))))
 
-(deftest an-unknown-argument-reads-nothing
-  (assert (= (argument-text (ref (found)) "path")
-             none)))
+(deftest an-unknown-arg-reads-nothing
+  (assert (= (arg-text (ref (found)) "path") none)))
 
 (deftest reads-an-option-by-long-name
   (assert (= (option-value (ref (found)) "verbose")
@@ -56,9 +54,9 @@
   (assert (= (:path (shifted (ref (chosen))))
              (vec (str "add")))))
 
-(deftest reads-every-word-of-an-argument
-  (assert (= (argument-texts (ref (found)) "root")
+(deftest reads-every-word-of-an-arg
+  (assert (= (arg-texts (ref (found)) "root")
              (vec (str "site")))))
 
-(deftest an-unknown-argument-has-no-words
-  (assert (empty? (argument-texts (ref (found)) "path"))))
+(deftest an-unknown-arg-has-no-words
+  (assert (empty? (arg-texts (ref (found)) "path"))))

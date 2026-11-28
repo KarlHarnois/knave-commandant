@@ -5,7 +5,7 @@
 (use spec/spec-error spec-error)
 (use help/page spec->help)
 (use spec/shapes ->option-spec value-kind)
-(use values/matches argument-text matches)
+(use values/matches arg-text matches)
 
 (use support/fixture environment-with no-environment
                      no-words serve-spec site-spec words)
@@ -51,7 +51,7 @@
     (result int cli-error)))
 
 (defn refused (_found)
-  (err (cli-error/missing-argument (str "root"))))
+  (err (cli-error/missing-arg (str "root"))))
 
 (defn site-into (texts convert)
   (parse-line-into (ref (site-spec))
@@ -64,7 +64,7 @@
                            (no-environment)
                            (vec "site"))
                      (fn (found)
-                       (map-some (argument-text (ref found) "root") clone)))
+                       (map-some (arg-text (ref found) "root") clone)))
              (ok (some (str "site"))))))
 
 (deftest help-is-an-answer-on-standard-output
@@ -159,4 +159,4 @@
 (deftest a-conversion-error-is-a-usage-reason-at-the-command-path
   (assert (= (:reason (unwrap-err (site-into (vec "build") refused)))
              (usage-at (vec "build")
-                       (cli-error/missing-argument (str "root"))))))
+                       (cli-error/missing-arg (str "root"))))))

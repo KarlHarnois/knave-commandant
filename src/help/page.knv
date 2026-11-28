@@ -1,10 +1,8 @@
 (module
   "Writes a command's usage line and its help page, laid out in columns that fit a width.")
 
-(use help/rows argument-rows command-rows help-row
-               option-rows)
-
-(use help/terms argument-term required-option-term)
+(use help/rows arg-rows command-rows help-row option-rows)
+(use help/terms arg-term required-option-term)
 (use spec/shapes command-spec option-required?)
 (use help/wrap wrap)
 
@@ -30,10 +28,10 @@
 
 (defn spec->help (spec width)
   (let (commands (command-rows spec)
-        arguments (argument-rows spec)
+        args (arg-rows spec)
         options (option-rows spec)
         layout (page-layout (max (widest-term (ref commands))
-                                 (widest-term (ref arguments))
+                                 (widest-term (ref args))
                                  (widest-term (ref options)))
                             width)
         sections (vec (clone (:about spec))
@@ -44,7 +42,7 @@
                    layout)
     (push-section! (mut sections)
                    "Arguments:"
-                   (ref arguments)
+                   (ref args)
                    layout)
     (push-section! (mut sections)
                    "Options:"
@@ -59,9 +57,8 @@
   (let (parts (vec (clone (:name spec))
                    (str options-mark)))
     (push-required-options! (mut parts) spec)
-    (for-each (iter (:arguments spec))
-      (fn (argument)
-        (push! parts (argument-term argument))))
+    (for-each (iter (:args spec))
+      (fn (arg) (push! parts (arg-term arg))))
     (when (not (empty? (:subcommands spec)))
       (push! parts (str command-mark)))
     (join parts " ")))

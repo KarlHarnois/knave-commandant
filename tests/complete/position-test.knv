@@ -40,12 +40,12 @@
 (deftest an-unknown-option-is-skipped
   (assert (open? (after (serve-spec) (vec "--bogus")))))
 
-(deftest each-plain-word-fills-an-argument
-  (assert (= (:arguments-filled (after (serve-spec) (vec "--port" "80" "site")))
+(deftest each-plain-word-fills-an-arg
+  (assert (= (:args-filled (after (serve-spec) (vec "--port" "80" "site")))
              1)))
 
-(deftest every-word-after-the-end-of-options-fills-an-argument
-  (assert (= (:arguments-filled (after (serve-spec) (vec "--" "--port" "80")))
+(deftest every-word-after-the-end-of-options-fills-an-arg
+  (assert (= (:args-filled (after (serve-spec) (vec "--" "--port" "80")))
              2)))
 
 (deftest the-options-given-are-remembered

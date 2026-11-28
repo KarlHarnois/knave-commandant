@@ -1,0 +1,69 @@
+(module
+  "Pairs the plain words of a command line with the command's arguments, and reports a word too many or an argument left out.")
+
+(use errors/cli-error cli-error)
+(use values/matches ->arg-match arg-match)
+(use resolve/shares share shares-of split-of taken-total)
+(use spec/shapes arg-label arg-spec presence required?)
+
+(export resolve-args)
+
+(defn resolve-args (spec positionals)
+  (let (layout (split-of spec (len positionals))
+        shares (shares-of spec (ref layout)))
+    (try (check-no-extra positionals (ref layout)))
+    (try (check-no-missing spec (ref shares)))
+    (ok (arg-matches spec positionals (ref shares)))))
+
+(defn check-no-extra (positionals layout)
+  (match (get positionals (taken-total layout))
+    ((some extra)
+     (err (cli-error/unexpected-arg (clone extra))))
+    (none (ok (do)))))
+
+(defn check-no-missing (spec shares)
+  (match (find (range 0 (len shares))
+           (fn (index)
+             (missing? (at (:args spec) index)
+                       (at shares index))))
+    ((some index)
+     (err (cli-error/missing-arg (arg-label (at (:args spec) index)))))
+    (none (ok (do)))))
+
+(defn missing? (arg taken)
+  (and (required? arg)
+       (= (:count taken) 0)))
+
+(defn arg-matches (spec positionals shares)
+  (collect (map (range 0 (len shares))
+             (fn (index)
+               (arg-match-at (at (:args spec) index)
+                             positionals
+                             (at shares index))))))
+
+(type arg-match-at
+  (fn ((ref arg-spec)
+       (ref (vec string))
+       (ref share))
+    arg-match))
+
+(defn arg-match-at (arg positionals taken)
+  (->arg-match :name (clone (:name arg))
+               :placeholder (arg-label arg)
+               :values (values-or-default arg (slice-of positionals taken))))
+
+(defn slice-of (positionals taken)
+  (collect (map (range (:start taken)
+                       (+ (:start taken) (:count taken)))
+                (fn (index)
+                  (clone (at positionals index))))))
+
+(defn values-or-default (arg given)
+  (if (empty? given)
+    (default-values (:presence arg))
+    given))
+
+(defn default-values (presence)
+  (match presence
+    ((presence/defaulted text) (vec (clone text)))
+    (_ (vec))))

@@ -1,18 +1,16 @@
-(use help/terms argument-term option-term
-                required-option-term)
-
+(use help/terms arg-term option-term required-option-term)
 (use spec/shapes presence)
 
-(use support/fixture argument-named repeated-argument
-                     serve-spec spec-choosing spec-requiring
+(use support/fixture arg-named repeated-arg serve-spec
+                     spec-choosing spec-requiring
                      spec-with-lists spec-with-token)
 
-(deftest a-defaulted-argument-shows-in-brackets
-  (assert (= (argument-term (at (:arguments (serve-spec)) 0))
+(deftest a-defaulted-arg-shows-in-brackets
+  (assert (= (arg-term (at (:args (serve-spec)) 0))
              "[ROOT]")))
 
-(deftest a-required-argument-shows-in-angle-brackets
-  (assert (= (argument-term (at (:arguments (spec-requiring "file")) 0))
+(deftest a-required-arg-shows-in-angle-brackets
+  (assert (= (arg-term (at (:args (spec-requiring "file")) 0))
              "<FILE>")))
 
 (deftest an-option-shows-its-short-long-and-value
@@ -23,16 +21,16 @@
   (assert (= (required-option-term (at (:options (spec-with-token)) 0))
              "--token <TOKEN>")))
 
-(deftest a-repeated-argument-shows-its-dots
-  (assert (= (argument-term (ref (repeated-argument "file" presence/required)))
+(deftest a-repeated-arg-shows-its-dots
+  (assert (= (arg-term (ref (repeated-arg "file" presence/required)))
              "<FILE>...")))
 
-(deftest an-argument-that-can-repeat-zero-times-shows-in-brackets
-  (assert (= (argument-term (ref (repeated-argument "file" presence/optional)))
+(deftest an-arg-that-can-repeat-zero-times-shows-in-brackets
+  (assert (= (arg-term (ref (repeated-arg "file" presence/optional)))
              "[FILE]...")))
 
-(deftest an-optional-argument-shows-in-brackets
-  (assert (= (argument-term (ref (argument-named "name" presence/optional)))
+(deftest an-optional-arg-shows-in-brackets
+  (assert (= (arg-term (ref (arg-named "name" presence/optional)))
              "[NAME]")))
 
 (deftest a-delimited-list-option-shows-its-separator

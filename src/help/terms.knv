@@ -3,29 +3,29 @@
 
 (use help/placeholders shown-placeholder)
 
-(use spec/shapes argument-spec long-prefix name->placeholder
+(use spec/shapes arg-spec long-prefix name->placeholder
                  repetition required? switch-state
                  value-kind)
 
-(export argument-term option-term required-option-term)
+(export arg-term option-term required-option-term)
 
 (def no-short "    ")
 
-(type argument-term
-  (fn ((ref argument-spec)) string))
+(type arg-term
+  (fn ((ref arg-spec)) string))
 
-(defn argument-term (argument)
-  (let (shown (shown-placeholder (as-str (:name argument))
-                                 (ref (:value-name argument))
-                                 (ref (:choices argument))))
-    (str (bracketed argument shown)
-         (repeat-mark (:repeats argument)))))
+(defn arg-term (arg)
+  (let (shown (shown-placeholder (as-str (:name arg))
+                                 (ref (:value-name arg))
+                                 (ref (:choices arg))))
+    (str (bracketed arg shown)
+         (repeat-mark (:repeats arg)))))
 
 (type bracketed
-  (fn ((ref argument-spec) string) string))
+  (fn ((ref arg-spec) string) string))
 
-(defn bracketed (argument shown)
-  (if (required? argument)
+(defn bracketed (arg shown)
+  (if (required? arg)
     (str "<" shown ">")
     (str "[" shown "]")))
 

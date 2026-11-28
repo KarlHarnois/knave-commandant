@@ -1,5 +1,5 @@
 (use errors/cli-error cli-error)
-(use values/matches argument-text one-text option-value)
+(use values/matches arg-text one-text option-value)
 (use resolve/matches-of resolve)
 
 (use support/fixture environment-with no-environment
@@ -12,9 +12,9 @@
              (ref (no-environment))
              (ref (scanned-texts spec texts)))))
 
-(deftest fills-the-arguments
-  (assert (= (argument-text (ref (unwrap-ok (resolved (vec "site"))))
-                            "root")
+(deftest fills-the-args
+  (assert (= (arg-text (ref (unwrap-ok (resolved (vec "site"))))
+                       "root")
              (some (ref (str "site"))))))
 
 (deftest settles-every-option

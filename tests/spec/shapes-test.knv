@@ -44,11 +44,11 @@
 (deftest a-count-is-no-switch
   (assert (not (switch? (ref (unwrap (long-named "verbose")))))))
 
-(deftest a-required-argument-is-required
-  (assert (required? (at (:arguments (spec-requiring "file")) 0))))
+(deftest a-required-arg-is-required
+  (assert (required? (at (:args (spec-requiring "file")) 0))))
 
-(deftest a-defaulted-argument-is-not-required
-  (assert (not (required? (at (:arguments (serve-spec)) 0)))))
+(deftest a-defaulted-arg-is-not-required
+  (assert (not (required? (at (:args (serve-spec)) 0)))))
 
 (deftest an-option-is-required-when-its-presence-says-so
   (assert (option-required? (at (:options (spec-with-token)) 0))))

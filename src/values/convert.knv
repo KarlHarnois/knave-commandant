@@ -5,14 +5,13 @@
 (use sequence appended)
 (use spec/shapes long-flag name->placeholder)
 
-(use values/matches argument-placeholder argument-text
-                    argument-texts many-texts matches
-                    one-text)
+(use values/matches arg-placeholder arg-text arg-texts
+                    many-texts matches one-text)
 
-(export read-argument read-arguments read-many read-option
-        read-optional read-optional-argument)
+(export read-arg read-args read-many read-option
+        read-optional read-optional-arg)
 
-(type read-argument
+(type read-arg
   (where (t)
     (fn ((ref matches)
          (ref str)
@@ -20,16 +19,15 @@
            (result t (option string))))
       (result t cli-error))))
 
-(defn read-argument (found name read)
-  (match (argument-text found name)
+(defn read-arg (found name read)
+  (match (arg-text found name)
     ((some text)
      (valued (read (as-str text))
              text
-             (argument-written found name)))
-    (none (err (cli-error/missing-argument (argument-placeholder found
-                                                                 name))))))
+             (arg-written found name)))
+    (none (err (cli-error/missing-arg (arg-placeholder found name))))))
 
-(type read-optional-argument
+(type read-optional-arg
   (where (t)
     (fn ((ref matches)
          (ref str)
@@ -37,16 +35,16 @@
            (result t (option string))))
       (result (option t) cli-error))))
 
-(defn read-optional-argument (found name read)
-  (match (argument-text found name)
+(defn read-optional-arg (found name read)
+  (match (arg-text found name)
     ((some text)
      (map-ok (valued (read (as-str text))
                      text
-                     (argument-written found name))
+                     (arg-written found name))
              some))
     (none (ok none))))
 
-(type read-arguments
+(type read-args
   (where (t)
     (fn ((ref matches)
          (ref str)
@@ -54,14 +52,14 @@
            (result t (option string))))
       (result (vec t) cli-error))))
 
-(defn read-arguments (found name read)
-  (converted-all (argument-texts found name)
-                 (argument-written found name)
+(defn read-args (found name read)
+  (converted-all (arg-texts found name)
+                 (arg-written found name)
                  read))
 
-(defn argument-written (found name)
+(defn arg-written (found name)
   (str "<"
-       (name->placeholder (as-str (argument-placeholder found name)))
+       (name->placeholder (as-str (arg-placeholder found name)))
        ">"))
 
 (type read-option

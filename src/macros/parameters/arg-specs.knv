@@ -3,7 +3,7 @@
 
 (use code list)
 
-(use macros/parameters/kinds argument-kind choose kind-many
+(use macros/parameters/kinds arg-kind choose kind-many
                              kind-one kind-optional)
 
 (use macros/parameters/parts about default-text defaulted?
@@ -11,29 +11,29 @@
                              required-parameter?
                              value-name-form)
 
-(use spec/shapes ->argument-spec presence repetition)
+(use spec/shapes ->arg-spec presence repetition)
 (use macros/parameters/readers names-form)
 
-(export argument-spec)
+(export arg-spec)
 
-(def argument-spec
+(def arg-spec
   (fn (parameter)
-    (template (->argument-spec :name (str (unquote (parameter-name parameter)))
-                               :value-name (unquote (value-name-form parameter))
-                               :choices (unquote (names-form parameter))
-                               :about (str (unquote (about parameter)))
-                               :presence (unquote (presence parameter))
-                               :repeats (unquote (repeats parameter))))))
+    (template (->arg-spec :name (str (unquote (parameter-name parameter)))
+                          :value-name (unquote (value-name-form parameter))
+                          :choices (unquote (names-form parameter))
+                          :about (str (unquote (about parameter)))
+                          :presence (unquote (presence parameter))
+                          :repeats (unquote (repeats parameter))))))
 
 (def presence
   (fn (parameter)
     (if (defaulted? parameter)
       (template (presence/defaulted (str (unquote (default-text parameter)))))
-      (undefaulted-argument parameter))))
+      (undefaulted-arg parameter))))
 
-(def undefaulted-argument
+(def undefaulted-arg
   (fn (parameter)
-    (choose (argument-kind parameter)
+    (choose (arg-kind parameter)
             (list kind-many
                   (repeated-presence parameter)
                   kind-optional
@@ -49,7 +49,7 @@
 
 (def repeats
   (fn (parameter)
-    (choose (argument-kind parameter)
+    (choose (arg-kind parameter)
             (list kind-many
                   (quote repetition/repeated)
                   kind-optional

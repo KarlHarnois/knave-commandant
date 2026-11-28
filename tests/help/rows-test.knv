@@ -1,5 +1,4 @@
-(use help/rows ->help-row argument-rows command-rows
-               option-rows)
+(use help/rows ->help-row arg-rows command-rows option-rows)
 
 (use support/fixture serve-spec site-spec spec-choosing
                      spec-requiring)
@@ -8,8 +7,8 @@
   (clone (at (option-rows (ref (serve-spec)))
              index)))
 
-(deftest an-argument-row-notes-its-default
-  (assert (= (argument-rows (ref (serve-spec)))
+(deftest an-arg-row-notes-its-default
+  (assert (= (arg-rows (ref (serve-spec)))
              (vec (->help-row :term (str "[ROOT]")
                               :description (str "The folder to serve [default: .]"))))))
 

@@ -4,8 +4,8 @@
 
 (defcommand both (file string) (:quiet switch))
 
-(deftest an-argument-becomes-an-argument-spec
-  (assert (= (:name (at (:arguments (both-spec)) 0))
+(deftest an-arg-becomes-an-arg-spec
+  (assert (= (:name (at (:args (both-spec)) 0))
              "file")))
 
 (deftest an-option-becomes-an-option-spec

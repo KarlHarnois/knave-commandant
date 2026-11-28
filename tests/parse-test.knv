@@ -1,5 +1,5 @@
 (use errors/cli-error ->usage-failure cli-error)
-(use values/matches argument-text)
+(use values/matches arg-text)
 (use parse outcome)
 
 (use support/fixture environment-with no-environment
@@ -9,7 +9,7 @@
 (defn root-after (texts)
   (match (parse-texts texts)
     ((parsed found)
-     (map-some (argument-text (ref found) "root") clone))
+     (map-some (arg-text (ref found) "root") clone))
     (_ none)))
 
 (deftest a-valid-line-parses-into-matches
@@ -30,7 +30,7 @@
 
 (deftest a-resolve-error-becomes-a-usage-error
   (assert (= (parse-texts (vec "one" "two"))
-             (usage-error (cli-error/unexpected-argument (str "two"))))))
+             (usage-error (cli-error/unexpected-arg (str "two"))))))
 
 (deftest a-group-parse-records-the-command-path
   (assert (= (match (parse-with (site-spec)
@@ -51,7 +51,7 @@
                          (no-environment)
                          (vec "build" "a" "b"))
              (outcome/usage-error (->usage-failure :path (vec (str "build"))
-                                                   :error (cli-error/unexpected-argument
+                                                   :error (cli-error/unexpected-arg
                                                             (str "b")))))))
 
 (deftest help-needs-no-required-option

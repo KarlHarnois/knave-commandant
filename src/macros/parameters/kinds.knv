@@ -6,7 +6,7 @@
 
 (use macros/parameters/parts parameter-type)
 
-(export argument-kind choose choose-or kind-count kind-many
+(export arg-kind choose choose-or kind-count kind-many
         kind-one kind-optional kind-switch option-kind)
 
 (def kind-switch "switch")
@@ -19,7 +19,7 @@
 
 (def kind-one "one")
 
-(def argument-kind
+(def arg-kind
   (fn (parameter)
     (choose-or (type-kind (parameter-type parameter))
                (list kind-many kind-many kind-optional kind-optional)

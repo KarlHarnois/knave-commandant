@@ -1,16 +1,16 @@
 (module
   "Writes the spec of one `defcommand` parameter, after checking its details and its name.")
 
-(use macros/parameters/argument-specs argument-spec)
+(use macros/parameters/arg-specs arg-spec)
 (use macros/parameters/details check-details)
 (use macros/parameters/option-specs option-spec)
-(use macros/parameters/parts argument?)
+(use macros/parameters/parts arg?)
 (use macros/parameters/reserved check-reserved)
 
 (export parameter-spec)
 
 (def parameter-spec
   (fn (parameter)
-    (if (argument? parameter)
-      (argument-spec (check-details parameter))
+    (if (arg? parameter)
+      (arg-spec (check-details parameter))
       (option-spec (check-reserved (check-details parameter))))))

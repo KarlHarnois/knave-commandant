@@ -1,12 +1,11 @@
-(use lib ->argument-spec ->early-exit ->usage-failure
-         argument-text cli-error error->message
-         matched-value option-value output-stream parse-line
-         presence repetition spec->help stop-reason
-         switch-state)
+(use lib ->arg-spec ->early-exit ->usage-failure arg-text
+         cli-error error->message matched-value option-value
+         output-stream parse-line presence repetition
+         spec->help stop-reason switch-state)
 
 (use support/fixture environment-with no-environment
                      no-words serve-spec site-spec
-                     spec-with-arguments spec-with-lists
+                     spec-with-args spec-with-lists
                      spec-with-token words)
 
 (defn line (spec environment texts)
@@ -31,8 +30,7 @@
 
 (defn root-after (texts)
   (match (serve-line texts)
-    ((ok found)
-     (map-some (argument-text (ref found) "root") clone))
+    ((ok found) (map-some (arg-text (ref found) "root") clone))
     ((err _) none)))
 
 (defn port-text (text)
@@ -119,7 +117,7 @@
   (assert (= (option-after (vec "-vvp80") "port")
              (port-text "80"))))
 
-(deftest options-and-arguments-mix-in-any-order
+(deftest options-and-args-mix-in-any-order
   (assert (= (root-after (vec "--open" "site" "-p" "80"))
              (some (str "site"))))
   (assert (= (option-after (vec "site" "-p" "80") "port")
@@ -133,7 +131,7 @@
   (assert (starts-with? (as-str (report-after (vec "--port" "--" "80")))
                         "error: option `--port` needs a value")))
 
-(deftest a-negative-number-is-an-argument
+(deftest a-negative-number-is-an-arg
   (assert (= (root-after (vec "-5"))
              (some (str "-5")))))
 
@@ -209,14 +207,14 @@
                   "For more information, try `add --help`."))))
 
 (defn spec-with-value-name ()
-  (spec-with-arguments (vec (->argument-spec :name (str "root")
-                                             :value-name (some (str "path"))
-                                             :choices (vec)
-                                             :about (str "")
-                                             :presence presence/required
-                                             :repeats repetition/once))))
+  (spec-with-args (vec (->arg-spec :name (str "root")
+                                   :value-name (some (str "path"))
+                                   :choices (vec)
+                                   :about (str "")
+                                   :presence presence/required
+                                   :repeats repetition/once))))
 
-(deftest a-missing-argument-is-reported-under-its-value-name
+(deftest a-missing-arg-is-reported-under-its-value-name
   (assert (= (report-of (spec-with-value-name) (no-words))
              (str "error: missing argument <PATH>\n\n"
                   "Usage: copy [OPTIONS] <PATH>\n\n"
