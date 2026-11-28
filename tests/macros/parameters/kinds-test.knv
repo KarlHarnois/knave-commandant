@@ -11,12 +11,12 @@
 (defn kind-at (index)
   (clone (:value (at (:options (kinds-spec)) index))))
 
-(deftest a-vec-argument-repeats
-  (assert (= (:repeats (at (:arguments (kinds-spec)) 0))
+(deftest a-vec-arg-repeats
+  (assert (= (:repeats (at (:args (kinds-spec)) 0))
              repetition/repeated)))
 
-(deftest a-vec-argument-without-required-is-optional
-  (assert (= (:presence (at (:arguments (kinds-spec)) 0))
+(deftest a-vec-arg-without-required-is-optional
+  (assert (= (:presence (at (:args (kinds-spec)) 0))
              presence/optional)))
 
 (deftest a-count-option-counts

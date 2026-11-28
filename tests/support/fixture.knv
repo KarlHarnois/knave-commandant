@@ -5,26 +5,25 @@
 (use scan/walk scan-end scan-tokens)
 (use scan/tokens words->tokens)
 
-(use lib ->argument-spec ->command-spec ->environment
+(use lib ->arg-spec ->command-spec ->env ->env-var
          ->list-slot ->option-spec ->switch-slot
-         ->value-slot ->variable presence repetition
-         switch-state value-kind)
+         ->value-slot presence repetition switch-state
+         value-kind)
 
 (use parse outcome parse)
 
-(export argument-named command-spec-named environment-with
-        no-environment no-words parse-texts parse-with
-        repeated-argument scanned-texts serve-spec site-spec
-        spec-choosing spec-requiring spec-with-arguments
-        spec-with-choices spec-with-lists spec-with-token
-        usage-error words)
+(export arg-named command-spec-named env-with no-env
+        no-words parse-texts parse-with repeated-arg
+        scanned-texts serve-spec site-spec spec-choosing
+        spec-requiring spec-with-args spec-with-choices
+        spec-with-lists spec-with-token usage-error words)
 
 (defn parse-texts (texts)
-  (parse-with (serve-spec) (no-environment) texts))
+  (parse-with (serve-spec) (no-env) texts))
 
-(defn parse-with (spec environment texts)
+(defn parse-with (spec env texts)
   (parse (ref spec)
-         (ref environment)
+         (ref env)
          (ref (words texts))))
 
 (defn words (texts)
@@ -36,12 +35,12 @@
     :name (str "serve")
     :about (str "Serves a folder over HTTP.")
     :version (some (str "1.0.0"))
-    :arguments (vec (->argument-spec :repeats repetition/once
-                                     :name (str "root")
-                                     :value-name none
-                                     :choices (vec)
-                                     :about (str "The folder to serve")
-                                     :presence (presence/defaulted (str "."))))
+    :args (vec (->arg-spec :repeats repetition/once
+                           :name (str "root")
+                           :value-name none
+                           :choices (vec)
+                           :about (str "The folder to serve")
+                           :presence (presence/defaulted (str "."))))
     :options (vec
                (->option-spec :conflicts-with (vec)
                               :long (str "port")
@@ -86,22 +85,19 @@
   (->command-spec :name (str "copy")
                   :about (str "Copies a file.")
                   :version none
-                  :arguments (vec (->argument-spec :repeats repetition/once
-                                                   :name (str name)
-                                                   :value-name none
-                                                   :choices (vec)
-                                                   :about (str
-                                                            "The file to copy")
-                                                   :presence presence/required))
+                  :args (vec (->arg-spec :repeats repetition/once
+                                         :name (str name)
+                                         :value-name none
+                                         :choices (vec)
+                                         :about (str "The file to copy")
+                                         :presence presence/required))
                   :options (vec)
                   :subcommands (vec)))
 
-(defn no-environment ()
-  (->environment :variables (vec)))
+(defn no-env () (->env :vars (vec)))
 
-(defn environment-with (name value)
-  (->environment :variables (vec (->variable :name (str name)
-                                             :value (str value)))))
+(defn env-with (name value)
+  (->env :vars (vec (->env-var :name (str name) :value (str value)))))
 
 (defn no-words ()
   (the (vec (ref str)) (vec)))
@@ -114,7 +110,7 @@
     :name (str "log")
     :about (str "Prints the log.")
     :version none
-    :arguments (vec)
+    :args (vec)
     :options (vec (->option-spec
                     :conflicts-with (vec)
                     :long (str "format")
@@ -141,7 +137,7 @@
   (->command-spec :name (str "site")
                   :about (str "Builds and serves a site.")
                   :version (some (str "1.4.0"))
-                  :arguments (vec)
+                  :args (vec)
                   :options (vec (->option-spec :conflicts-with (vec)
                                                :long (str "verbose")
                                                :short (some (char "v"))
@@ -153,7 +149,7 @@
   (->command-spec :name (str name)
                   :about (str about)
                   :version none
-                  :arguments (vec)
+                  :args (vec)
                   :options (vec)
                   :subcommands (vec)))
 
@@ -162,12 +158,12 @@
     :name (str "build")
     :about (str "Builds the site.")
     :version none
-    :arguments (vec (->argument-spec :repeats repetition/once
-                                     :name (str "root")
-                                     :value-name none
-                                     :choices (vec)
-                                     :about (str "The pages")
-                                     :presence (presence/defaulted (str "."))))
+    :args (vec (->arg-spec :repeats repetition/once
+                           :name (str "root")
+                           :value-name none
+                           :choices (vec)
+                           :about (str "The pages")
+                           :presence (presence/defaulted (str "."))))
     :options (vec (->option-spec :conflicts-with (vec)
                                  :long (str "port")
                                  :short (some (char "p"))
@@ -184,7 +180,7 @@
   (->command-spec :name (str "page")
                   :about (str "Manages the pages.")
                   :version none
-                  :arguments (vec)
+                  :args (vec)
                   :options (vec)
                   :subcommands (vec (command-spec-named "add" "Adds a page.")
                                     (command-spec-named "list"
@@ -199,7 +195,7 @@
   (->command-spec :name (str "deploy")
                   :about (str "Deploys the site.")
                   :version none
-                  :arguments (vec)
+                  :args (vec)
                   :options (vec (->option-spec
                                   :conflicts-with (vec)
                                   :long (str "token")
@@ -213,27 +209,27 @@
                                              :choices (vec)))))
                   :subcommands (vec)))
 
-(defn argument-named (name presence)
-  (->argument-spec :name (str name)
-                   :value-name none
-                   :choices (vec)
-                   :about (str "")
-                   :presence presence
-                   :repeats repetition/once))
+(defn arg-named (name presence)
+  (->arg-spec :name (str name)
+              :value-name none
+              :choices (vec)
+              :about (str "")
+              :presence presence
+              :repeats repetition/once))
 
-(defn repeated-argument (name presence)
-  (->argument-spec :name (str name)
-                   :value-name none
-                   :choices (vec)
-                   :about (str "")
-                   :presence presence
-                   :repeats repetition/repeated))
+(defn repeated-arg (name presence)
+  (->arg-spec :name (str name)
+              :value-name none
+              :choices (vec)
+              :about (str "")
+              :presence presence
+              :repeats repetition/repeated))
 
-(defn spec-with-arguments (arguments)
+(defn spec-with-args (args)
   (->command-spec :name (str "copy")
                   :about (str "Copies files.")
                   :version none
-                  :arguments arguments
+                  :args args
                   :options (vec)
                   :subcommands (vec)))
 
@@ -242,7 +238,7 @@
     :name (str "add")
     :about (str "Adds an item.")
     :version none
-    :arguments (vec)
+    :args (vec)
     :options (vec (->option-spec :conflicts-with (vec)
                                  :long (str "after")
                                  :short none

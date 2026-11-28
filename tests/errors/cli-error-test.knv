@@ -17,12 +17,12 @@
   (assert (= (error->message (cli-error/repeated-option (str "-p")))
              "option `-p` is given more than once")))
 
-(deftest names-an-extra-argument
-  (assert (= (error->message (cli-error/unexpected-argument (str "two")))
+(deftest names-an-extra-arg
+  (assert (= (error->message (cli-error/unexpected-arg (str "two")))
              "unexpected argument `two`")))
 
-(deftest names-a-missing-argument
-  (assert (= (error->message (cli-error/missing-argument (str "file")))
+(deftest names-a-missing-arg
+  (assert (= (error->message (cli-error/missing-arg (str "file")))
              "missing argument <FILE>")))
 
 (deftest names-a-missing-required-option

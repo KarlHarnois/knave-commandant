@@ -12,7 +12,7 @@
 
 (defn chosen (word)
   (->matches :path (vec (str word))
-             :arguments (vec)
+             :args (vec)
              :options (vec)))
 
 (deftest each-entry-becomes-a-subcommand-named-by-its-word
@@ -26,6 +26,6 @@
 
 (deftest a-path-without-a-command-is-a-missing-command
   (assert (= (log-command-at (ref (->matches :path (vec)
-                                             :arguments (vec)
+                                             :args (vec)
                                              :options (vec))))
              (err cli-error/missing-command))))

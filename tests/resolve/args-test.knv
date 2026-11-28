@@ -1,0 +1,65 @@
+(use resolve/args resolve-args)
+(use errors/cli-error cli-error)
+(use values/matches ->arg-match)
+(use spec/shapes presence)
+
+(use support/fixture arg-named no-words repeated-arg
+                     serve-spec spec-requiring
+                     spec-with-args words)
+
+(defn args-of (spec texts)
+  (resolve-args (ref spec)
+                (ref (words texts))))
+
+(deftest a-word-fills-the-arg
+  (assert (= (args-of (serve-spec) (vec "site"))
+             (ok (vec (->arg-match :name (str "root")
+                                   :placeholder (str "root")
+                                   :values (vec (str "site"))))))))
+
+(deftest an-absent-arg-takes-its-default
+  (assert (= (args-of (serve-spec) (no-words))
+             (ok (vec (->arg-match :name (str "root")
+                                   :placeholder (str "root")
+                                   :values (vec (str "."))))))))
+
+(deftest an-extra-word-is-an-error
+  (assert (= (args-of (serve-spec) (vec "one" "two"))
+             (err (cli-error/unexpected-arg (str "two"))))))
+
+(deftest a-required-arg-is-missing
+  (assert (= (args-of (spec-requiring "file") (no-words))
+             (err (cli-error/missing-arg (str "file"))))))
+
+(defn copy-spec ()
+  (spec-with-args (vec (repeated-arg "source" presence/required)
+                       (arg-named "target" presence/required))))
+
+(deftest a-repeated-arg-leaves-the-last-word-to-the-one-after-it
+  (assert (= (args-of (copy-spec) (vec "a" "b" "c"))
+             (ok (vec (->arg-match :name (str "source")
+                                   :placeholder (str "source")
+                                   :values (vec (str "a") (str "b")))
+                      (->arg-match :name (str "target")
+                                   :placeholder (str "target")
+                                   :values (vec (str "c"))))))))
+
+(deftest a-repeated-arg-that-needs-one-word-is-missing-without-it
+  (assert (= (args-of (copy-spec) (vec "c"))
+             (err (cli-error/missing-arg (str "source"))))))
+
+(deftest a-repeated-arg-can-take-no-words
+  (assert (= (args-of (spec-with-args (vec (repeated-arg "file"
+                                                         presence/optional)))
+                      (no-words))
+             (ok (vec (->arg-match :name (str "file")
+                                   :placeholder (str "file")
+                                   :values (vec)))))))
+
+(deftest an-absent-optional-arg-has-no-value
+  (assert (= (args-of (spec-with-args (vec (arg-named "name"
+                                                      presence/optional)))
+                      (no-words))
+             (ok (vec (->arg-match :name (str "name")
+                                   :placeholder (str "name")
+                                   :values (vec)))))))

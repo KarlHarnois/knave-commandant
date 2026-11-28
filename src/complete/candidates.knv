@@ -37,7 +37,7 @@
   (match (:expecting position)
     ((value-of option)
      (choices->completion (option-choices option)))
-    (arguments-only (argument-completion position))
+    (args-only (arg-completion position))
     (anything (open-completion position current))))
 
 (defn open-completion (position current)
@@ -46,7 +46,7 @@
      (completion/words (flags-offered position)))
     ((subcommands? (:scope position))
      (completion/words (command-names (:scope position))))
-    (else (argument-completion position))))
+    (else (arg-completion position))))
 
 (defn command-names (spec)
   (let (names (vec (str help-command)))
@@ -55,17 +55,16 @@
         (push! names (clone (:name subcommand)))))
     names))
 
-(defn argument-completion (position)
-  (match (argument-at (:arguments (:scope position))
-                      (:arguments-filled position))
-    ((some argument)
-     (choices->completion (clone (:choices argument))))
+(defn arg-completion (position)
+  (match (arg-at (:args (:scope position))
+                 (:args-filled position))
+    ((some arg) (choices->completion (clone (:choices arg))))
     (none (completion/words (vec)))))
 
-(defn argument-at (arguments index)
-  (match (get arguments index)
-    ((some argument) (some argument))
-    (none (find (iter arguments) repeated?))))
+(defn arg-at (args index)
+  (match (get args index)
+    ((some arg) (some arg))
+    (none (find (iter args) repeated?))))
 
 (defn option-choices (option)
   (match (:value option)

@@ -16,8 +16,8 @@
   (missing-value string)
   (unexpected-value string)
   (repeated-option string)
-  (unexpected-argument string)
-  (missing-argument string)
+  (unexpected-arg string)
+  (missing-arg string)
   (missing-option string)
   (unknown-command string)
   missing-command
@@ -44,9 +44,9 @@
      (str "option `" written "` takes no value"))
     ((repeated-option written)
      (str "option `" written "` is given more than once"))
-    ((unexpected-argument written)
+    ((unexpected-arg written)
      (str "unexpected argument `" written "`"))
-    ((missing-argument name)
+    ((missing-arg name)
      (str "missing argument <"
           (name->placeholder (as-str name))
           ">"))

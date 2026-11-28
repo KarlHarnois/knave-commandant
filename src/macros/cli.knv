@@ -46,7 +46,7 @@
                   (->command-spec :name (str (unquote (symbol-name name)))
                                   :about (str (unquote about))
                                   :version (unquote (version-form settings))
-                                  :arguments (vec)
+                                  :args (vec)
                                   :options (vec (splice (specs options)))
                                   :subcommands (vec (splice (subcommand-specs
                                                               commands)))))

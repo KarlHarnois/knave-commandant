@@ -2,7 +2,7 @@
   "Runs each check a command's spec must pass and lists the mistakes they find.")
 
 (use resolve/conflicts unknown-conflict)
-(use spec/argument-order argument-order)
+(use spec/arg-order arg-order)
 (use spec/builtins builtin-options help-command)
 (use spec/commands subcommand-names)
 (use spec/shapes long-names)
@@ -15,8 +15,8 @@
     (for-each (iter (vec (check-longs spec)
                          (check-shorts spec)
                          (check-conflict-names spec)
-                         (check-arguments spec)
-                         (check-argument-order spec)
+                         (check-args spec)
+                         (check-arg-order spec)
                          (check-commands spec)))
               (fn (finding)
                 (push-mistake! (mut found) finding)))
@@ -27,9 +27,9 @@
     ((err failure) (push! found (clone failure)))
     ((ok _) (do))))
 
-(defn check-argument-order (spec)
-  (map-err (argument-order spec)
-    (fn (failure) (spec-error/misordered-argument failure))))
+(defn check-arg-order (spec)
+  (map-err (arg-order spec)
+    (fn (failure) (spec-error/misordered-arg failure))))
 
 (defn check-conflict-names (spec)
   (match (unknown-conflict spec)
@@ -59,9 +59,9 @@
     ((some character) (push! shorts character))
     (none (do))))
 
-(defn argument-names (spec)
-  (collect (map (iter (:arguments spec))
-             (fn (argument) (clone (:name argument))))))
+(defn arg-names (spec)
+  (collect (map (iter (:args spec))
+             (fn (arg) (clone (:name arg))))))
 
 (defn check-longs (spec)
   (longs-checked (long-names spec)))
@@ -95,9 +95,9 @@
     (none (map-err (check-unique (ref names))
             (fn (name) (spec-error/repeated-short name))))))
 
-(defn check-arguments (spec)
-  (map-err (check-unique (ref (argument-names spec)))
-    (fn (name) (spec-error/repeated-argument name))))
+(defn check-args (spec)
+  (map-err (check-unique (ref (arg-names spec)))
+    (fn (name) (spec-error/repeated-arg name))))
 
 (defn check-unique (names)
   (match (find (range 1 (len names))

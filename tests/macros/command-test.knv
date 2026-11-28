@@ -1,6 +1,6 @@
-(use lib ->early-exit ->environment ->variable defchoice
-         defcommand output-stream parse-args-from
-         spec->usage stop-reason)
+(use lib ->early-exit ->env ->env-var defchoice defcommand
+         output-stream parse-args-from spec->usage
+         stop-reason)
 
 (export matches->copy matches->greet matches->hello
         matches->say matches->unlock)
@@ -32,7 +32,7 @@
 
 (defn greet-after (texts)
   (parse-args-from greet
-                   (->environment :variables (vec))
+                   (->env :vars (vec))
                    (texts->words texts)))
 
 (defn greet-stop (texts)
@@ -44,7 +44,7 @@
   (assert (= (:version (greet-spec))
              (some (str "2.0.0")))))
 
-(deftest the-spec-lists-arguments-then-options
+(deftest the-spec-lists-args-then-options
   (assert (= (spec->usage (ref (greet-spec)))
              "greet [OPTIONS] <WHO>")))
 
@@ -70,26 +70,26 @@
   (assert (= (:code (greet-stop (vec "--help")))
              0)))
 
-(deftest a-vec-argument-takes-every-word-the-next-one-leaves
+(deftest a-vec-arg-takes-every-word-the-next-one-leaves
   (assert (= (parse-args-from copy
-                              (->environment :variables (vec))
+                              (->env :vars (vec))
                               (texts->words (vec "a" "b" "c")))
              (ok (->copy :sources (vec (str "a") (str "b"))
                          :target (str "c"))))))
 
-(deftest a-required-vec-argument-shows-it-repeats
+(deftest a-required-vec-arg-shows-it-repeats
   (assert (= (spec->usage (ref (copy-spec)))
              "copy [OPTIONS] <SOURCES>... <TARGET>")))
 
-(deftest an-option-argument-can-be-left-out
+(deftest an-option-arg-can-be-left-out
   (assert (= (parse-args-from hello
-                              (->environment :variables (vec))
+                              (->env :vars (vec))
                               (texts->words (the (vec (ref str)) (vec))))
              (ok (->hello :name none)))))
 
-(deftest an-option-argument-takes-a-given-word
+(deftest an-option-arg-takes-a-given-word
   (assert (= (parse-args-from hello
-                              (->environment :variables (vec))
+                              (->env :vars (vec))
                               (texts->words (vec "ana")))
              (ok (->hello :name (some (str "ana")))))))
 
@@ -97,17 +97,16 @@
   (assert (= (spec->usage (ref (hello-spec)))
              "hello [OPTIONS] [WHO]")))
 
-(deftest a-choice-argument-and-option-show-their-choices
+(deftest a-choice-arg-and-option-show-their-choices
   (assert (= (spec->usage (ref (say-spec)))
              "say [OPTIONS] <plain|loud>"))
-  (assert (= (:choices (at (:arguments (say-spec)) 0))
+  (assert (= (:choices (at (:args (say-spec)) 0))
              (vec (str "plain") (str "loud")))))
 
 (deftest a-completion-request-comes-back-as-an-early-exit
   (assert (= (map-ok (parse-args-from copy
-                                      (->environment
-                                        :variables (vec (->variable :name (str "COMPLETE")
-                                                                    :value (str "bash"))))
+                                      (->env :vars (vec (->env-var :name (str "COMPLETE")
+                                                                   :value (str "bash"))))
                                       (texts->words (vec "--" "-")))
                      (fn (_) 0))
              (err (->early-exit :text (str "words\n--help")
@@ -144,13 +143,13 @@
 
 (defn unlock-report (texts)
   (clone (:text (unwrap-err (map-ok (parse-args-from unlock
-                                                     (->environment :variables (vec))
+                                                     (->env :vars (vec))
                                                      (texts->words texts))
                                     (fn (_) 0))))))
 
 (deftest a-custom-type-reads-its-value
   (assert (= (parse-args-from unlock
-                              (->environment :variables (vec))
+                              (->env :vars (vec))
                               (texts->words (vec "1234" "--label" "#front")))
              (ok (->unlock :code (->pin :digits (str "1234"))
                            :label (some (->label :text (str "#front"))))))))

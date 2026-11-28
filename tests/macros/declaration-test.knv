@@ -16,9 +16,8 @@
   (assert (= (:version (described-spec))
              (some (str "9.9.9")))))
 
-(deftest arguments-and-options-are-sorted-by-kind
-  (assert (= (len (:arguments (described-spec)))
-             1))
+(deftest args-and-options-are-sorted-by-kind
+  (assert (= (len (:args (described-spec))) 1))
   (assert (= (len (:options (described-spec))) 1)))
 
 (deftest a-bare-command-has-no-about-and-no-version

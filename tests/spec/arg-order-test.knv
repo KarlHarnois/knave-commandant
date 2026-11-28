@@ -1,0 +1,35 @@
+(use spec/arg-order arg-order order-error)
+(use spec/shapes presence)
+(use support/fixture arg-named repeated-arg spec-with-args)
+
+(defn order-of (args)
+  (arg-order (ref (spec-with-args args))))
+
+(defn failure-of (args)
+  (match (order-of args)
+    ((ok _) none)
+    ((err failure) (some failure))))
+
+(deftest a-required-arg-can-follow-a-repeated-one
+  (assert (ok? (order-of (vec (repeated-arg "source" presence/required)
+                              (arg-named "target" presence/required))))))
+
+(deftest only-one-arg-can-repeat
+  (assert (= (failure-of (vec (repeated-arg "a" presence/optional)
+                              (repeated-arg "b" presence/optional)))
+             (some (order-error/second-repeated (str "b"))))))
+
+(deftest a-required-arg-cannot-follow-an-optional-one
+  (assert (= (failure-of (vec (arg-named "a" presence/optional)
+                              (arg-named "b" presence/required)))
+             (some (order-error/after-optional (str "b"))))))
+
+(deftest only-a-required-arg-can-follow-a-repeated-one
+  (assert (= (failure-of (vec (repeated-arg "a" presence/required)
+                              (arg-named "b" presence/optional)))
+             (some (order-error/after-repeated (str "b"))))))
+
+(deftest a-repeated-arg-cannot-have-a-default
+  (assert (= (failure-of (vec (repeated-arg "a"
+                                            (presence/defaulted (str "x")))))
+             (some (order-error/repeated-default (str "a"))))))

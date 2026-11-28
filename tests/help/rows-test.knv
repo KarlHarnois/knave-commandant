@@ -1,5 +1,4 @@
-(use help/rows ->help-row argument-rows command-rows
-               option-rows)
+(use help/rows ->help-row arg-rows command-rows option-rows)
 
 (use support/fixture serve-spec site-spec spec-choosing
                      spec-requiring)
@@ -8,12 +7,12 @@
   (clone (at (option-rows (ref (serve-spec)))
              index)))
 
-(deftest an-argument-row-notes-its-default
-  (assert (= (argument-rows (ref (serve-spec)))
+(deftest an-arg-row-notes-its-default
+  (assert (= (arg-rows (ref (serve-spec)))
              (vec (->help-row :term (str "[ROOT]")
                               :description (str "The folder to serve [default: .]"))))))
 
-(deftest a-value-option-notes-its-default-and-environment
+(deftest a-value-option-notes-its-default-and-env
   (assert (= (option-row-at 0)
              (->help-row :term (str "-p, --port <PORT>")
                          :description (str "The port to listen on [default: 8000] [env: SERVE_PORT, PORT]")))))
@@ -40,7 +39,7 @@
   (assert (= (len (option-rows (ref (spec-requiring "file"))))
              1)))
 
-(deftest a-switch-notes-its-environment-variable
+(deftest a-switch-notes-its-env-variable
   (assert (= (:description (option-row-at 1))
              "Opens the browser [env: SERVE_OPEN]")))
 

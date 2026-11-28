@@ -3,20 +3,20 @@
 
 (use spec/shapes command-spec presence value-kind)
 (use help/placeholders choices-listed?)
-(use help/terms argument-term option-term)
+(use help/terms arg-term option-term)
 
 (use spec/builtins builtin-options-of help-command
                    help-command-about)
 
-(export ->help-row argument-rows command-rows help-row
+(export ->help-row arg-rows command-rows help-row
         option-rows)
 
 (defstruct help-row
   :term string
   :description string)
 
-(defn argument-rows (spec)
-  (collect (map (iter (:arguments spec)) argument-row)))
+(defn arg-rows (spec)
+  (collect (map (iter (:args spec)) arg-row)))
 
 (type option-rows
   (fn ((ref command-spec)) (vec help-row)))
@@ -44,12 +44,12 @@
   (->help-row :term (clone (:name subcommand))
               :description (clone (:about subcommand))))
 
-(defn argument-row (argument)
-  (->help-row :term (argument-term argument)
-              :description (str (:about argument)
-                                (argument-default-note (:presence argument)))))
+(defn arg-row (arg)
+  (->help-row :term (arg-term arg)
+              :description (str (:about arg)
+                                (arg-default-note (:presence arg)))))
 
-(defn argument-default-note (presence)
+(defn arg-default-note (presence)
   (match presence
     ((presence/defaulted text) (default-note text))
     (_ (str))))

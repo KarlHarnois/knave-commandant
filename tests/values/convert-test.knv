@@ -1,48 +1,47 @@
 (use errors/cli-error ->invalid-text cli-error)
 
-(use values/matches ->argument-match ->matches
-                    ->option-match matched-value)
+(use values/matches ->arg-match ->matches ->option-match
+                    matched-value)
 
 (use spec/shapes switch-state)
 
 (use values/builtin text->bool text->string text->u16
                     text->u8)
 
-(use values/convert read-argument read-arguments read-many
-                    read-option read-optional
-                    read-optional-argument)
+(use values/convert read-arg read-args read-many read-option
+                    read-optional read-optional-arg)
 
 (defn found ()
-  (->matches
-    :path (vec)
-    :arguments (vec (->argument-match :name (str "root")
-                                      :placeholder (str "root")
-                                      :values (vec (str "site")))
-                    (->argument-match :name (str "ports")
-                                      :placeholder (str "ports")
-                                      :values (vec (str "80") (str "81")))
-                    (->argument-match :name (str "label")
-                                      :placeholder (str "label")
-                                      :values (vec)))
-    :options (vec (->option-match :long (str "port")
-                                  :value (matched-value/one (some (str "80"))))
-                  (->option-match :long (str "name")
-                                  :value (matched-value/one none))
-                  (->option-match :long (str "tag")
-                                  :value (matched-value/many (vec (str "1")
-                                                                  (str "2"))))
-                  (->option-match :long (str "open")
-                                  :value (matched-value/switch switch-state/on))
-                  (->option-match :long (str "verbose")
-                                  :value (matched-value/count 3)))))
+  (->matches :path (vec)
+             :args (vec (->arg-match :name (str "root")
+                                     :placeholder (str "root")
+                                     :values (vec (str "site")))
+                        (->arg-match :name (str "ports")
+                                     :placeholder (str "ports")
+                                     :values (vec (str "80") (str "81")))
+                        (->arg-match :name (str "label")
+                                     :placeholder (str "label")
+                                     :values (vec)))
+             :options (vec (->option-match :long (str "port")
+                                           :value (matched-value/one (some (str "80"))))
+                           (->option-match :long (str "name")
+                                           :value (matched-value/one none))
+                           (->option-match :long (str "tag")
+                                           :value (matched-value/many (vec (str "1")
+                                                                           (str "2"))))
+                           (->option-match :long (str "open")
+                                           :value (matched-value/switch
+                                                    switch-state/on))
+                           (->option-match :long (str "verbose")
+                                           :value (matched-value/count 3)))))
 
-(deftest reads-an-argument-as-text
-  (assert (= (read-argument (ref (found)) "root" text->string)
+(deftest reads-an-arg-as-text
+  (assert (= (read-arg (ref (found)) "root" text->string)
              (ok (str "site")))))
 
-(deftest a-missing-argument-is-an-error
-  (assert (= (read-argument (ref (found)) "path" text->string)
-             (err (cli-error/missing-argument (str "path"))))))
+(deftest a-missing-arg-is-an-error
+  (assert (= (read-arg (ref (found)) "path" text->string)
+             (err (cli-error/missing-arg (str "path"))))))
 
 (deftest reads-an-option-as-a-number
   (assert (= (read-option (ref (found)) "port" text->u16)
@@ -71,14 +70,14 @@
   (assert (= (read-many (ref (found)) "tag" text->u8)
              (ok (vec 1 2)))))
 
-(deftest reads-every-word-of-a-repeated-argument
-  (assert (= (read-arguments (ref (found)) "ports" text->u16)
+(deftest reads-every-word-of-a-repeated-arg
+  (assert (= (read-args (ref (found)) "ports" text->u16)
              (ok (vec 80 81)))))
 
-(deftest an-absent-optional-argument-is-none
-  (assert (= (read-optional-argument (ref (found)) "label" text->string)
+(deftest an-absent-optional-arg-is-none
+  (assert (= (read-optional-arg (ref (found)) "label" text->string)
              (ok none))))
 
-(deftest a-given-optional-argument-is-some
-  (assert (= (read-optional-argument (ref (found)) "root" text->string)
+(deftest a-given-optional-arg-is-some
+  (assert (= (read-optional-arg (ref (found)) "root" text->string)
              (ok (some (str "site"))))))

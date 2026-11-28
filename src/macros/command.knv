@@ -37,7 +37,7 @@
   (template (run-with (ref ((unquote (named name "" "-spec"))))
                       (unquote (named name "matches->" "")))))
 
-(defmacro parse-args-from (name environment words)
+(defmacro parse-args-from (name env words)
   "Parses `words` with the command `name`, defined by `defcommand` or
   `defcli`, and returns `(ok value)` with its typed struct. Anything else
   comes back as `(err early-exit)`, which holds the text, the stream and the
@@ -46,7 +46,7 @@
   `(exit-early early-exit)` prints it and exits. `parse-args-from` itself reads
   nothing from the process and never exits."
   (template (parse-line-into (ref ((unquote (named name "" "-spec"))))
-                             (ref (unquote environment))
+                             (ref (unquote env))
                              (ref (unquote words))
                              (unquote (named name "matches->" "")))))
 
@@ -62,7 +62,7 @@
                     :name (str (unquote (symbol-name name)))
                     :about (str (unquote about))
                     :version (unquote (version-form settings))
-                    :arguments (vec (splice (specs (only parameters true))))
+                    :args (vec (splice (specs (only parameters true))))
                     :options (vec (splice (specs (only parameters false))))
                     :subcommands (vec)))
                 (type (unquote (named name "matches->" ""))

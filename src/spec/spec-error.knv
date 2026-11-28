@@ -1,7 +1,7 @@
 (module
   "Names each mistake a spec can hold, and says it in a sentence.")
 
-(use spec/argument-order order-error order-error->message)
+(use spec/arg-order order-error order-error->message)
 (use spec/builtins help-command)
 
 (export spec-error spec-error->message)
@@ -11,8 +11,8 @@
   (reserved-short char)
   (repeated-long string)
   (repeated-short char)
-  (repeated-argument string)
-  (misordered-argument order-error)
+  (repeated-arg string)
+  (misordered-arg order-error)
   (unknown-conflict string)
   reserved-command
   (repeated-command string))
@@ -29,10 +29,9 @@
      (str "two options are named `--" name "`"))
     ((repeated-short name)
      (str "two options are named `-" name "`"))
-    ((repeated-argument name)
+    ((repeated-arg name)
      (str "two arguments are named <" name ">"))
-    ((misordered-argument failure)
-     (order-error->message failure))
+    ((misordered-arg failure) (order-error->message failure))
     ((unknown-conflict name)
      (str "an option conflicts with `--" name
           "`, which is not an option"))

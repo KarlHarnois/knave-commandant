@@ -31,7 +31,7 @@
                 (ref (str (deref (at texts 0)))))
     (clone (:path scan))))
 
-(deftest a-word-of-a-leaf-command-is-an-argument
+(deftest a-word-of-a-leaf-command-is-an-arg
   (assert (= (word-step (serve-spec) (vec "site"))
              (ok (step/advance 1)))))
 

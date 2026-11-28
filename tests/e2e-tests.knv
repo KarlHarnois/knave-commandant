@@ -1,21 +1,19 @@
-(use lib ->argument-spec ->early-exit ->usage-failure
-         argument-text cli-error error->message
-         matched-value option-value output-stream parse-line
-         presence repetition spec->help stop-reason
-         switch-state)
+(use lib ->arg-spec ->early-exit ->usage-failure arg-text
+         cli-error error->message matched-value option-value
+         output-stream parse-line presence repetition
+         spec->help stop-reason switch-state)
 
-(use support/fixture environment-with no-environment
-                     no-words serve-spec site-spec
-                     spec-with-arguments spec-with-lists
-                     spec-with-token words)
+(use support/fixture env-with no-env no-words serve-spec
+                     site-spec spec-with-args
+                     spec-with-lists spec-with-token words)
 
-(defn line (spec environment texts)
+(defn line (spec env texts)
   (parse-line (ref spec)
-              (ref environment)
+              (ref env)
               (ref (words texts))))
 
 (defn serve-line (texts)
-  (line (serve-spec) (no-environment) texts))
+  (line (serve-spec) (no-env) texts))
 
 (defn option-in (parsed long)
   (match parsed
@@ -26,13 +24,12 @@
 (defn option-after (texts long)
   (option-in (serve-line texts) long))
 
-(defn port-with (environment texts)
-  (option-in (line (serve-spec) environment texts) "port"))
+(defn port-with (env texts)
+  (option-in (line (serve-spec) env texts) "port"))
 
 (defn root-after (texts)
   (match (serve-line texts)
-    ((ok found)
-     (map-some (argument-text (ref found) "root") clone))
+    ((ok found) (map-some (arg-text (ref found) "root") clone))
     ((err _) none)))
 
 (defn port-text (text)
@@ -77,7 +74,7 @@
     (_ (str))))
 
 (defn report-of (spec texts)
-  (match (line spec (no-environment) texts)
+  (match (line spec (no-env) texts)
     ((ok _) (str))
     ((err stop) (clone (:text stop)))))
 
@@ -119,7 +116,7 @@
   (assert (= (option-after (vec "-vvp80") "port")
              (port-text "80"))))
 
-(deftest options-and-arguments-mix-in-any-order
+(deftest options-and-args-mix-in-any-order
   (assert (= (root-after (vec "--open" "site" "-p" "80"))
              (some (str "site"))))
   (assert (= (option-after (vec "site" "-p" "80") "port")
@@ -133,7 +130,7 @@
   (assert (starts-with? (as-str (report-after (vec "--port" "--" "80")))
                         "error: option `--port` needs a value")))
 
-(deftest a-negative-number-is-an-argument
+(deftest a-negative-number-is-an-arg
   (assert (= (root-after (vec "-5"))
              (some (str "-5")))))
 
@@ -141,10 +138,10 @@
   (assert (= (option-after (vec "--no-color") "color")
              (some (matched-value/switch switch-state/off)))))
 
-(deftest a-flag-beats-the-environment-which-beats-the-default
-  (assert (= (port-with (environment-with "PORT" "90") (vec "-p" "80"))
+(deftest a-flag-beats-the-env-which-beats-the-default
+  (assert (= (port-with (env-with "PORT" "90") (vec "-p" "80"))
              (port-text "80")))
-  (assert (= (port-with (environment-with "PORT" "90") (no-words))
+  (assert (= (port-with (env-with "PORT" "90") (no-words))
              (port-text "90")))
   (assert (= (option-after (no-words) "port")
              (port-text "8000"))))
@@ -167,7 +164,7 @@
 
 (deftest a-global-option-works-after-the-command
   (assert (= (option-in (line (site-spec)
-                              (no-environment)
+                              (no-env)
                               (vec "build" "-v" "site"))
                         "verbose")
              (some (matched-value/count 1)))))
@@ -196,7 +193,7 @@
 
 (deftest a-delimited-list-option-reads-every-part
   (assert (= (option-in (line (spec-with-lists)
-                              (no-environment)
+                              (no-env)
                               (vec "--after" "1,2" "--after" "3"))
                         "after")
              (some (matched-value/many (vec (str "1") (str "2") (str "3")))))))
@@ -209,14 +206,14 @@
                   "For more information, try `add --help`."))))
 
 (defn spec-with-value-name ()
-  (spec-with-arguments (vec (->argument-spec :name (str "root")
-                                             :value-name (some (str "path"))
-                                             :choices (vec)
-                                             :about (str "")
-                                             :presence presence/required
-                                             :repeats repetition/once))))
+  (spec-with-args (vec (->arg-spec :name (str "root")
+                                   :value-name (some (str "path"))
+                                   :choices (vec)
+                                   :about (str "")
+                                   :presence presence/required
+                                   :repeats repetition/once))))
 
-(deftest a-missing-argument-is-reported-under-its-value-name
+(deftest a-missing-arg-is-reported-under-its-value-name
   (assert (= (report-of (spec-with-value-name) (no-words))
              (str "error: missing argument <PATH>\n\n"
                   "Usage: copy [OPTIONS] <PATH>\n\n"
@@ -232,7 +229,7 @@
   (assert (= (kind-of (serve-line (vec "--prot")))
              "usage"))
   (assert (= (kind-of (line (serve-spec)
-                            (environment-with "COMPLETE" "bash")
+                            (env-with "COMPLETE" "bash")
                             (vec "--" "-")))
              "completion")))
 

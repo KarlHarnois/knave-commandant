@@ -1,6 +1,6 @@
-(use spec/argument-order order-error)
+(use spec/arg-order order-error)
 
-(use spec/shapes ->argument-spec ->option-spec presence
+(use spec/shapes ->arg-spec ->option-spec presence
                  repetition value-kind)
 
 (use support/fixture command-spec-named serve-spec site-spec
@@ -19,15 +19,15 @@
                           :value value-kind/count))
     spec))
 
-(defn with-argument (name)
+(defn with-arg (name)
   (let (spec (serve-spec))
-    (push! (:arguments spec)
-           (->argument-spec :repeats repetition/once
-                            :name (str name)
-                            :value-name none
-                            :choices (vec)
-                            :about (str "")
-                            :presence presence/required))
+    (push! (:args spec)
+           (->arg-spec :repeats repetition/once
+                       :name (str name)
+                       :value-name none
+                       :choices (vec)
+                       :about (str "")
+                       :presence presence/required))
     spec))
 
 (defn site-with-command (name)
@@ -57,9 +57,9 @@
                                                           (some (char "p"))))))
              (spec-error/repeated-short (char "p")))))
 
-(deftest two-arguments-cannot-share-a-name
-  (assert (= (unwrap-err (validate-spec (ref (with-argument "root"))))
-             (spec-error/repeated-argument (str "root")))))
+(deftest two-args-cannot-share-a-name
+  (assert (= (unwrap-err (validate-spec (ref (with-arg "root"))))
+             (spec-error/repeated-arg (str "root")))))
 
 (deftest a-group-spec-is-valid
   (assert (ok? (validate-spec (ref (site-spec))))))
@@ -83,9 +83,9 @@
     (assert (= (unwrap-err (validate-spec (ref spec)))
                (spec-error/repeated-long (str "port"))))))
 
-(deftest a-required-argument-cannot-follow-a-default
-  (assert (= (unwrap-err (validate-spec (ref (with-argument "extra"))))
-             (spec-error/misordered-argument (order-error/after-optional (str "extra"))))))
+(deftest a-required-arg-cannot-follow-a-default
+  (assert (= (unwrap-err (validate-spec (ref (with-arg "extra"))))
+             (spec-error/misordered-arg (order-error/after-optional (str "extra"))))))
 
 (deftest a-conflict-must-name-an-option-of-the-command
   (let (spec (spec-with-lists))

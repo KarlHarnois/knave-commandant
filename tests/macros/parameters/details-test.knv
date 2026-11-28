@@ -1,4 +1,4 @@
-(use lib ->environment defcommand parse-args-from)
+(use lib ->env defcommand parse-args-from)
 
 (export matches->add-item matches->deploy)
 
@@ -11,7 +11,7 @@
 
 (defn deploy-after (texts)
   (parse-args-from deploy
-                   (->environment :variables (vec))
+                   (->env :vars (vec))
                    (words texts)))
 
 (deftest a-required-option-becomes-a-plain-field
@@ -28,7 +28,7 @@
 
 (defn add-after (texts)
   (parse-args-from add-item
-                   (->environment :variables (vec))
+                   (->env :vars (vec))
                    (words texts)))
 
 (deftest a-delimited-vec-option-reads-each-part

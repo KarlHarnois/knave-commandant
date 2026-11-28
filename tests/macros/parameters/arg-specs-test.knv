@@ -1,0 +1,27 @@
+(use lib defcommand presence repetition)
+
+(export matches->move)
+
+(defcommand move (sources (vec string) :required true)
+  (target string)
+  (label string :default "moved" :value-name tag))
+
+(defn arg-at (index)
+  (clone (at (:args (move-spec)) index)))
+
+(deftest a-required-vec-arg-is-required-and-repeats
+  (assert (= (:presence (arg-at 0)) presence/required))
+  (assert (= (:repeats (arg-at 0)) repetition/repeated)))
+
+(deftest an-arg-without-a-default-is-required-once
+  (assert (= (:presence (arg-at 1)) presence/required))
+  (assert (= (:repeats (arg-at 1)) repetition/once)))
+
+(deftest a-defaulted-arg-records-its-default-text
+  (assert (= (:presence (arg-at 2))
+             (presence/defaulted (str "moved")))))
+
+(deftest an-arg-records-its-value-name-only-when-given
+  (assert (= (:value-name (arg-at 1)) none))
+  (assert (= (:value-name (arg-at 2))
+             (some (str "tag")))))

@@ -3,21 +3,20 @@
 
 (use code first list string symbol)
 
-(use macros/parameters/kinds argument-kind choose kind-count
+(use macros/parameters/kinds arg-kind choose kind-count
                              kind-many kind-one
                              kind-optional kind-switch
                              option-kind)
 
-(use macros/parameters/parts always-set? argument?
-                             parameter-name parameter-type)
+(use macros/parameters/parts always-set? arg? parameter-name
+                             parameter-type)
 
 (use macros/parameters/readers reader-form)
 (use values/matches read-count read-switch)
 (use spec/shapes switch-state)
 
-(use values/convert read-argument read-arguments read-many
-                    read-option read-optional
-                    read-optional-argument)
+(use values/convert read-arg read-args read-many read-option
+                    read-optional read-optional-arg)
 
 (export matches-name parameter-binding parameter-field
         parameter-reader)
@@ -34,38 +33,37 @@
 
 (def parameter-reader
   (fn (parameter)
-    (if (argument? parameter)
-      (argument-reader parameter
-                       (matches-name (first parameter))
-                       (parameter-name parameter))
+    (if (arg? parameter)
+      (arg-reader parameter
+                  (matches-name (first parameter))
+                  (parameter-name parameter))
       (option-reader parameter
                      (matches-name (first parameter))
                      (parameter-name parameter)))))
 
-(def argument-reader
+(def arg-reader
   (fn (parameter found name)
-    (choose (argument-kind parameter)
+    (choose (arg-kind parameter)
             (list kind-many
-                  (template (read-arguments (unquote found)
-                                            (unquote name)
-                                            (unquote (reader-form parameter))))
+                  (template (read-args (unquote found)
+                                       (unquote name)
+                                       (unquote (reader-form parameter))))
                   kind-optional
-                  (template (read-optional-argument (unquote found)
-                                                    (unquote name)
-                                                    (unquote (reader-form
-                                                               parameter))))
+                  (template (read-optional-arg (unquote found)
+                                               (unquote name)
+                                               (unquote (reader-form
+                                                          parameter))))
                   kind-one
-                  (template (read-argument (unquote found)
-                                           (unquote name)
-                                           (unquote (reader-form
-                                                      parameter))))))))
+                  (template (read-arg (unquote found)
+                                      (unquote name)
+                                      (unquote (reader-form parameter))))))))
 
 (def matches-name
   (fn (anchor) (symbol anchor "command-line-matches")))
 
 (def field-type
   (fn (parameter)
-    (if (argument? parameter)
+    (if (arg? parameter)
       (parameter-type parameter)
       (option-field-type parameter (parameter-type parameter)))))
 

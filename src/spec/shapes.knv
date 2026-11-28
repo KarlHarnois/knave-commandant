@@ -1,24 +1,24 @@
 (module
   "Describes a command: its arguments, its options, and how each option takes a value.")
 
-(export ->argument-spec ->command-spec ->list-slot
-        ->option-spec ->switch-slot ->value-slot
-        argument-label argument-spec command-spec find-long
-        find-short list-slot long-flag long-names
-        long-prefix name->placeholder option-required?
-        option-spec presence repeated? repetition required?
-        short-takes-value? switch-slot switch-state switch?
-        takes-value? value-kind value-slot)
+(export ->arg-spec ->command-spec ->list-slot ->option-spec
+        ->switch-slot ->value-slot arg-label arg-spec
+        command-spec find-long find-short list-slot
+        long-flag long-names long-prefix name->placeholder
+        option-required? option-spec presence repeated?
+        repetition required? short-takes-value? switch-slot
+        switch-state switch? takes-value? value-kind
+        value-slot)
 
 (defstruct command-spec
   :name string
   :about string
   :version (option string)
-  :arguments (vec argument-spec)
+  :args (vec arg-spec)
   :options (vec option-spec)
   :subcommands (vec command-spec))
 
-(defstruct argument-spec
+(defstruct arg-spec
   :name string
   :value-name (option string)
   :choices (vec string)
@@ -73,12 +73,12 @@
 
 (defn long-flag (long) (str long-prefix long))
 
-(type argument-label
-  (fn ((ref argument-spec)) string))
+(type arg-label
+  (fn ((ref arg-spec)) string))
 
-(defn argument-label (argument)
-  (unwrap-or (clone (:value-name argument))
-             (clone (:name argument))))
+(defn arg-label (arg)
+  (unwrap-or (clone (:value-name arg))
+             (clone (:name arg))))
 
 (defn long-names (spec)
   (collect (map (iter (:options spec))
@@ -116,13 +116,13 @@
     (_ false)))
 
 (type required?
-  (fn ((ref argument-spec)) bool))
+  (fn ((ref arg-spec)) bool))
 
-(defn required? (argument)
-  (presence-required? (:presence argument)))
+(defn required? (arg)
+  (presence-required? (:presence arg)))
 
-(defn repeated? (argument)
-  (= (:repeats argument) repetition/repeated))
+(defn repeated? (arg)
+  (= (:repeats arg) repetition/repeated))
 
 (defn presence-required? (presence)
   (match presence (required true) (_ false)))

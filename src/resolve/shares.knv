@@ -16,11 +16,11 @@
   :trailing-taken int)
 
 (defn split-of (spec given)
-  (let (repeated-index (find (range 0 (len (:arguments spec)))
+  (let (repeated-index (find (range 0 (len (:args spec)))
                          (fn (index)
-                           (repeated? (at (:arguments spec) index))))
-        leading (unwrap-or repeated-index (len (:arguments spec)))
-        trailing (- (len (:arguments spec))
+                           (repeated? (at (:args spec) index))))
+        leading (unwrap-or repeated-index (len (:args spec)))
+        trailing (- (len (:args spec))
                     leading
                     (repeated-count repeated-index))
         leading-taken (min leading given)
@@ -37,7 +37,7 @@
     (none 0)))
 
 (defn shares-of (spec layout)
-  (collect (map (range 0 (len (:arguments spec)))
+  (collect (map (range 0 (len (:args spec)))
              (fn (index) (share-at layout index)))))
 
 (type share-at

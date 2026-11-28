@@ -3,7 +3,7 @@
 
 (use spec/shapes presence repeated? required?)
 
-(export argument-order order-error order-error->message)
+(export arg-order order-error order-error->message)
 
 (defenum order-error
   (second-repeated string)
@@ -11,7 +11,7 @@
   (after-repeated string)
   (repeated-default string))
 
-(defn argument-order (spec) (order-from spec 0))
+(defn arg-order (spec) (order-from spec 0))
 
 (defn order-error->message (failure)
   (match failure
@@ -29,7 +29,7 @@
           "> repeats, so it cannot have a default"))))
 
 (defn order-from (spec index)
-  (if (>= index (len (:arguments spec)))
+  (if (>= index (len (:args spec)))
     (ok (do))
     (order-at spec index)))
 
@@ -39,37 +39,36 @@
     (none (order-from spec (inc index)))))
 
 (defn violation-at (spec index)
-  (let (argument (at (:arguments spec) index)
-        name (clone (:name argument)))
+  (let (arg (at (:args spec) index)
+        name (clone (:name arg)))
     (cond
-      ((and (repeated? argument) (defaulted? argument))
+      ((and (repeated? arg) (defaulted? arg))
        (some (order-error/repeated-default name)))
-      ((and (repeated? argument) (earlier? spec index repeated?))
+      ((and (repeated? arg) (earlier? spec index repeated?))
        (some (order-error/second-repeated name)))
-      ((and (must-be-given? argument)
-            (earlier? spec index optional?))
+      ((and (must-be-given? arg) (earlier? spec index optional?))
        (some (order-error/after-optional name)))
       ((and (earlier? spec index repeated?)
-            (not (single-required? argument)))
+            (not (single-required? arg)))
        (some (order-error/after-repeated name)))
       (else none))))
 
 (defn earlier? (spec index test)
   (any? (range 0 index)
     (fn (earlier)
-      (test (at (:arguments spec) earlier)))))
+      (test (at (:args spec) earlier)))))
 
-(defn must-be-given? (argument)
-  (or (required? argument) (repeated? argument)))
+(defn must-be-given? (arg)
+  (or (required? arg) (repeated? arg)))
 
-(defn defaulted? (argument)
-  (match (:presence argument)
+(defn defaulted? (arg)
+  (match (:presence arg)
     ((defaulted _) true)
     (_ false)))
 
-(defn optional? (argument)
-  (not (or (required? argument) (repeated? argument))))
+(defn optional? (arg)
+  (not (or (required? arg) (repeated? arg))))
 
-(defn single-required? (argument)
-  (and (required? argument)
-       (not (repeated? argument))))
+(defn single-required? (arg)
+  (and (required? arg)
+       (not (repeated? arg))))

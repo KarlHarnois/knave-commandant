@@ -12,13 +12,13 @@
 (defstruct position
   :scope command-spec
   :expecting expectation
-  :arguments-filled int
+  :args-filled int
   :given (vec string))
 
 (defenum expectation
   anything
   (value-of option-spec)
-  arguments-only)
+  args-only)
 
 (defn position-after (spec preceding)
   (reduce (iter preceding) (start spec) after-word))
@@ -26,7 +26,7 @@
 (defn start (spec)
   (->position :scope (clone spec)
               :expecting expectation/anything
-              :arguments-filled 0
+              :args-filled 0
               :given (vec)))
 
 (defn after-word (position word)
@@ -34,7 +34,7 @@
     (anything (after-open-word position word))
     ((value-of _)
      (assoc position :expecting expectation/anything))
-    (arguments-only (argument-filled position))))
+    (args-only (arg-filled position))))
 
 (defn after-open-word (position word)
   (let (items (word->items (ref (:scope position)) word))
@@ -49,7 +49,7 @@
   (match item
     ((flag flag) (after-flag position flag))
     ((flag-with-value flag _) (after-assignment position flag))
-    (options-end (assoc position :expecting expectation/arguments-only))
+    (options-end (assoc position :expecting expectation/args-only))
     ((word text) (after-plain-word position text))))
 
 (defn after-flag (position flag)
@@ -80,7 +80,7 @@
 (defn after-plain-word (position text)
   (if (subcommands? (ref (:scope position)))
     (entered position text)
-    (argument-filled position)))
+    (arg-filled position)))
 
 (defn entered (position text)
   (match (find-subcommand (ref (:scope position))
@@ -88,6 +88,6 @@
     ((some subcommand) (assoc position :scope subcommand))
     (none position)))
 
-(defn argument-filled (position)
-  (let (filled (inc (:arguments-filled position)))
-    (assoc position :arguments-filled filled)))
+(defn arg-filled (position)
+  (let (filled (inc (:args-filled position)))
+    (assoc position :args-filled filled)))

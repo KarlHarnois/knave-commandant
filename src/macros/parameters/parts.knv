@@ -5,7 +5,7 @@
           list? nth number? rest string string? symbol-name
           symbol? value-eq)
 
-(export about always-set? argument? default-text defaulted?
+(export about always-set? arg? default-text defaulted?
         detail given? list-value-name many-type?
         option-type? parameter-details parameter-name
         parameter-type required-parameter? type-named?
@@ -13,11 +13,11 @@
 
 (def parameter-name
   (fn (parameter)
-    (if (argument? parameter)
+    (if (arg? parameter)
       (symbol-name (first parameter))
       (keyword-name (first parameter)))))
 
-(def argument?
+(def arg?
   (fn (parameter)
     (bool-not (keyword? (first parameter)))))
 

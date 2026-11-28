@@ -1,7 +1,7 @@
 (module
   "Turns a scan into matches: fills each argument, checks that a single-value option is given once, and settles each option.")
 
-(use resolve/arguments resolve-arguments)
+(use resolve/args resolve-args)
 (use resolve/conflicts check-conflicts)
 (use errors/cli-error cli-error)
 (use values/matches ->matches one-text)
@@ -11,14 +11,13 @@
 
 (export resolve)
 
-(defn resolve (spec environment scan)
-  (let-try (arguments (resolve-arguments spec (ref (:positionals scan))))
+(defn resolve (spec env scan)
+  (let-try (args (resolve-args spec (ref (:positionals scan))))
     (try (check-no-repeated spec (ref (:occurrences scan))))
     (try (check-conflicts spec (ref (:occurrences scan))))
     (let (found (->matches :path (clone (:path scan))
-                           :arguments arguments
-                           :options (option-matches spec
-                                                    environment
+                           :args args
+                           :options (option-matches spec env
                                                     (ref (:occurrences scan)))))
       (try (check-required spec (ref found)))
       (ok found))))
